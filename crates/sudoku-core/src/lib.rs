@@ -11,9 +11,10 @@
 //!    - [`index_9`]: Index types and semantics for 9-element containers
 //!    - [`index_81`]: Index types and semantics for 81-element containers
 //!
-//! 2. **Generic containers** - Bitsets parameterized by semantics
+//! 2. **Generic containers** - Containers parameterized by semantics
 //!    - [`bit_set_9`]: Generic 9-bit set implementation
 //!    - [`bit_set_81`]: Generic 81-bit set implementation
+//!    - [`array_9`]: Generic 9-element array with semantic indexing
 //!
 //! 3. **Specialized types** - Convenient type aliases with specific semantics
 //!    - [`digit_candidates`]: Candidate digits (1-9) for a single cell
@@ -36,6 +37,7 @@
 //! assert!(!candidates.contains(5)); // 5 removed from same column
 //! ```
 
+pub mod array_9;
 pub mod bit_set_81;
 pub mod bit_set_9;
 pub mod candidate_board;

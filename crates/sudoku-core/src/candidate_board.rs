@@ -37,6 +37,7 @@
 //! ```
 
 use crate::{
+    array_9::Array9,
     bit_set_9::BitSet9,
     bit_set_81::BitSet81,
     digit_candidates::DigitCandidates,
@@ -129,7 +130,7 @@ pub type HouseMask = BitSet9<CellIndexSemantics>;
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct CandidateBoard {
     /// `digits[i]` represents possible positions for digit `(i+1)`
-    digits: [DigitPositions; 9],
+    digits: Array9<DigitPositions, DigitSemantics>,
 }
 
 impl Default for CandidateBoard {
@@ -141,9 +142,9 @@ impl Default for CandidateBoard {
 impl CandidateBoard {
     /// Creates a new candidate board with all positions available for all digits.
     #[must_use]
-    pub const fn new() -> Self {
+    pub fn new() -> Self {
         Self {
-            digits: [DigitPositions::FULL; 9],
+            digits: Array9::from([DigitPositions::FULL; 9]),
         }
     }
 
@@ -153,14 +154,12 @@ impl CandidateBoard {
     /// the same row, column, and box, then marks the position as containing
     /// the placed digit.
     pub fn place(&mut self, pos: Position, digit: u8) {
-        let digit_index = DigitSemantics::to_index(digit);
-
         // remove all digits at pos
         for digits in &mut self.digits {
             digits.remove(pos);
         }
 
-        let digits = &mut self.digits[usize::from(digit_index.index())];
+        let digits = &mut self.digits[digit];
         for x in 0..9 {
             digits.remove(Position::new(x, pos.y()));
         }
@@ -176,9 +175,7 @@ impl CandidateBoard {
 
     /// Removes a specific digit as a candidate at a position.
     pub fn remove_candidate(&mut self, pos: Position, digit: u8) {
-        let digit_index = DigitSemantics::to_index(digit);
-
-        let digits = &mut self.digits[usize::from(digit_index.index())];
+        let digits = &mut self.digits[digit];
         digits.remove(pos);
     }
 
@@ -199,8 +196,7 @@ impl CandidateBoard {
     /// If the returned mask has only one bit set, a Hidden Single is detected.
     #[must_use]
     pub fn get_row(&self, y: u8, digit: u8) -> HouseMask {
-        let digit_index = DigitSemantics::to_index(digit);
-        let digits = &self.digits[usize::from(digit_index.index())];
+        let digits = &self.digits[digit];
 
         let mut mask = HouseMask::new();
         for x in 0..9 {
@@ -216,8 +212,7 @@ impl CandidateBoard {
     /// If the returned mask has only one bit set, a Hidden Single is detected.
     #[must_use]
     pub fn get_col(&self, x: u8, digit: u8) -> HouseMask {
-        let digit_index = DigitSemantics::to_index(digit);
-        let digits = &self.digits[usize::from(digit_index.index())];
+        let digits = &self.digits[digit];
 
         let mut mask = HouseMask::new();
         for y in 0..9 {
@@ -233,8 +228,7 @@ impl CandidateBoard {
     /// If the returned mask has only one bit set, a Hidden Single is detected.
     #[must_use]
     pub fn get_box(&self, box_index: u8, digit: u8) -> HouseMask {
-        let digit_index = DigitSemantics::to_index(digit);
-        let digits = &self.digits[usize::from(digit_index.index())];
+        let digits = &self.digits[digit];
 
         let mut mask = HouseMask::new();
         for i in 0..9 {
@@ -544,7 +538,7 @@ mod tests {
     #[test]
     fn test_board_clone() {
         let mut board1 = CandidateBoard::new();
-        board1.digits[0].insert(Position::new(0, 0));
+        board1.digits[1].insert(Position::new(0, 0));
 
         let board2 = board1.clone();
 
