@@ -4,8 +4,9 @@
 //! any set of up to 9 elements. The semantics of the elements (their type and
 //! how they map to bit indices 0-8) are determined by the `BitSet9Semantics` trait.
 //!
-//! The most common use case is `NumberSet` (defined in the `number_set` module),
-//! which represents a set of numbers from 1 to 9 for sudoku solvers.
+//! The most common use case is [`DigitCandidates`](crate::digit_candidates::DigitCandidates)
+//! (defined in the [`digit_candidates`](crate::digit_candidates) module),
+//! which represents a set of candidate digits from 1 to 9 for sudoku cells.
 
 use std::{
     fmt::{self, Debug},
@@ -117,7 +118,7 @@ pub trait BitSet9Semantics {
 ///
 /// # Examples
 ///
-/// See the [`number_set`](crate::number_set) module for a concrete example using [`NumberSet`](crate::number_set::NumberSet).
+/// See the [`digit_candidates`](crate::digit_candidates) module for a concrete example using [`DigitCandidates`](crate::digit_candidates::DigitCandidates).
 pub struct BitSet9<S>
 where
     S: BitSet9Semantics,
