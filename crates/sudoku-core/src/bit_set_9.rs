@@ -283,19 +283,19 @@ where
     }
 
     const fn first_index(self) -> Option<BitIndex9> {
-        match self.bits.trailing_zeros() {
-            16 => None,
-            #[expect(clippy::cast_possible_truncation)]
-            n => Some(BitIndex9::new(n as u8)),
+        if self.bits == 0 {
+            return None;
         }
+        #[expect(clippy::cast_possible_truncation)]
+        Some(BitIndex9::new(self.bits.trailing_zeros() as u8))
     }
 
     const fn last_index(self) -> Option<BitIndex9> {
-        match self.bits.leading_zeros() {
-            16 => None,
-            #[expect(clippy::cast_possible_truncation)]
-            n => Some(BitIndex9::new(15 - n as u8)),
+        if self.bits == 0 {
+            return None;
         }
+        #[expect(clippy::cast_possible_truncation)]
+        Some(BitIndex9::new(15 - self.bits.leading_zeros() as u8))
     }
 
     /// Returns the smallest element in the set, if any.
