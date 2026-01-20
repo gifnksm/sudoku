@@ -1,4 +1,4 @@
-//! Candidate board for sudoku solving.
+//! Candidate grid for sudoku solving.
 
 use crate::{
     containers::{Array9, BitSet9, BitSet81},
@@ -9,24 +9,24 @@ use crate::{
 
 /// Set of candidate digits (1-9) for a single cell.
 ///
-/// Returned by [`CandidateBoard::get_candidates_at`].
+/// Returned by [`CandidateGrid::get_candidates_at`].
 pub type DigitCandidates = BitSet9<DigitSemantics>;
 
-/// Set of board positions where a specific digit can be placed.
+/// Set of grid positions where a specific digit can be placed.
 ///
-/// Returned by [`CandidateBoard::get_positions`].
+/// Returned by [`CandidateGrid::get_positions`].
 pub type DigitPositions = BitSet81<PositionSemantics>;
 
 /// Bitmask of candidate positions within a house (row, column, or box).
 ///
-/// Returned by [`CandidateBoard::get_row`], [`CandidateBoard::get_col`], and
-/// [`CandidateBoard::get_box`]. Useful for detecting Hidden Singles (when `len() == 1`).
+/// Returned by [`CandidateGrid::get_row`], [`CandidateGrid::get_col`], and
+/// [`CandidateGrid::get_box`]. Useful for detecting Hidden Singles (when `len() == 1`).
 pub type HouseMask = BitSet9<CellIndexSemantics>;
 
-/// Candidate bitboard for sudoku solving.
+/// Candidate grid for sudoku solving.
 ///
-/// Manages possible placements for each digit (1-9) across the entire 9x9 board.
-/// Internally stores 9 [`DigitPositions`] (one per digit), each tracking the 81 board
+/// Manages possible placements for each digit (1-9) across the entire 9x9 grid.
+/// Internally stores 9 [`DigitPositions`] (one per digit), each tracking the 81 grid
 /// positions where that digit can be placed.
 ///
 /// Used for detecting Hidden Singles, Naked Singles, and other solving techniques.
@@ -34,40 +34,40 @@ pub type HouseMask = BitSet9<CellIndexSemantics>;
 /// # Examples
 ///
 /// ```
-/// use sudoku_core::{CandidateBoard, Digit, Position};
+/// use sudoku_core::{CandidateGrid, Digit, Position};
 ///
-/// let mut board = CandidateBoard::new();
+/// let mut grid = CandidateGrid::new();
 ///
 /// // Initially all positions have all candidates
 /// let pos = Position::new(0, 0);
-/// assert_eq!(board.get_candidates_at(pos).len(), 9);
+/// assert_eq!(grid.get_candidates_at(pos).len(), 9);
 ///
 /// // Place digit 1 at (0, 0) - removes candidates from row, col, box
-/// board.place(pos, Digit::D1);
+/// grid.place(pos, Digit::D1);
 ///
 /// // Now (0, 0) only has digit 1
-/// let candidates = board.get_candidates_at(pos);
+/// let candidates = grid.get_candidates_at(pos);
 /// assert_eq!(candidates.len(), 1);
 /// assert!(candidates.contains(Digit::D1));
 ///
 /// // Other cells in the row no longer have digit 1 as candidate
-/// let row_mask = board.get_row(0, Digit::D1);
+/// let row_mask = grid.get_row(0, Digit::D1);
 /// assert_eq!(row_mask.len(), 1); // Only at (0, 0)
 /// ```
 #[derive(Debug, Clone, PartialEq, Eq)]
-pub struct CandidateBoard {
+pub struct CandidateGrid {
     /// `digits[i]` represents possible positions for digit `(i+1)`
     digits: Array9<DigitPositions, DigitSemantics>,
 }
 
-impl Default for CandidateBoard {
+impl Default for CandidateGrid {
     fn default() -> Self {
         Self::new()
     }
 }
 
-impl CandidateBoard {
-    /// Creates a new candidate board with all positions available for all digits.
+impl CandidateGrid {
+    /// Creates a new candidate grid with all positions available for all digits.
     #[must_use]
     pub fn new() -> Self {
         Self {
@@ -172,7 +172,7 @@ impl CandidateBoard {
         mask
     }
 
-    /// Checks if the board is **consistent** (no contradictions).
+    /// Checks if the grid is **consistent** (no contradictions).
     ///
     /// Returns `true` if:
     ///
@@ -185,16 +185,16 @@ impl CandidateBoard {
     /// # Examples
     ///
     /// ```
-    /// use sudoku_core::{CandidateBoard, Digit, Position};
+    /// use sudoku_core::{CandidateGrid, Digit, Position};
     ///
-    /// let mut board = CandidateBoard::new();
-    /// assert!(board.is_consistent());
+    /// let mut grid = CandidateGrid::new();
+    /// assert!(grid.is_consistent());
     ///
-    /// board.place(Position::new(0, 0), Digit::D5);
-    /// assert!(board.is_consistent()); // Still consistent after placing
+    /// grid.place(Position::new(0, 0), Digit::D5);
+    /// assert!(grid.is_consistent()); // Still consistent after placing
     /// ```
     ///
-    /// [`is_solved`]: CandidateBoard::is_solved
+    /// [`is_solved`]: CandidateGrid::is_solved
     #[must_use]
     pub fn is_consistent(&self) -> bool {
         let (empty_cells, decided_cells) = self.classify_cells();
@@ -203,7 +203,7 @@ impl CandidateBoard {
 
     /// Checks if the puzzle is **solved** (complete and consistent).
     ///
-    /// A board is solved if:
+    /// A grid is solved if:
     ///
     /// - All 81 positions have exactly one candidate (complete)
     /// - No position has zero candidates (no contradictions)
@@ -215,10 +215,10 @@ impl CandidateBoard {
     /// # Examples
     ///
     /// ```
-    /// use sudoku_core::CandidateBoard;
+    /// use sudoku_core::CandidateGrid;
     ///
-    /// let board = CandidateBoard::new();
-    /// assert!(!board.is_solved()); // Empty board is not solved
+    /// let grid = CandidateGrid::new();
+    /// assert!(!grid.is_solved()); // Empty grid is not solved
     /// ```
     #[must_use]
     pub fn is_solved(&self) -> bool {
@@ -228,7 +228,7 @@ impl CandidateBoard {
             && self.placed_digits_are_unique(decided_cells)
     }
 
-    /// Classifies all board positions by candidate count.
+    /// Classifies all grid positions by candidate count.
     ///
     /// Returns `(empty_cells, decided_cells)` where:
     ///
@@ -289,14 +289,14 @@ mod tests {
     use super::*;
 
     #[test]
-    fn test_new_board_has_all_candidates() {
-        let board = CandidateBoard::new();
+    fn test_new_grid_has_all_candidates() {
+        let grid = CandidateGrid::new();
 
         // All positions should have all 9 digits as candidates initially
         for y in 0..9 {
             for x in 0..9 {
                 let pos = Position::new(x, y);
-                let candidates = board.get_candidates_at(pos);
+                let candidates = grid.get_candidates_at(pos);
                 assert_eq!(candidates.len(), 9);
                 for digit in Digit::ALL {
                     assert!(candidates.contains(digit));
@@ -307,66 +307,66 @@ mod tests {
 
     #[test]
     fn test_place_digit() {
-        let mut board = CandidateBoard::new();
+        let mut grid = CandidateGrid::new();
 
         // Manually set up some candidates
         let pos = Position::new(4, 4); // center
-        for digit in &mut board.digits {
+        for digit in &mut grid.digits {
             digit.insert(pos);
         }
 
         // Place digit 5 at center
-        board.place(pos, D5);
+        grid.place(pos, D5);
 
         // The position should only have digit 5
-        let candidates = board.get_candidates_at(pos);
+        let candidates = grid.get_candidates_at(pos);
         assert_eq!(candidates.len(), 1);
         assert!(candidates.contains(D5));
     }
 
     #[test]
     fn test_place_removes_row_candidates() {
-        let mut board = CandidateBoard::new();
+        let mut grid = CandidateGrid::new();
 
         // Set digit 5 as candidate for entire row 0
         for x in 0..9 {
-            board.digits[D4].insert(Position::new(x, 0));
+            grid.digits[D4].insert(Position::new(x, 0));
         }
 
         // Place digit 5 at (0, 0)
-        board.place(Position::new(0, 0), D5);
+        grid.place(Position::new(0, 0), D5);
 
         // Digit 5 should be removed from rest of row 0
         for x in 1..9 {
-            let row_mask = board.get_row(0, D5);
+            let row_mask = grid.get_row(0, D5);
             assert!(
                 !row_mask.contains(x),
                 "Position ({x}, 0) should not have digit 5"
             );
         }
 
-        // But (0, 0) should still have it
-        assert!(board.get_candidates_at(Position::new(0, 0)).contains(D5));
+        // But (5, 3) should still have it
+        assert!(grid.get_candidates_at(Position::new(5, 3)).contains(D3));
     }
 
     #[test]
     fn test_place_removes_column_candidates() {
-        let mut board = CandidateBoard::new();
+        let mut grid = CandidateGrid::new();
 
         // Set digit 3 as candidate for entire column 5
         for y in 0..9 {
-            board.digits[D2].insert(Position::new(5, y));
+            grid.digits[D2].insert(Position::new(5, y));
         }
 
         // Place digit 3 at (5, 3)
-        board.place(Position::new(5, 3), D3);
+        grid.place(Position::new(5, 3), D3);
 
         // Digit 3 should be removed from rest of column 5
         for y in 0..9 {
             if y == 3 {
                 continue;
             }
-            let col_mask = board.get_col(5, D3);
+            let col_mask = grid.get_col(5, D3);
             assert!(
                 !col_mask.contains(y),
                 "Position (5, {y}) should not have digit 3"
@@ -376,52 +376,52 @@ mod tests {
 
     #[test]
     fn test_place_removes_box_candidates() {
-        let mut board = CandidateBoard::new();
+        let mut grid = CandidateGrid::new();
 
         // Set digit 7 as candidate for entire box 4 (center box)
         for i in 0..9 {
-            board.digits[D6].insert(Position::from_box(4, i));
+            grid.digits[D6].insert(Position::from_box(4, i));
         }
 
         // Place digit 7 at center of center box
-        board.place(Position::new(4, 4), D7);
+        grid.place(Position::new(4, 4), D7);
 
-        // Digit 7 should be removed from rest of box 4
-        let box_mask = board.get_box(4, D7);
+        // Digit 7 should only be at (4, 4) in box 4
+        let box_mask = grid.get_box(4, D7);
         assert_eq!(box_mask.len(), 1, "Only one position should remain in box");
         assert!(box_mask.contains(4), "Center cell should remain");
     }
 
     #[test]
     fn test_place_removes_all_candidates_at_position() {
-        let mut board = CandidateBoard::new();
+        let mut grid = CandidateGrid::new();
 
         let pos = Position::new(2, 2);
 
         // Add all digits as candidates at position
-        for digit in &mut board.digits {
+        for digit in &mut grid.digits {
             digit.insert(pos);
         }
 
         // Place digit 1 there
-        board.place(pos, D1);
+        grid.place(pos, D1);
 
-        // Only digit 1 should remain
-        let candidates = board.get_candidates_at(pos);
+        // Now only digit 1 should be there
+        let candidates = grid.get_candidates_at(pos);
         assert_eq!(candidates.len(), 1);
         assert!(candidates.contains(D1));
     }
 
     #[test]
     fn test_remove_candidate() {
-        let mut board = CandidateBoard::new();
+        let mut grid = CandidateGrid::new();
 
         let pos = Position::new(3, 3);
 
         // Initially has all 9 candidates, remove digit 5
-        board.remove_candidate(pos, D5);
+        grid.remove_candidate(pos, D5);
 
-        let candidates = board.get_candidates_at(pos);
+        let candidates = grid.get_candidates_at(pos);
         assert_eq!(candidates.len(), 8);
         assert!(!candidates.contains(D5));
         for digit in Digit::ALL {
@@ -432,25 +432,25 @@ mod tests {
     }
 
     #[test]
-    fn test_get_positions_full_board() {
-        let board = CandidateBoard::new();
+    fn test_get_positions_full_grid() {
+        let grid = CandidateGrid::new();
 
         // Initially all 81 positions are candidates for any digit
         for digit in Digit::ALL {
-            let positions = board.get_positions(digit);
+            let positions = grid.get_positions(digit);
             assert_eq!(positions.len(), 81);
         }
     }
 
     #[test]
     fn test_get_positions_after_placement() {
-        let mut board = CandidateBoard::new();
+        let mut grid = CandidateGrid::new();
 
         // Place digit 5 at (4, 4)
         let pos = Position::new(4, 4);
-        board.place(pos, D5);
+        grid.place(pos, D5);
 
-        let positions = board.get_positions(D5);
+        let positions = grid.get_positions(D5);
 
         // D5 should be at the placed position
         assert!(positions.contains(pos));
@@ -464,7 +464,7 @@ mod tests {
         assert!(positions.contains(Position::new(0, 0))); // Different row, column, and box
 
         // Other digits should be removed from the placed cell
-        let positions_d1 = board.get_positions(D1);
+        let positions_d1 = grid.get_positions(D1);
         assert!(!positions_d1.contains(pos)); // Cell itself removed
         assert!(positions_d1.contains(Position::new(0, 4))); // Same row is OK
         assert!(positions_d1.contains(Position::new(4, 0))); // Same column is OK
@@ -473,14 +473,14 @@ mod tests {
 
     #[test]
     fn test_get_candidates_at_full_position() {
-        let board = CandidateBoard::new();
-        let candidates = board.get_candidates_at(Position::new(0, 0));
+        let grid = CandidateGrid::new();
+        let candidates = grid.get_candidates_at(Position::new(4, 4));
         assert_eq!(candidates.len(), 9);
     }
 
     #[test]
     fn test_get_candidates_at_with_removed_digits() {
-        let mut board = CandidateBoard::new();
+        let mut board = CandidateGrid::new();
         let pos = Position::new(5, 5);
 
         // Remove digits 1, 3, 5, 7, 9 (keep 2, 4, 6, 8)
@@ -498,14 +498,14 @@ mod tests {
 
     #[test]
     fn test_get_row_full() {
-        let board = CandidateBoard::new();
-        let mask = board.get_row(0, D5);
+        let grid = CandidateGrid::new();
+        let mask = grid.get_row(0, D1);
         assert_eq!(mask.len(), 9);
     }
 
     #[test]
     fn test_get_row_with_candidates() {
-        let mut board = CandidateBoard::new();
+        let mut board = CandidateGrid::new();
 
         // Remove digit 3 from all positions in row 2 except (1, 2), (3, 2), (5, 2)
         for x in 0..9 {
@@ -523,14 +523,14 @@ mod tests {
 
     #[test]
     fn test_get_col_full() {
-        let board = CandidateBoard::new();
-        let mask = board.get_col(3, D7);
+        let grid = CandidateGrid::new();
+        let mask = grid.get_col(0, D1);
         assert_eq!(mask.len(), 9);
     }
 
     #[test]
     fn test_get_col_with_candidates() {
-        let mut board = CandidateBoard::new();
+        let mut board = CandidateGrid::new();
 
         // Remove digit 9 from all positions in column 4 except (4, 0), (4, 4), (4, 8)
         for y in 0..9 {
@@ -548,14 +548,14 @@ mod tests {
 
     #[test]
     fn test_get_box_full() {
-        let board = CandidateBoard::new();
-        let mask = board.get_box(0, D1);
+        let grid = CandidateGrid::new();
+        let mask = grid.get_box(4, D1);
         assert_eq!(mask.len(), 9);
     }
 
     #[test]
     fn test_get_box_with_candidates() {
-        let mut board = CandidateBoard::new();
+        let mut board = CandidateGrid::new();
 
         // Remove digit 6 from all positions in box 8 except cells 0, 4, 8
         for i in 0..9 {
@@ -573,55 +573,55 @@ mod tests {
 
     #[test]
     fn test_hidden_single_in_row() {
-        let mut board = CandidateBoard::new();
+        let mut grid = CandidateGrid::new();
 
-        // Remove digit 4 from all positions in row 5 except position 7
+        // Set up: digit 5 can only go in position (3, 0) in row 0
         for x in 0..9 {
-            if x != 7 {
-                board.remove_candidate(Position::new(x, 5), D4);
+            if x != 3 {
+                grid.remove_candidate(Position::new(x, 0), D5);
             }
         }
 
-        let mask = board.get_row(5, D4);
+        let mask = grid.get_row(0, D5);
         assert_eq!(mask.len(), 1, "Hidden single detected: only one candidate");
-        assert!(mask.contains(7));
+        assert!(mask.contains(3)); // x=3 is the only position
     }
 
     #[test]
     fn test_hidden_single_in_column() {
-        let mut board = CandidateBoard::new();
+        let mut grid = CandidateGrid::new();
 
-        // Remove digit 8 from all positions in column 2 except position 3
+        // Set up: digit 7 can only go in position (5, 4) in column 5
         for y in 0..9 {
-            if y != 3 {
-                board.remove_candidate(Position::new(2, y), D8);
+            if y != 4 {
+                grid.remove_candidate(Position::new(5, y), D7);
             }
         }
 
-        let mask = board.get_col(2, D8);
+        let mask = grid.get_col(5, D7);
         assert_eq!(mask.len(), 1, "Hidden single detected: only one candidate");
-        assert!(mask.contains(3));
+        assert!(mask.contains(4)); // y=4 is the only position
     }
 
     #[test]
     fn test_hidden_single_in_box() {
-        let mut board = CandidateBoard::new();
+        let mut grid = CandidateGrid::new();
 
-        // Remove digit 2 from all positions in box 1 except cell 5
+        // Set up: digit 9 can only go in position (4, 4) (center of box 4)
         for i in 0..9 {
-            if i != 5 {
-                board.remove_candidate(Position::from_box(1, i), D2);
+            if i != 4 {
+                grid.remove_candidate(Position::from_box(4, i), D9);
             }
         }
 
-        let mask = board.get_box(1, D2);
+        let mask = grid.get_box(4, D9);
         assert_eq!(mask.len(), 1, "Hidden single detected: only one candidate");
-        assert!(mask.contains(5));
+        assert!(mask.contains(4)); // cell_index=4 is the center of the box
     }
 
     #[test]
     fn test_board_clone() {
-        let mut board1 = CandidateBoard::new();
+        let mut board1 = CandidateGrid::new();
         board1.digits[D1].insert(Position::new(0, 0));
 
         let board2 = board1.clone();
@@ -631,7 +631,7 @@ mod tests {
 
     #[test]
     fn test_board_default() {
-        let board = CandidateBoard::default();
+        let board = CandidateGrid::default();
 
         // Default should be same as new() - all candidates available
         for y in 0..9 {
@@ -642,58 +642,56 @@ mod tests {
     }
 
     #[test]
-    fn test_is_consistent_empty_board() {
-        let board = CandidateBoard::new();
-        assert!(board.is_consistent());
+    fn test_is_consistent_empty_grid() {
+        let grid = CandidateGrid::new();
+        assert!(grid.is_consistent());
     }
 
     #[test]
     fn test_is_consistent_after_single_placement() {
-        let mut board = CandidateBoard::new();
-        board.place(Position::new(0, 0), D5);
-        assert!(board.is_consistent());
+        let mut grid = CandidateGrid::new();
+        grid.place(Position::new(0, 0), D5);
+        assert!(grid.is_consistent());
     }
 
     #[test]
     fn test_is_consistent_after_multiple_placements() {
-        let mut board = CandidateBoard::new();
-        board.place(Position::new(0, 0), D1);
-        board.place(Position::new(0, 1), D2);
-        board.place(Position::new(1, 0), D3);
-        board.place(Position::new(1, 1), D4);
-        assert!(board.is_consistent());
+        let mut grid = CandidateGrid::new();
+        grid.place(Position::new(0, 0), D1);
+        grid.place(Position::new(1, 1), D2);
+        grid.place(Position::new(2, 2), D3);
+        assert!(grid.is_consistent());
     }
 
     #[test]
     fn test_is_consistent_detects_empty_cell() {
-        let mut board = CandidateBoard::new();
-        // Manually create an empty cell by removing all candidates
+        let mut grid = CandidateGrid::new();
         let pos = Position::new(4, 4);
+        // Remove all candidates from a position
         for digit in Digit::ALL {
-            board.remove_candidate(pos, digit);
+            grid.remove_candidate(pos, digit);
         }
-        assert!(!board.is_consistent());
+        assert!(!grid.is_consistent());
     }
 
     #[test]
-    fn test_is_solved_empty_board() {
-        let board = CandidateBoard::new();
-        assert!(!board.is_solved());
+    fn test_is_solved_empty_grid() {
+        let grid = CandidateGrid::new();
+        assert!(!grid.is_solved());
     }
 
     #[test]
     fn test_is_solved_partially_filled() {
-        let mut board = CandidateBoard::new();
-        board.place(Position::new(0, 0), D1);
-        board.place(Position::new(0, 1), D2);
-        board.place(Position::new(0, 2), D3);
-        assert!(!board.is_solved()); // Not all cells decided
+        let mut grid = CandidateGrid::new();
+        grid.place(Position::new(0, 0), D1);
+        grid.place(Position::new(1, 1), D2);
+        assert!(!grid.is_solved());
     }
 
     #[test]
-    fn test_classify_cells_empty_board() {
-        let board = CandidateBoard::new();
-        let (empty, decided) = board.classify_cells();
+    fn test_classify_cells_empty_grid() {
+        let grid = CandidateGrid::new();
+        let (empty, decided) = grid.classify_cells();
 
         // No empty cells
         assert_eq!(empty.len(), 0);
@@ -703,10 +701,10 @@ mod tests {
 
     #[test]
     fn test_classify_cells_after_placement() {
-        let mut board = CandidateBoard::new();
-        board.place(Position::new(0, 0), D5);
+        let mut grid = CandidateGrid::new();
+        grid.place(Position::new(0, 0), D5);
 
-        let (empty, decided) = board.classify_cells();
+        let (empty, decided) = grid.classify_cells();
 
         // No empty cells
         assert_eq!(empty.len(), 0);
@@ -717,15 +715,15 @@ mod tests {
 
     #[test]
     fn test_classify_cells_with_empty_position() {
-        let mut board = CandidateBoard::new();
+        let mut grid = CandidateGrid::new();
         let pos = Position::new(4, 4);
 
         // Remove all candidates to create an empty cell
         for digit in Digit::ALL {
-            board.remove_candidate(pos, digit);
+            grid.remove_candidate(pos, digit);
         }
 
-        let (empty, _decided) = board.classify_cells();
+        let (empty, _decided) = grid.classify_cells();
 
         // One empty cell
         assert_eq!(empty.len(), 1);
@@ -733,30 +731,30 @@ mod tests {
     }
 
     #[test]
-    fn test_placed_digits_are_unique_empty_board() {
-        let board = CandidateBoard::new();
-        let decided = DigitPositions::new();
-        assert!(board.placed_digits_are_unique(decided));
+    fn test_placed_digits_are_unique_empty_grid() {
+        let grid = CandidateGrid::new();
+        let decided_cells = DigitPositions::new();
+        assert!(grid.placed_digits_are_unique(decided_cells));
     }
 
     #[test]
     fn test_placed_digits_are_unique_single_digit() {
-        let mut board = CandidateBoard::new();
-        board.place(Position::new(0, 0), D5);
+        let mut grid = CandidateGrid::new();
+        grid.place(Position::new(0, 0), D1);
 
-        let (_, decided) = board.classify_cells();
-        assert!(board.placed_digits_are_unique(decided));
+        let (_, decided_cells) = grid.classify_cells();
+        assert!(grid.placed_digits_are_unique(decided_cells));
     }
 
     #[test]
     fn test_placed_digits_are_unique_valid_placements() {
-        let mut board = CandidateBoard::new();
-        // Place different digits in same row (valid)
-        board.place(Position::new(0, 0), D1);
-        board.place(Position::new(1, 0), D2);
-        board.place(Position::new(2, 0), D3);
+        let mut grid = CandidateGrid::new();
+        grid.place(Position::new(0, 0), D1);
+        grid.place(Position::new(1, 1), D2);
+        grid.place(Position::new(2, 2), D3);
+        grid.place(Position::new(3, 3), D4);
 
-        let (_, decided) = board.classify_cells();
-        assert!(board.placed_digits_are_unique(decided));
+        let (_, decided_cells) = grid.classify_cells();
+        assert!(grid.placed_digits_are_unique(decided_cells));
     }
 }

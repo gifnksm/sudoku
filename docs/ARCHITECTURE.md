@@ -35,19 +35,23 @@ sudoku/
 
 **Key Components**:
 
-- `NumberSet`: Efficient bitset representation of numbers 1-9 using a 16-bit integer
-- `Position`: Row and column coordinates (planned)
-- `Cell`: Individual cell with candidate values (planned)
-- `Grid`: Complete puzzle state using BitBoard implementation with 128-bit integers (planned)
-- Basic rule validation (duplicate checking, etc.) (planned)
+- **Basic Types**: `Digit`, `Position` - Type-safe representations of sudoku elements
+- **CandidateGrid**: Candidate tracking optimized for solving algorithms
+- **DigitGrid** (planned): Simple, intuitive cell-centric interface
+- **Generic Containers**: Efficient bitset and array implementations with type-safe indexing
 
 **Dependencies**: None
 
 **Design Decisions**:
 
-- BitBoard implementation chosen for performance and memory efficiency
-- `NumberSet` uses only bits 0-8 of a u16 to represent numbers 1-9
-- All operations are designed to be copy-friendly and cache-efficient
+- **Two-Grid Architecture**: Separation of concerns between solving and simple data access
+  - `CandidateGrid`: Digit-centric interface optimized for constraint propagation and solving algorithms
+  - `DigitGrid` (planned): Cell-centric interface for intuitive "what's in this cell?" queries
+  - Allows each type to provide the most natural interface for its use case
+
+- **Type Safety via Semantics**: Generic containers prevent mixing incompatible index types at compile time
+
+For implementation details, see the [crate documentation](../crates/sudoku-core/src/lib.rs).
 
 ---
 
@@ -194,22 +198,22 @@ sudoku-app (desktop + web)
 
 ## Key Design Decisions
 
-### BitBoard Implementation
+### Two-Grid Architecture
 
-**Decision**: Use 128-bit integers for grid representation.
+**Decision**: Use separate types for solving (`CandidateGrid`) and data exchange (`DigitGrid`).
 
 **Rationale**:
 
-- Each cell needs 9 bits (one per candidate number)
-- 81 cells × 9 bits = 729 bits minimum
-- 128-bit integers provide efficient bitwise operations
-- Allows for fast constraint propagation and validation
+- Solving algorithms need fast candidate tracking and constraint propagation
+- Data exchange needs simple, serializable formats
+- Each grid type can be optimized for its specific use case without compromise
+- Clean separation prevents mixing solving logic with I/O concerns
 
 **Trade-offs**:
 
-- More complex implementation
-- Higher memory usage per grid
-- Significant performance benefits for solving algorithms
+- Requires conversion between grid types
+- Two types to maintain instead of one
+- Benefits: Better performance, cleaner API, easier to understand and test
 
 ### Separation of Solver Techniques
 

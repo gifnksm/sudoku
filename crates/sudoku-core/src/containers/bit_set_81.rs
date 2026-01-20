@@ -33,7 +33,7 @@ use crate::index::{Index81, Index81Semantics};
 /// See [`DigitPositions`] for a concrete example
 /// using [`Position`] as the element type.
 ///
-/// [`DigitPositions`]: crate::candidate_board::DigitPositions
+/// [`DigitPositions`]: crate::DigitPositions
 /// [`Position`]: crate::Position
 ///
 /// For information on defining custom semantics, see [`Index81Semantics`].

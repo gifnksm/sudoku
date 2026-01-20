@@ -4,22 +4,46 @@
 //! manipulating sudoku puzzles. These structures are used across solving, generation,
 //! and game management components.
 //!
+//! # Architecture Overview
+//!
+//! The crate follows a **two-grid architecture** that separates concerns:
+//!
+//! - [`CandidateGrid`] - Digit-centric interface for solving algorithms
+//! - `DigitGrid` - Cell-centric interface for simple data access *(planned)*
+//!
+//! This separation allows each type to provide the most natural interface for its use case.
+//!
 //! # Core Types
 //!
 //! ## Basic Sudoku Types
 //!
 //! - [`Digit`] - Type-safe representation of sudoku digits 1-9
-//! - [`Position`] - Board position with (x, y) coordinates in the range 0-8
+//! - [`Position`] - Grid position with (x, y) coordinates in the range 0-8
+//!   - Provides box calculation utilities (`box_index()`, `box_cell_index()`)
+//!   - Supports conversion between linear and box-relative coordinates
 //!
-//! ## Candidate Tracking
+//! ## Grid Types
+//!
+//! ### [`CandidateGrid`] (Solving & Constraint Propagation)
+//!
+//! [`CandidateGrid`] is a candidate tracking grid for solving algorithms:
+//!   - Digit-centric representation (tracks where each digit can be placed)
+//!   - Automatic constraint propagation and candidate elimination
+//!   - Supports technique detection (Hidden Singles, Naked Singles, etc.)
+//!
+//! ### `DigitGrid` (Simple Cell-Centric Interface) *(planned)*
+//!
+//! `DigitGrid` will provide an intuitive cell-centric interface:
+//!   - Direct "what's in this cell?" queries
+//!   - Simple array-based representation
+//!   - Natural for human reasoning about puzzle state
+//!
+//! ## Candidate Type Aliases
 //!
 //! - [`DigitCandidates`] - Set of candidate digits (1-9) for a single cell.
-//!   This is a specialized [`BitSet9`] using [`DigitSemantics`] to map digits to bit indices.
+//!   A specialized [`BitSet9`] using [`DigitSemantics`].
 //!
-//! - [`CandidateBoard`] - Board-wide candidate tracking for sudoku solving.
-//!   Tracks possible placements for each digit across all 81 positions.
-//!
-//! - [`DigitPositions`] - Set of board positions where a specific digit can be placed.
+//! - [`DigitPositions`] - Set of grid positions where a specific digit can be placed.
 //!   A type alias for `BitSet81<PositionSemantics>`.
 //!
 //! - [`HouseMask`] - Bitmask for candidate positions within a house (row/col/box).
@@ -35,12 +59,14 @@
 //! - [`Index9Semantics`] and [`Index81Semantics`] - Traits defining index semantics
 //! - [`DigitSemantics`], [`CellIndexSemantics`], [`PositionSemantics`] - Concrete semantics implementations
 //!
+//! This ensures compile-time safety by preventing accidental mixing of incompatible index types.
+//!
 //! ## Generic Containers
 //!
 //! The [`containers`] module provides generic containers parameterized by semantics:
 //!
-//! - [`BitSet9`] - Efficient 9-element bitset
-//! - [`BitSet81`] - Efficient 81-element bitset
+//! - [`BitSet9`] - Efficient 9-element bitset (u16-based)
+//! - [`BitSet81`] - Efficient 81-element bitset (u128-based)
 //! - [`Array9`] - 9-element array with semantic indexing
 //!
 //! [`Index9`]: index::Index9
@@ -72,27 +98,44 @@
 //! assert_eq!(candidates.len(), 7);
 //! ```
 //!
-//! ## Candidate Board
+//! ## [`CandidateGrid`] - Solving and Constraint Propagation
 //!
 //! ```
-//! use sudoku_core::{CandidateBoard, Digit, DigitCandidates, Position};
+//! use sudoku_core::{CandidateGrid, Digit, DigitCandidates, Position};
 //!
-//! // Create a candidate board
-//! let mut board = CandidateBoard::new();
+//! // Create a candidate grid with all positions having all candidates
+//! let mut grid = CandidateGrid::new();
 //!
-//! // Place a digit
-//! board.place(Position::new(4, 4), Digit::D5);
+//! // Place a digit - automatically updates candidates in row, column, and box
+//! grid.place(Position::new(4, 4), Digit::D5);
 //!
 //! // Check remaining candidates at a position
-//! let candidates: DigitCandidates = board.get_candidates_at(Position::new(4, 5));
-//! assert!(!candidates.contains(Digit::D5)); // 5 removed from same column
+//! let candidates: DigitCandidates = grid.get_candidates_at(Position::new(4, 5));
+//! assert!(!candidates.contains(Digit::D5)); // D5 removed from same column
+//!
+//! // Check if the puzzle is consistent (no contradictions)
+//! assert!(grid.is_consistent());
 //! ```
+//!
+//! ## Design Rationale
+//!
+//! ### Why Two Grid Types?
+//!
+//! - **[`CandidateGrid`]**: Digit-centric interface for solving
+//!   - Answers "where can digit X go?" efficiently
+//!   - Optimized for constraint propagation
+//!
+//! - **`DigitGrid`** *(planned)*: Cell-centric interface for simple access
+//!   - Answers "what's in this cell?" naturally
+//!   - Intuitive for human reasoning about puzzle state
+//!
+//! Each type provides the most natural interface for its access pattern.
 
-mod candidate_board;
+mod candidate_grid;
 pub mod containers;
 mod digit;
 pub mod index;
 mod position;
 
 // Re-export commonly used types
-pub use self::{candidate_board::*, digit::*, position::*};
+pub use self::{candidate_grid::*, digit::*, position::*};

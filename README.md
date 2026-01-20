@@ -10,15 +10,19 @@ A Sudoku application written in Rust, supporting both desktop and web platforms.
 
 ## Current Status
 
-- ✅ **sudoku-core**: `NumberSet` implementation (efficient bitset for numbers 1-9)
-- 🚧 **In Progress**: Core data structures (Grid, Position, Cell)
+- ✅ **sudoku-core**: Core data structures implemented
+  - `Digit`: Type-safe representation of numbers 1-9
+  - `Position`: Board coordinates with box calculation utilities
+  - `CandidateGrid`: Candidate tracking grid for solving algorithms
+  - Generic bitset containers (`BitSet9`, `BitSet81`)
+- 🚧 **In Progress**: `DigitGrid` (simple cell-centric interface)
 - 📋 **Planned**: Solver algorithms, puzzle generation, GUI
 
 ## Project Structure
 
 ```text
 crates/
-├── sudoku-core/       # Core data structures
+├── sudoku-core/       # Core data structures (CandidateGrid, Digit, Position)
 ├── sudoku-solver/     # Solving algorithms (planned)
 ├── sudoku-generator/  # Puzzle generation (planned)
 ├── sudoku-game/       # Game logic (planned)
