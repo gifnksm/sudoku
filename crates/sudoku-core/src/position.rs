@@ -1,4 +1,4 @@
-//! Board position and coordinate utilities.
+//! Board position types.
 
 /// Board position (x, y) where x is column and y is row.
 ///
@@ -43,7 +43,7 @@ impl Position {
     #[must_use]
     pub const fn from_box(box_index: u8, cell_index: u8) -> Self {
         assert!(box_index < 9 && cell_index < 9);
-        let origin = box_top_left(box_index);
+        let origin = Self::box_origin(box_index);
         Self::new(origin.x + cell_index % 3, origin.y + cell_index / 3)
     }
 
@@ -70,17 +70,17 @@ impl Position {
     pub const fn box_cell_index(&self) -> u8 {
         (self.y % 3) * 3 + (self.x % 3)
     }
-}
 
-/// Returns the top-left position of the specified box.
-///
-/// # Panics
-///
-/// Panics if `box_index` is greater than or equal to 9.
-#[must_use]
-pub const fn box_top_left(box_index: u8) -> Position {
-    assert!(box_index < 9);
-    Position::new((box_index % 3) * 3, (box_index / 3) * 3)
+    /// Returns the top-left position (origin) of the specified box.
+    ///
+    /// # Panics
+    ///
+    /// Panics if `box_index` is greater than or equal to 9.
+    #[must_use]
+    pub const fn box_origin(box_index: u8) -> Self {
+        assert!(box_index < 9);
+        Self::new((box_index % 3) * 3, (box_index / 3) * 3)
+    }
 }
 
 #[cfg(test)]
@@ -228,22 +228,22 @@ mod tests {
     }
 
     #[test]
-    fn test_box_top_left() {
-        assert_eq!(box_top_left(0), Position::new(0, 0));
-        assert_eq!(box_top_left(1), Position::new(3, 0));
-        assert_eq!(box_top_left(2), Position::new(6, 0));
-        assert_eq!(box_top_left(3), Position::new(0, 3));
-        assert_eq!(box_top_left(4), Position::new(3, 3));
-        assert_eq!(box_top_left(5), Position::new(6, 3));
-        assert_eq!(box_top_left(6), Position::new(0, 6));
-        assert_eq!(box_top_left(7), Position::new(3, 6));
-        assert_eq!(box_top_left(8), Position::new(6, 6));
+    fn test_box_origin() {
+        assert_eq!(Position::box_origin(0), Position::new(0, 0));
+        assert_eq!(Position::box_origin(1), Position::new(3, 0));
+        assert_eq!(Position::box_origin(2), Position::new(6, 0));
+        assert_eq!(Position::box_origin(3), Position::new(0, 3));
+        assert_eq!(Position::box_origin(4), Position::new(3, 3));
+        assert_eq!(Position::box_origin(5), Position::new(6, 3));
+        assert_eq!(Position::box_origin(6), Position::new(0, 6));
+        assert_eq!(Position::box_origin(7), Position::new(3, 6));
+        assert_eq!(Position::box_origin(8), Position::new(6, 6));
     }
 
     #[test]
     #[should_panic(expected = "assertion failed")]
-    fn test_box_top_left_invalid() {
-        let _ = box_top_left(9);
+    fn test_box_origin_invalid() {
+        let _ = Position::box_origin(9);
     }
 
     #[test]

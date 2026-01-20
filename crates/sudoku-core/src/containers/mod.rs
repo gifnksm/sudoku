@@ -51,8 +51,7 @@
 //! ## Using [`BitSet81`] with [`PositionSemantics`]
 //!
 //! ```
-//! use sudoku_core::Position;
-//! use sudoku_core::candidate_board::DigitPositions;
+//! use sudoku_core::{DigitPositions, Position};
 //!
 //! let mut positions = DigitPositions::new();
 //! positions.insert(Position::new(0, 0));

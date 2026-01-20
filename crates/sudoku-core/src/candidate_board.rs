@@ -1,108 +1,35 @@
-//! Candidate bitboard for sudoku solving.
-//!
-//! This module provides [`CandidateBoard`], which tracks possible placements
-//! for each digit (1-9) across the entire 9x9 board using bitboards.
-//!
-//! # Type Aliases
-//!
-//! - [`DigitPositions`] - A [`BitSet81`] tracking positions where a digit can be placed
-//! - [`HouseMask`] - A [`BitSet9`] for candidates within a house (row/col/box)
-//!
-//! # Semantics
-//!
-//! This module uses semantics implementations defined in the index modules:
-//!
-//! - [`PositionSemantics`] - Maps [`Position`] to indices (from [`index`])
-//! - [`CellIndexSemantics`] - Direct 0-8 mapping (from [`index`])
-//!
-//! [`index`]: crate::index
-//!
-//! # Examples
-//!
-//! ```
-//! use sudoku_core::{CandidateBoard, Digit, Position};
-//!
-//! let mut board = CandidateBoard::new();
-//!
-//! // Place digit 5 at position (4, 4)
-//! board.place(Position::new(4, 4), Digit::D5);
-//!
-//! // Check remaining candidates at a position
-//! let candidates = board.get_candidates_at(Position::new(4, 5));
-//! assert!(!candidates.contains(Digit::D5)); // 5 was removed from the column
-//!
-//! // Check for Hidden Single in a row
-//! let row_mask = board.get_row(4, Digit::D3);
-//! if row_mask.len() == 1 {
-//!     println!("Found Hidden Single for digit 3 in row 4");
-//! }
-//! ```
+//! Candidate board for sudoku solving.
 
 use crate::{
     containers::{Array9, BitSet9, BitSet81},
     digit::Digit,
-    digit_candidates::DigitCandidates,
     index::{CellIndexSemantics, DigitSemantics, Index9, Index9Semantics, PositionSemantics},
     position::Position,
 };
 
-/// A set of candidate positions across the board for a single digit.
+/// Set of candidate digits (1-9) for a single cell.
 ///
-/// This is a type alias for `BitSet81<PositionSemantics>`, representing
-/// "which cells can this digit go in?" across the entire 9x9 board.
+/// Returned by [`CandidateBoard::get_candidates_at`].
+pub type DigitCandidates = BitSet9<DigitSemantics>;
+
+/// Set of board positions where a specific digit can be placed.
 ///
-/// # Examples
-///
-/// ```
-/// use sudoku_core::Position;
-/// use sudoku_core::candidate_board::DigitPositions;
-///
-/// let mut positions = DigitPositions::FULL; // All 81 positions initially
-/// positions.remove(Position::new(0, 0));
-/// positions.remove(Position::new(4, 4));
-///
-/// assert_eq!(positions.len(), 79);
-/// assert!(!positions.contains(Position::new(0, 0)));
-/// ```
+/// Returned by [`CandidateBoard::get_positions`].
 pub type DigitPositions = BitSet81<PositionSemantics>;
 
-/// A bitmask representing candidate positions within a house (row/col/box).
+/// Bitmask of candidate positions within a house (row, column, or box).
 ///
-/// This is a type alias for `BitSet9<CellIndexSemantics>`, where each bit
-/// represents one of the 9 cells in a house. "House" is a sudoku term for
-/// any row, column, or box.
-///
-/// Used by [`CandidateBoard::get_row`], [`CandidateBoard::get_col`], and
-/// [`CandidateBoard::get_box`] to return candidate positions within a specific house.
-///
-/// # Examples
-///
-/// ```
-/// use sudoku_core::candidate_board::HouseMask;
-///
-/// let mut mask = HouseMask::new();
-/// mask.insert(0); // First cell in house
-/// mask.insert(4); // Middle cell
-/// mask.insert(8); // Last cell
-///
-/// assert_eq!(mask.len(), 3);
-///
-/// // Useful for detecting Hidden Singles
-/// if mask.len() == 1 {
-///     println!("Found a Hidden Single!");
-/// }
-/// ```
+/// Returned by [`CandidateBoard::get_row`], [`CandidateBoard::get_col`], and
+/// [`CandidateBoard::get_box`]. Useful for detecting Hidden Singles (when `len() == 1`).
 pub type HouseMask = BitSet9<CellIndexSemantics>;
 
 /// Candidate bitboard for sudoku solving.
 ///
-/// Manages possible placements for each digit (1-9) across the entire board.
+/// Manages possible placements for each digit (1-9) across the entire 9x9 board.
+/// Internally stores 9 [`DigitPositions`] (one per digit), each tracking the 81 board
+/// positions where that digit can be placed.
+///
 /// Used for detecting Hidden Singles, Naked Singles, and other solving techniques.
-///
-/// # Structure
-///
-/// Internally stores 9 [`DigitPositions`] (one per digit), each tracking the
-/// 81 board positions where that digit can be placed.
 ///
 /// # Examples
 ///
@@ -177,6 +104,12 @@ impl CandidateBoard {
     pub fn remove_candidate(&mut self, pos: Position, digit: Digit) {
         let digits = &mut self.digits[digit];
         digits.remove(pos);
+    }
+
+    /// Returns all positions where the specified digit can be placed.
+    #[must_use]
+    pub fn get_positions(&self, digit: Digit) -> DigitPositions {
+        self.digits[digit]
     }
 
     /// Returns the set of candidate digits that can be placed at a position.
@@ -495,6 +428,46 @@ mod tests {
                 assert!(candidates.contains(digit));
             }
         }
+    }
+
+    #[test]
+    fn test_get_positions_full_board() {
+        let board = CandidateBoard::new();
+
+        // Initially all 81 positions are candidates for any digit
+        for digit in Digit::ALL {
+            let positions = board.get_positions(digit);
+            assert_eq!(positions.len(), 81);
+        }
+    }
+
+    #[test]
+    fn test_get_positions_after_placement() {
+        let mut board = CandidateBoard::new();
+
+        // Place digit 5 at (4, 4)
+        let pos = Position::new(4, 4);
+        board.place(pos, D5);
+
+        let positions = board.get_positions(D5);
+
+        // D5 should be at the placed position
+        assert!(positions.contains(pos));
+
+        // D5 should be removed from same row, column, and box
+        assert!(!positions.contains(Position::new(0, 4))); // Same row
+        assert!(!positions.contains(Position::new(4, 0))); // Same column
+        assert!(!positions.contains(Position::new(3, 3))); // Same box
+
+        // But D5 can still be placed in other rows/columns/boxes
+        assert!(positions.contains(Position::new(0, 0))); // Different row, column, and box
+
+        // Other digits should be removed from the placed cell
+        let positions_d1 = board.get_positions(D1);
+        assert!(!positions_d1.contains(pos)); // Cell itself removed
+        assert!(positions_d1.contains(Position::new(0, 4))); // Same row is OK
+        assert!(positions_d1.contains(Position::new(4, 0))); // Same column is OK
+        assert!(positions_d1.contains(Position::new(3, 3))); // Same box is OK
     }
 
     #[test]

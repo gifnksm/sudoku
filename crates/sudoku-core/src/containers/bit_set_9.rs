@@ -30,10 +30,10 @@ use crate::index::{Index9, Index9Semantics};
 ///
 /// # Examples
 ///
-/// See the [`digit_candidates`] module for a concrete example using [`DigitCandidates`].
+/// See [`DigitCandidates`] for a concrete example of `BitSet9` specialized with [`DigitSemantics`].
 ///
-/// [`digit_candidates`]: crate::digit_candidates
-/// [`DigitCandidates`]: crate::digit_candidates::DigitCandidates
+/// [`DigitCandidates`]: crate::DigitCandidates
+/// [`DigitSemantics`]: crate::index::DigitSemantics
 ///
 /// For information on defining custom semantics, see [`Index9Semantics`].
 pub struct BitSet9<S>

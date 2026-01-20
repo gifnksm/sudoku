@@ -1,7 +1,4 @@
 //! Sudoku digit representation.
-//!
-//! This module provides the [`Digit`] enum, which represents the digits 1-9
-//! used in sudoku puzzles with type safety and compile-time guarantees.
 
 use std::fmt::{self, Display};
 
