@@ -8,9 +8,18 @@ This file tracks tasks that must be done to achieve the project goals.
 
 ## sudoku-generator: Puzzle Generation
 
-- [ ] Create design document at `docs/design/sudoku-generator.md`
+- [x] Create design document at `docs/design/sudoku-generator.md`
   - Consider aspects such as: generation algorithm, API design, difficulty evaluation, etc.
 - [ ] Add specific implementation tasks to this TODO based on design decisions
+  - [ ] Create `crates/sudoku-generator` crate
+  - [ ] Implement `PuzzleGenerator` struct with `TechniqueSolver` dependency
+  - [ ] Implement complete grid generation using random placement + backtracking
+  - [ ] Implement cell removal algorithm with shuffled positions
+  - [ ] Implement solvability verification using `TechniqueSolver`
+  - [ ] Add `rand` and `rand_pcg` dependencies
+  - [ ] Write unit tests for generation logic
+  - [ ] Write property-based tests using `proptest`
+  - [ ] Update workspace `Cargo.toml` to include new crate
 - [ ] On completion: Delete design document. Preserve only essential design decisions (if any) in crate documentation or ARCHITECTURE.md
 
 **Note**: This is marked as "Planned" in ARCHITECTURE.md and README.md
