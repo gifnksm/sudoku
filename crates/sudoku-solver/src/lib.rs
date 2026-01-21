@@ -1,5 +1,6 @@
-pub use self::{error::*, technique_solver::*};
+pub use self::{backtrack_solver::*, error::*, technique_solver::*};
 
+mod backtrack_solver;
 mod error;
 pub mod technique;
 mod technique_solver;

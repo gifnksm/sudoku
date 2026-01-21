@@ -19,6 +19,99 @@ pub type DigitCandidates = BitSet9<DigitSemantics>;
 /// Returned by [`CandidateGrid::digit_positions`].
 pub type DigitPositions = BitSet81<PositionSemantics>;
 
+impl DigitPositions {
+    /// Returns a bitmask of positions in the specified row.
+    ///
+    /// The returned mask contains the column indices (0-8) where positions exist
+    /// in the given row.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use sudoku_core::{DigitPositions, Position};
+    ///
+    /// let mut positions = DigitPositions::new();
+    /// positions.insert(Position::new(2, 0)); // Column 2, Row 0
+    /// positions.insert(Position::new(5, 0)); // Column 5, Row 0
+    /// positions.insert(Position::new(3, 1)); // Column 3, Row 1
+    ///
+    /// let mask = positions.row_mask(0);
+    /// assert_eq!(mask.len(), 2); // Two positions in row 0
+    /// assert!(mask.contains(2));
+    /// assert!(mask.contains(5));
+    /// ```
+    #[must_use]
+    pub fn row_mask(&self, y: u8) -> HouseMask {
+        let mut mask = HouseMask::new();
+        for x in 0..9 {
+            if self.contains(Position::new(x, y)) {
+                mask.insert(x);
+            }
+        }
+        mask
+    }
+
+    /// Returns a bitmask of positions in the specified column.
+    ///
+    /// The returned mask contains the row indices (0-8) where positions exist
+    /// in the given column.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use sudoku_core::{DigitPositions, Position};
+    ///
+    /// let mut positions = DigitPositions::new();
+    /// positions.insert(Position::new(0, 1)); // Column 0, Row 1
+    /// positions.insert(Position::new(0, 4)); // Column 0, Row 4
+    /// positions.insert(Position::new(1, 2)); // Column 1, Row 2
+    ///
+    /// let mask = positions.col_mask(0);
+    /// assert_eq!(mask.len(), 2); // Two positions in column 0
+    /// assert!(mask.contains(1));
+    /// assert!(mask.contains(4));
+    /// ```
+    #[must_use]
+    pub fn col_mask(&self, x: u8) -> HouseMask {
+        let mut mask = HouseMask::new();
+        for y in 0..9 {
+            if self.contains(Position::new(x, y)) {
+                mask.insert(y);
+            }
+        }
+        mask
+    }
+
+    /// Returns a bitmask of positions in the specified 3×3 box.
+    ///
+    /// The returned mask contains the cell indices (0-8) within the box where positions exist.
+    /// Boxes are numbered 0-8 from left to right, top to bottom.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use sudoku_core::{DigitPositions, Position};
+    ///
+    /// let mut positions = DigitPositions::new();
+    /// positions.insert(Position::new(0, 0)); // Top-left corner of box 0
+    /// positions.insert(Position::new(1, 1)); // Center area of box 0
+    /// positions.insert(Position::new(3, 0)); // Box 1
+    ///
+    /// let mask = positions.box_mask(0);
+    /// assert_eq!(mask.len(), 2); // Two positions in box 0
+    /// ```
+    #[must_use]
+    pub fn box_mask(&self, box_index: u8) -> HouseMask {
+        let mut mask = HouseMask::new();
+        for i in 0..9 {
+            if self.contains(Position::from_box(box_index, i)) {
+                mask.insert(i);
+            }
+        }
+        mask
+    }
+}
+
 /// Bitmask of candidate positions within a house (row, column, or box).
 ///
 /// Returned by [`CandidateGrid::row_mask`], [`CandidateGrid::col_mask`], and
@@ -178,14 +271,7 @@ impl CandidateGrid {
     /// If the returned mask has only one bit set, a Hidden Single is detected.
     #[must_use]
     pub fn row_mask(&self, y: u8, digit: Digit) -> HouseMask {
-        let digit_pos = &self.digit_positions[digit];
-        let mut mask = HouseMask::new();
-        for x in 0..9 {
-            if digit_pos.contains(Position::new(x, y)) {
-                mask.insert(x);
-            }
-        }
-        mask
+        self.digit_positions[digit].row_mask(y)
     }
 
     /// Returns a bitmask of candidate positions in the specified column for the digit.
@@ -193,14 +279,7 @@ impl CandidateGrid {
     /// If the returned mask has only one bit set, a Hidden Single is detected.
     #[must_use]
     pub fn col_mask(&self, x: u8, digit: Digit) -> HouseMask {
-        let digit_pos = &self.digit_positions[digit];
-        let mut mask = HouseMask::new();
-        for y in 0..9 {
-            if digit_pos.contains(Position::new(x, y)) {
-                mask.insert(y);
-            }
-        }
-        mask
+        self.digit_positions[digit].col_mask(x)
     }
 
     /// Returns a bitmask of candidate positions in the specified box for the digit.
@@ -208,14 +287,7 @@ impl CandidateGrid {
     /// If the returned mask has only one bit set, a Hidden Single is detected.
     #[must_use]
     pub fn box_mask(&self, box_index: u8, digit: Digit) -> HouseMask {
-        let digit_pos = &self.digit_positions[digit];
-        let mut mask = HouseMask::new();
-        for i in 0..9 {
-            if digit_pos.contains(Position::from_box(box_index, i)) {
-                mask.insert(i);
-            }
-        }
-        mask
+        self.digit_positions[digit].box_mask(box_index)
     }
 
     /// Checks if the grid is **consistent** (no contradictions).
@@ -374,14 +446,15 @@ impl CandidateGrid {
     fn placed_digits_are_unique(&self, decided_cells: DigitPositions) -> bool {
         for digit in Digit::ALL {
             let digit_cells = &self.digit_positions[digit];
-            for pos in *digit_cells & decided_cells {
-                if self.row_mask(pos.y(), digit).len() != 1 {
+            let decided_digit_cells = *digit_cells & decided_cells;
+            for pos in decided_digit_cells {
+                if decided_digit_cells.row_mask(pos.y()).len() != 1 {
                     return false;
                 }
-                if self.col_mask(pos.x(), digit).len() != 1 {
+                if decided_digit_cells.col_mask(pos.x()).len() != 1 {
                     return false;
                 }
-                if self.box_mask(pos.box_index(), digit).len() != 1 {
+                if decided_digit_cells.box_mask(pos.box_index()).len() != 1 {
                     return false;
                 }
             }
@@ -1031,6 +1104,76 @@ mod tests {
         // Most cells should have fewer than 9 candidates due to the placement
         // (cells in same row/col/box will have 8 or fewer)
         assert!(nine.len() < 81);
+    }
+
+    #[test]
+    fn test_digit_positions_row_mask() {
+        let mut positions = DigitPositions::new();
+        positions.insert(Position::new(0, 0));
+        positions.insert(Position::new(2, 0));
+        positions.insert(Position::new(5, 0));
+        positions.insert(Position::new(1, 1));
+
+        let mask = positions.row_mask(0);
+        assert_eq!(mask.len(), 3);
+        assert!(mask.contains(0));
+        assert!(mask.contains(2));
+        assert!(mask.contains(5));
+        assert!(!mask.contains(1));
+
+        let mask = positions.row_mask(1);
+        assert_eq!(mask.len(), 1);
+        assert!(mask.contains(1));
+
+        let mask = positions.row_mask(2);
+        assert_eq!(mask.len(), 0);
+    }
+
+    #[test]
+    fn test_digit_positions_col_mask() {
+        let mut positions = DigitPositions::new();
+        positions.insert(Position::new(0, 0));
+        positions.insert(Position::new(0, 2));
+        positions.insert(Position::new(0, 5));
+        positions.insert(Position::new(1, 1));
+
+        let mask = positions.col_mask(0);
+        assert_eq!(mask.len(), 3);
+        assert!(mask.contains(0));
+        assert!(mask.contains(2));
+        assert!(mask.contains(5));
+        assert!(!mask.contains(1));
+
+        let mask = positions.col_mask(1);
+        assert_eq!(mask.len(), 1);
+        assert!(mask.contains(1));
+
+        let mask = positions.col_mask(2);
+        assert_eq!(mask.len(), 0);
+    }
+
+    #[test]
+    fn test_digit_positions_box_mask() {
+        let mut positions = DigitPositions::new();
+        // Box 0 (top-left 3×3)
+        positions.insert(Position::new(0, 0)); // Box index 0
+        positions.insert(Position::new(1, 1)); // Box index 4
+        positions.insert(Position::new(2, 2)); // Box index 8
+        // Box 1 (top-center 3×3)
+        positions.insert(Position::new(3, 0)); // Box index 0
+
+        let mask = positions.box_mask(0);
+        assert_eq!(mask.len(), 3);
+        assert!(mask.contains(0));
+        assert!(mask.contains(4));
+        assert!(mask.contains(8));
+
+        let mask = positions.box_mask(1);
+        assert_eq!(mask.len(), 1);
+        assert!(mask.contains(0));
+
+        let mask = positions.box_mask(2);
+        assert_eq!(mask.len(), 0);
     }
 
     #[test]

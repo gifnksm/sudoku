@@ -22,16 +22,14 @@ use crate::{
 /// let mut grid = CandidateGrid::new();
 ///
 /// let (solved, stats) = solver.solve(&mut grid)?;
-/// println!("Total steps: {}", stats.total_steps);
+/// println!("Total steps: {}", stats.total_steps());
 /// println!("Naked singles applied: {}", stats.count("naked singles"));
 /// # Ok::<(), sudoku_solver::SolverError>(())
 /// ```
 #[derive(Debug, Default, Clone)]
 pub struct TechniqueSolverStats {
-    /// Map of technique names to the number of times each was successfully applied.
-    pub applications: HashMap<&'static str, usize>,
-    /// Total number of solving steps taken (sum of all technique applications).
-    pub total_steps: usize,
+    applications: HashMap<&'static str, usize>,
+    total_steps: usize,
 }
 
 impl TechniqueSolverStats {
@@ -39,6 +37,41 @@ impl TechniqueSolverStats {
     #[must_use]
     pub fn new() -> Self {
         Self::default()
+    }
+
+    /// Returns a reference to the map of technique names and their application counts.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use sudoku_solver::TechniqueSolverStats;
+    ///
+    /// let mut stats = TechniqueSolverStats::new();
+    /// // After solving...
+    /// for (name, count) in stats.applications() {
+    ///     println!("{}: {} times", name, count);
+    /// }
+    /// ```
+    #[must_use]
+    pub fn applications(&self) -> &HashMap<&'static str, usize> {
+        &self.applications
+    }
+
+    /// Returns the total number of solving steps taken.
+    ///
+    /// This is the sum of all technique applications.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use sudoku_solver::TechniqueSolverStats;
+    ///
+    /// let mut stats = TechniqueSolverStats::new();
+    /// assert_eq!(stats.total_steps(), 0);
+    /// ```
+    #[must_use]
+    pub fn total_steps(&self) -> usize {
+        self.total_steps
     }
 
     /// Returns the number of times a specific technique was applied.
@@ -73,9 +106,9 @@ impl TechniqueSolverStats {
 /// // Solve completely
 /// let (solved, stats) = solver.solve(&mut grid)?;
 /// if solved {
-///     println!("Puzzle solved in {} steps!", stats.total_steps);
+///     println!("Puzzle solved in {} steps!", stats.total_steps());
 /// } else {
-///     println!("Stuck after {} steps", stats.total_steps);
+///     println!("Stuck after {} steps", stats.total_steps());
 /// }
 /// # Ok::<(), sudoku_solver::SolverError>(())
 /// ```
@@ -91,7 +124,7 @@ impl TechniqueSolverStats {
 /// let mut stats = TechniqueSolverStats::new();
 ///
 /// while solver.step(&mut grid, &mut stats)? {
-///     println!("Progress made! Step {}", stats.total_steps);
+///     println!("Progress made! Step {}", stats.total_steps());
 ///     if grid.is_solved() {
 ///         break;
 ///     }
@@ -188,6 +221,10 @@ impl TechniqueSolver {
         grid: &mut CandidateGrid,
         stats: &mut TechniqueSolverStats,
     ) -> Result<bool, SolverError> {
+        if !grid.is_consistent() {
+            return Err(SolverError::Contradiction);
+        }
+
         for technique in &self.techniques {
             if technique.apply(grid)? {
                 *stats.applications.entry(technique.name()).or_default() += 1;
@@ -233,11 +270,11 @@ impl TechniqueSolver {
     ///
     /// let (solved, stats) = solver.solve(&mut grid)?;
     /// if solved {
-    ///     println!("Solved in {} steps", stats.total_steps);
+    ///     println!("Solved in {} steps", stats.total_steps());
     /// } else {
     ///     println!(
     ///         "Stuck after {} steps - backtracking needed",
-    ///         stats.total_steps
+    ///         stats.total_steps()
     ///     );
     /// }
     /// # Ok::<(), sudoku_solver::SolverError>(())
@@ -247,13 +284,57 @@ impl TechniqueSolver {
         grid: &mut CandidateGrid,
     ) -> Result<(bool, TechniqueSolverStats), SolverError> {
         let mut stats = TechniqueSolverStats::default();
-        while self.step(grid, &mut stats)? {
+        let solved = self.solve_with_stats(grid, &mut stats)?;
+        Ok((solved, stats))
+    }
+
+    /// Applies techniques repeatedly until the grid is solved or no progress can be made,
+    /// using the provided statistics object.
+    ///
+    /// This is similar to [`solve`](Self::solve), but allows reusing an existing
+    /// statistics object. This is useful when you want to accumulate statistics
+    /// across multiple solving attempts or when you need more control over the
+    /// statistics lifecycle.
+    ///
+    /// # Arguments
+    ///
+    /// * `grid` - The candidate grid to solve
+    /// * `stats` - Statistics object to accumulate technique application data
+    ///
+    /// # Returns
+    ///
+    /// Returns `true` if the grid is completely solved, `false` if stuck.
+    ///
+    /// # Errors
+    ///
+    /// Returns [`SolverError::Contradiction`] if the grid becomes inconsistent
+    /// during solving.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use sudoku_core::CandidateGrid;
+    /// use sudoku_solver::{TechniqueSolver, TechniqueSolverStats};
+    ///
+    /// let solver = TechniqueSolver::with_all_techniques();
+    /// let mut grid = CandidateGrid::new();
+    /// let mut stats = TechniqueSolverStats::new();
+    ///
+    /// let solved = solver.solve_with_stats(&mut grid, &mut stats)?;
+    /// println!("Solved: {}, Steps: {}", solved, stats.total_steps());
+    /// # Ok::<(), sudoku_solver::SolverError>(())
+    /// ```
+    pub fn solve_with_stats(
+        &self,
+        grid: &mut CandidateGrid,
+        stats: &mut TechniqueSolverStats,
+    ) -> Result<bool, SolverError> {
+        while self.step(grid, stats)? {
             if grid.is_solved() {
-                return Ok((true, stats));
+                return Ok(true);
             }
         }
-
-        Ok((false, stats))
+        Ok(false)
     }
 }
 
@@ -430,5 +511,69 @@ mod tests {
 
         let solver = TechniqueSolver::new(techniques);
         assert_eq!(solver.techniques.len(), 1);
+    }
+
+    #[test]
+    fn test_stats_applications_getter() {
+        let mut stats = TechniqueSolverStats::new();
+        assert_eq!(stats.applications().len(), 0);
+
+        *stats.applications.entry("test").or_default() += 1;
+        assert_eq!(stats.applications().get("test"), Some(&1));
+    }
+
+    #[test]
+    fn test_stats_total_steps_getter() {
+        let mut stats = TechniqueSolverStats::new();
+        assert_eq!(stats.total_steps(), 0);
+
+        stats.total_steps = 5;
+        assert_eq!(stats.total_steps(), 5);
+    }
+
+    #[test]
+    fn test_solve_with_stats() {
+        let solver = create_test_solver();
+        let mut grid = CandidateGrid::new();
+        let mut stats = TechniqueSolverStats::new();
+
+        // Create a naked single that hasn't been placed yet
+        for digit in Digit::ALL {
+            if digit != Digit::D5 {
+                grid.remove_candidate(Position::new(4, 4), digit);
+            }
+        }
+
+        let result = solver.solve_with_stats(&mut grid, &mut stats);
+        assert!(result.is_ok());
+        // The naked single should have been detected and placed
+        assert!(stats.total_steps() >= 1);
+    }
+
+    #[test]
+    fn test_solve_with_stats_accumulates() {
+        let solver = create_test_solver();
+        let mut grid1 = CandidateGrid::new();
+        let mut grid2 = CandidateGrid::new();
+        let mut stats = TechniqueSolverStats::new();
+
+        // First solve - create naked single
+        for digit in Digit::ALL {
+            if digit != Digit::D1 {
+                grid1.remove_candidate(Position::new(0, 0), digit);
+            }
+        }
+        let _ = solver.solve_with_stats(&mut grid1, &mut stats);
+        let first_steps = stats.total_steps();
+
+        // Second solve accumulates - create another naked single
+        for digit in Digit::ALL {
+            if digit != Digit::D2 {
+                grid2.remove_candidate(Position::new(1, 1), digit);
+            }
+        }
+        let _ = solver.solve_with_stats(&mut grid2, &mut stats);
+
+        assert!(stats.total_steps() >= first_steps);
     }
 }
