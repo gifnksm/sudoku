@@ -3,10 +3,29 @@ use sudoku_core::{CandidateGrid, Digit};
 use super::BoxedTechnique;
 use crate::{SolverError, technique::Technique};
 
+/// A technique that finds cells with only one remaining candidate.
+///
+/// When a cell has only one possible digit (a "naked single"), that digit
+/// must be placed in that cell. This is the simplest Sudoku solving technique.
+///
+/// # Examples
+///
+/// ```
+/// use sudoku_core::CandidateGrid;
+/// use sudoku_solver::technique::{Technique, NakedSingle};
+///
+/// let mut grid = CandidateGrid::new();
+/// let technique = NakedSingle::new();
+///
+/// // Apply the technique
+/// let changed = technique.apply(&mut grid)?;
+/// # Ok::<(), sudoku_solver::SolverError>(())
+/// ```
 #[derive(Debug, Default, Clone, Copy)]
 pub struct NakedSingle;
 
 impl NakedSingle {
+    /// Creates a new `NakedSingle` technique.
     #[must_use]
     pub const fn new() -> Self {
         NakedSingle

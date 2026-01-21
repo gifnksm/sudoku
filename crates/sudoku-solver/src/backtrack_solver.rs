@@ -19,6 +19,7 @@ pub struct BacktrackSolverStats {
 }
 
 impl BacktrackSolverStats {
+    /// Creates a new empty statistics object.
     #[must_use]
     pub fn new() -> Self {
         Self::default()

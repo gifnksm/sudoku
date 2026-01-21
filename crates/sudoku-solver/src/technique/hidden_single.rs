@@ -3,10 +3,31 @@ use sudoku_core::{CandidateGrid, Digit, Position};
 use super::BoxedTechnique;
 use crate::{SolverError, technique::Technique};
 
+/// A technique that finds digits that can only go in one position within a house.
+///
+/// A "hidden single" occurs when a digit has only one possible position in a row,
+/// column, or box, even though that cell may have multiple candidates. This is
+/// slightly more complex than a naked single as it requires checking all positions
+/// for a specific digit within a house.
+///
+/// # Examples
+///
+/// ```
+/// use sudoku_core::CandidateGrid;
+/// use sudoku_solver::technique::{Technique, HiddenSingle};
+///
+/// let mut grid = CandidateGrid::new();
+/// let technique = HiddenSingle::new();
+///
+/// // Apply the technique
+/// let changed = technique.apply(&mut grid)?;
+/// # Ok::<(), sudoku_solver::SolverError>(())
+/// ```
 #[derive(Debug, Default, Clone, Copy)]
 pub struct HiddenSingle;
 
 impl HiddenSingle {
+    /// Creates a new `HiddenSingle` technique.
     #[must_use]
     pub const fn new() -> Self {
         HiddenSingle

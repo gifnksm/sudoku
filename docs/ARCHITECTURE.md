@@ -17,7 +17,7 @@ This document describes the architecture of the Sudoku application, including th
 sudoku/
 ├── crates/
 │   ├── sudoku-core/          # Core data structures and types
-│   ├── sudoku-solver/        # Solving algorithms (planned)
+│   ├── sudoku-solver/        # Solving algorithms
 │   ├── sudoku-generator/     # Puzzle generation (planned)
 │   ├── sudoku-game/          # Game logic and state management (planned)
 │   └── sudoku-app/           # GUI application (desktop + web)
@@ -64,19 +64,39 @@ For implementation details, see the [crate documentation](../crates/sudoku-core/
 
 ### sudoku-solver
 
-**Status**: Planned 📋
-
-**Design**: [design/solver-design.md](design/solver-design.md)
+**Status**: Completed ✅
 
 **Purpose**: Implements solving algorithms using technique-based approach with backtracking fallback.
 
-**Key Features**:
+**Key Components**:
 
-- Two-layer architecture: `TechniqueSolver` (techniques only) and `BacktrackSolver` (with backtracking)
-- Human-like solving techniques: Naked Single, Hidden Single, and more advanced techniques
-- Solution enumeration for puzzle generation validation
+- **`TechniqueSolver`**: Applies human-like solving techniques without backtracking
+  - Step-by-step solving with progress tracking
+  - Statistics collection (technique usage, step count)
+  - Returns when stuck for difficulty evaluation
+  
+- **`BacktrackSolver`**: Combines techniques with backtracking
+  - Uses `TechniqueSolver` first, backtracks when stuck
+  - Enumerates all solutions (for puzzle validation)
+  - Tracks assumptions and backtrack count
+
+- **Extensible Technique System**: New solving techniques can be added by implementing the `Technique` trait
+
+- **Progress Strategy**: Resets to first technique on any progress (cell placement or candidate removal)
 
 **Dependencies**: `sudoku-core`
+
+**Design Decisions**:
+
+- **Two-layer architecture**: Separates technique-only solving from backtracking
+  - Allows difficulty evaluation based on which techniques are needed
+  - Useful for puzzle generation with specific technique requirements
+  
+- **Stateless techniques**: Each technique holds no state, only implements `apply()` method
+  
+- **Solution enumeration**: `BacktrackSolver::solve()` returns an iterator for finding multiple solutions
+
+For detailed API documentation, see the [crate documentation](../crates/sudoku-solver/src/lib.rs).
 
 ---
 
@@ -84,7 +104,7 @@ For implementation details, see the [crate documentation](../crates/sudoku-core/
 
 **Status**: Planned 📋
 
-**Purpose**: Generates valid Sudoku puzzles with specified difficulty levels using backtracking and technique-based difficulty evaluation.
+**Purpose**: Generates valid Sudoku puzzles with specified difficulty levels.
 
 **Dependencies**: `sudoku-core`, `sudoku-solver`
 
@@ -94,7 +114,7 @@ For implementation details, see the [crate documentation](../crates/sudoku-core/
 
 **Status**: Planned 📋
 
-**Purpose**: Manages game state, user interactions, and game logic including undo/redo, hints, and validation.
+**Purpose**: Manages game state, user interactions, and game logic.
 
 **Dependencies**: `sudoku-core`, `sudoku-solver`, `sudoku-generator`
 
@@ -102,35 +122,11 @@ For implementation details, see the [crate documentation](../crates/sudoku-core/
 
 ### sudoku-app
 
-**Status**: In Development
+**Status**: Planned 📋
 
 **Purpose**: GUI application for both desktop and web platforms using egui/eframe.
 
-**Key Components**:
-
-- Puzzle board rendering
-- Cell selection and input handling
-- Menu system (New Game, Difficulty, Settings)
-- Visual feedback (highlights, error indicators)
-- UI state management
-- Application entry point (`main.rs` for desktop)
-- WASM support for web deployment
-- Configuration management
-
-**Platform Support**:
-
-- **Desktop**: Native application via `cargo run`
-- **Web**: WASM compilation via `trunk build` or `wasm-pack`
-- eframe provides unified API for both platforms
-
 **Dependencies**: `sudoku-game`, `eframe`
-
-**Design Decisions**:
-
-- Single crate for both desktop and web to avoid premature abstraction (YAGNI principle)
-- eframe handles platform differences internally
-- Platform-specific code uses conditional compilation when needed
-- If significant divergence occurs, can be split later
 
 ---
 
@@ -188,38 +184,13 @@ sudoku-app (desktop + web)
 - Difficulty evaluation based on technique complexity
 - Hint system can explain which technique to use
 
-### Solver-Based Generation
-
-**Decision**: Use solving techniques to evaluate puzzle difficulty during generation.
-
-**Rationale**:
-
-- Ensures puzzles are solvable with human techniques
-- Difficulty rating matches player experience
-- Can target specific technique practice
-- Validates that puzzles don't require guessing
-
 ---
 
 ## Testing Strategy
 
-### Unit Tests
-
 - Each crate has comprehensive unit tests
 - Property-based testing for core data structures (proptest)
 - Edge case coverage for all public APIs
-
-### Integration Tests
-
-- Solver correctness on known puzzles
-- Generator produces valid, unique-solution puzzles
-- Game state transitions maintain invariants
-
-### Performance Tests
-
-- Solver performance benchmarks
-- Generation speed targets
-- Memory usage profiling
 
 ---
 

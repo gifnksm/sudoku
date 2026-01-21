@@ -16,6 +16,7 @@ eframe = "0.33.3"
 proptest = "1.9"
 
 sudoku-core = { path = "crates/sudoku-core" }
+sudoku-solver = { path = "crates/sudoku-solver" }
 
 [workspace.lints.clippy]
 pedantic = { level = "warn", priority = -1 }
