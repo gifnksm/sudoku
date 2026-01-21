@@ -131,7 +131,19 @@ where
     /// The length of the array (always 9).
     pub const LEN: usize = 9;
 
-    const fn from_array(array: [T; 9]) -> Self {
+    /// Creates a new `Array9` from a raw array.
+    ///
+    /// This is a const function that can be used in const contexts.
+    ///
+    /// # Example
+    ///
+    /// ```
+    /// use sudoku_core::{containers::Array9, index::CellIndexSemantics};
+    ///
+    /// const MY_ARRAY: Array9<i32, CellIndexSemantics> = Array9::from_array([1, 2, 3, 4, 5, 6, 7, 8, 9]);
+    /// assert_eq!(MY_ARRAY[0], 1);
+    /// ```
+    pub const fn from_array(array: [T; 9]) -> Self {
         Self {
             array,
             _marker: PhantomData,

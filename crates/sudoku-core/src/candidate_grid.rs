@@ -44,9 +44,9 @@ impl DigitPositions {
     #[must_use]
     pub fn row_mask(&self, y: u8) -> HouseMask {
         let mut mask = HouseMask::new();
-        for x in 0..9 {
-            if self.contains(Position::new(x, y)) {
-                mask.insert(x);
+        for pos in Position::ROWS[y] {
+            if self.contains(pos) {
+                mask.insert(pos.x());
             }
         }
         mask
@@ -75,9 +75,9 @@ impl DigitPositions {
     #[must_use]
     pub fn col_mask(&self, x: u8) -> HouseMask {
         let mut mask = HouseMask::new();
-        for y in 0..9 {
-            if self.contains(Position::new(x, y)) {
-                mask.insert(y);
+        for pos in Position::COLUMNS[x] {
+            if self.contains(pos) {
+                mask.insert(pos.y());
             }
         }
         mask
@@ -104,9 +104,9 @@ impl DigitPositions {
     #[must_use]
     pub fn box_mask(&self, box_index: u8) -> HouseMask {
         let mut mask = HouseMask::new();
-        for i in 0..9 {
-            if self.contains(Position::from_box(box_index, i)) {
-                mask.insert(i);
+        for pos in Position::BOXES[box_index] {
+            if self.contains(pos) {
+                mask.insert(pos.box_cell_index());
             }
         }
         mask
@@ -178,12 +178,9 @@ impl CandidateGrid {
     #[must_use]
     pub fn from_digit_grid(digit_grid: &crate::DigitGrid) -> Self {
         let mut grid = Self::new();
-        for x in 0..9 {
-            for y in 0..9 {
-                let pos = Position::new(x, y);
-                if let Some(digit) = digit_grid.get(pos) {
-                    grid.place(pos, digit);
-                }
+        for pos in Position::ALL {
+            if let Some(digit) = digit_grid.get(pos) {
+                grid.place(pos, digit);
             }
         }
         grid
@@ -218,12 +215,9 @@ impl CandidateGrid {
     #[must_use]
     pub fn from_digit_grid_no_propagation(digit_grid: &crate::DigitGrid) -> Self {
         let mut grid = Self::new();
-        for x in 0..9 {
-            for y in 0..9 {
-                let pos = Position::new(x, y);
-                if let Some(digit) = digit_grid.get(pos) {
-                    grid.place_no_propagation(pos, digit);
-                }
+        for pos in Position::ALL {
+            if let Some(digit) = digit_grid.get(pos) {
+                grid.place_no_propagation(pos, digit);
             }
         }
         grid
@@ -317,21 +311,20 @@ impl CandidateGrid {
         }
 
         let digit_pos = &mut self.digit_positions[digit];
-        for x in 0..9 {
-            if x != pos.x() {
-                changed |= digit_pos.remove(Position::new(x, pos.y()));
+        for row_pos in Position::ROWS[pos.y()] {
+            if row_pos.x() != pos.x() {
+                changed |= digit_pos.remove(row_pos);
             }
         }
-        for y in 0..9 {
-            if y != pos.y() {
-                changed |= digit_pos.remove(Position::new(pos.x(), y));
+        for col_pos in Position::COLUMNS[pos.x()] {
+            if col_pos.y() != pos.y() {
+                changed |= digit_pos.remove(col_pos);
             }
         }
         let box_index = pos.box_index();
-        let cell_index = pos.box_cell_index();
-        for i in 0..9 {
-            if i != cell_index {
-                changed |= digit_pos.remove(Position::from_box(box_index, i));
+        for box_pos in Position::BOXES[box_index] {
+            if box_pos != pos {
+                changed |= digit_pos.remove(box_pos);
             }
         }
         changed |= digit_pos.insert(pos);
@@ -636,14 +629,11 @@ mod tests {
         let grid = CandidateGrid::new();
 
         // All positions should have all 9 digits as candidates initially
-        for y in 0..9 {
-            for x in 0..9 {
-                let pos = Position::new(x, y);
-                let candidates = grid.candidates_at(pos);
-                assert_eq!(candidates.len(), 9);
-                for digit in Digit::ALL {
-                    assert!(candidates.contains(digit));
-                }
+        for pos in Position::ALL {
+            let candidates = grid.candidates_at(pos);
+            assert_eq!(candidates.len(), 9);
+            for digit in Digit::ALL {
+                assert!(candidates.contains(digit));
             }
         }
     }
@@ -688,8 +678,8 @@ mod tests {
         let mut grid = CandidateGrid::new();
 
         // Set digit 5 as candidate for entire row 0
-        for x in 0..9 {
-            grid.digit_positions[D4].insert(Position::new(x, 0));
+        for pos in Position::ROWS[0] {
+            grid.digit_positions[D4].insert(pos);
         }
 
         // Place digit 5 at (0, 0)
@@ -713,22 +703,23 @@ mod tests {
         let mut grid = CandidateGrid::new();
 
         // Set digit 3 as candidate for entire column 5
-        for y in 0..9 {
-            grid.digit_positions[D2].insert(Position::new(5, y));
+        for pos in Position::COLUMNS[5] {
+            grid.digit_positions[D2].insert(pos);
         }
 
         // Place digit 3 at (5, 3)
         grid.place(Position::new(5, 3), D3);
 
         // Digit 3 should be removed from rest of column 5
-        for y in 0..9 {
-            if y == 3 {
+        for pos in Position::COLUMNS[5] {
+            if pos.y() == 3 {
                 continue;
             }
             let col_mask = grid.col_mask(5, D3);
             assert!(
-                !col_mask.contains(y),
-                "Position (5, {y}) should not have digit 3"
+                !col_mask.contains(pos.y()),
+                "Position (5, {}) should not have digit 3",
+                pos.y()
             );
         }
     }
@@ -738,8 +729,8 @@ mod tests {
         let mut grid = CandidateGrid::new();
 
         // Set digit 7 as candidate for entire box 4 (center box)
-        for i in 0..9 {
-            grid.digit_positions[D6].insert(Position::from_box(4, i));
+        for pos in Position::BOXES[4] {
+            grid.digit_positions[D6].insert(pos);
         }
 
         // Place digit 7 at center of center box
@@ -921,9 +912,9 @@ mod tests {
         let mut board = CandidateGrid::new();
 
         // Remove digit 3 from all positions in row 2 except (1, 2), (3, 2), (5, 2)
-        for x in 0..9 {
-            if x != 1 && x != 3 && x != 5 {
-                board.remove_candidate(Position::new(x, 2), D3);
+        for pos in Position::ROWS[2] {
+            if pos.x() != 1 && pos.x() != 3 && pos.x() != 5 {
+                board.remove_candidate(pos, D3);
             }
         }
 
@@ -946,9 +937,9 @@ mod tests {
         let mut board = CandidateGrid::new();
 
         // Remove digit 9 from all positions in column 4 except (4, 0), (4, 4), (4, 8)
-        for y in 0..9 {
-            if y != 0 && y != 4 && y != 8 {
-                board.remove_candidate(Position::new(4, y), D9);
+        for pos in Position::COLUMNS[4] {
+            if pos.y() != 0 && pos.y() != 4 && pos.y() != 8 {
+                board.remove_candidate(pos, D9);
             }
         }
 
@@ -971,9 +962,10 @@ mod tests {
         let mut board = CandidateGrid::new();
 
         // Remove digit 6 from all positions in box 8 except cells 0, 4, 8
-        for i in 0..9 {
-            if i != 0 && i != 4 && i != 8 {
-                board.remove_candidate(Position::from_box(8, i), D6);
+        for pos in Position::BOXES[8] {
+            let cell_idx = pos.box_cell_index();
+            if cell_idx != 0 && cell_idx != 4 && cell_idx != 8 {
+                board.remove_candidate(pos, D6);
             }
         }
 
@@ -989,9 +981,9 @@ mod tests {
         let mut grid = CandidateGrid::new();
 
         // Set up: digit 5 can only go in position (3, 0) in row 0
-        for x in 0..9 {
-            if x != 3 {
-                grid.remove_candidate(Position::new(x, 0), D5);
+        for pos in Position::ROWS[0] {
+            if pos.x() != 3 {
+                grid.remove_candidate(pos, D5);
             }
         }
 
@@ -1005,9 +997,9 @@ mod tests {
         let mut grid = CandidateGrid::new();
 
         // Set up: digit 7 can only go in position (5, 4) in column 5
-        for y in 0..9 {
-            if y != 4 {
-                grid.remove_candidate(Position::new(5, y), D7);
+        for pos in Position::COLUMNS[5] {
+            if pos.y() != 4 {
+                grid.remove_candidate(pos, D7);
             }
         }
 
@@ -1021,9 +1013,9 @@ mod tests {
         let mut grid = CandidateGrid::new();
 
         // Set up: digit 9 can only go in position (4, 4) (center of box 4)
-        for i in 0..9 {
-            if i != 4 {
-                grid.remove_candidate(Position::from_box(4, i), D9);
+        for pos in Position::BOXES[4] {
+            if pos.box_cell_index() != 4 {
+                grid.remove_candidate(pos, D9);
             }
         }
 
@@ -1047,10 +1039,8 @@ mod tests {
         let board = CandidateGrid::default();
 
         // Default should be same as new() - all candidates available
-        for y in 0..9 {
-            for x in 0..9 {
-                assert_eq!(board.candidates_at(Position::new(x, y)).len(), 9);
-            }
+        for pos in Position::ALL {
+            assert_eq!(board.candidates_at(pos).len(), 9);
         }
     }
 
@@ -1532,10 +1522,8 @@ mod tests {
         let digit_grid = grid.to_digit_grid();
 
         // Empty candidate grid should produce empty digit grid
-        for y in 0..9 {
-            for x in 0..9 {
-                assert_eq!(digit_grid.get(Position::new(x, y)), None);
-            }
+        for pos in Position::ALL {
+            assert_eq!(digit_grid.get(pos), None);
         }
     }
 
@@ -1550,11 +1538,9 @@ mod tests {
         assert_eq!(digit_grid.get(Position::new(0, 0)), Some(D1));
 
         // All other cells should be empty
-        for y in 0..9 {
-            for x in 0..9 {
-                if x != 0 || y != 0 {
-                    assert_eq!(digit_grid.get(Position::new(x, y)), None);
-                }
+        for pos in Position::ALL {
+            if pos != Position::new(0, 0) {
+                assert_eq!(digit_grid.get(pos), None);
             }
         }
     }

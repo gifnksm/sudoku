@@ -89,9 +89,9 @@ mod tests {
         let mut grid = CandidateGrid::new();
 
         // Remove D5 from all cells in row 0 except (3, 0)
-        for x in 0..9 {
-            if x != 3 {
-                grid.remove_candidate(Position::new(x, 0), Digit::D5);
+        for pos in Position::ROWS[0] {
+            if pos.x() != 3 {
+                grid.remove_candidate(pos, Digit::D5);
             }
         }
 
@@ -109,9 +109,9 @@ mod tests {
         let mut grid = CandidateGrid::new();
 
         // Remove D7 from all cells in column 5 except (5, 4)
-        for y in 0..9 {
-            if y != 4 {
-                grid.remove_candidate(Position::new(5, y), Digit::D7);
+        for pos in Position::COLUMNS[5] {
+            if pos.y() != 4 {
+                grid.remove_candidate(pos, Digit::D7);
             }
         }
 
@@ -130,9 +130,9 @@ mod tests {
 
         // Box 4 is the center box (rows 3-5, columns 3-5)
         // Remove D9 from all cells in box 4 except the center cell (4, 4)
-        for i in 0..9 {
-            if i != 4 {
-                grid.remove_candidate(Position::from_box(4, i), Digit::D9);
+        for pos in Position::BOXES[4] {
+            if pos.box_cell_index() != 4 {
+                grid.remove_candidate(pos, Digit::D9);
             }
         }
 
@@ -150,16 +150,16 @@ mod tests {
         let mut grid = CandidateGrid::new();
 
         // Create hidden single in row 0: D3 can only go at (2, 0)
-        for x in 0..9 {
-            if x != 2 {
-                grid.remove_candidate(Position::new(x, 0), Digit::D3);
+        for pos in Position::ROWS[0] {
+            if pos.x() != 2 {
+                grid.remove_candidate(pos, Digit::D3);
             }
         }
 
         // Create hidden single in column 7: D8 can only go at (7, 6)
-        for y in 0..9 {
-            if y != 6 {
-                grid.remove_candidate(Position::new(7, y), Digit::D8);
+        for pos in Position::COLUMNS[7] {
+            if pos.y() != 6 {
+                grid.remove_candidate(pos, Digit::D8);
             }
         }
 

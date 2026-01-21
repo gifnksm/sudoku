@@ -137,16 +137,13 @@ impl IndexMut<Position> for DigitGrid {
 
 impl Display for DigitGrid {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        for y in 0..9 {
-            for x in 0..9 {
-                let pos = Position::new(x, y);
-                if let Some(digit) = self.get(pos) {
-                    write!(f, "{digit}")?;
-                } else {
-                    write!(f, ".")?;
-                }
+        for (i, pos) in Position::ALL.iter().enumerate() {
+            if let Some(digit) = self.get(*pos) {
+                write!(f, "{digit}")?;
+            } else {
+                write!(f, ".")?;
             }
-            if f.alternate() {
+            if f.alternate() && (i + 1) % 9 == 0 {
                 writeln!(f)?;
             }
         }
@@ -204,10 +201,8 @@ mod tests {
         let s = ".................................................................................";
         let grid: DigitGrid = s.parse().unwrap();
 
-        for y in 0..9 {
-            for x in 0..9 {
-                assert_eq!(grid.get(Position::new(x, y)), None);
-            }
+        for pos in Position::ALL {
+            assert_eq!(grid.get(pos), None);
         }
     }
 
@@ -245,10 +240,8 @@ mod tests {
         let s = format!("000000000{}", "0".repeat(72));
         let grid: DigitGrid = s.parse().unwrap();
 
-        for y in 0..9 {
-            for x in 0..9 {
-                assert_eq!(grid.get(Position::new(x, y)), None);
-            }
+        for pos in Position::ALL {
+            assert_eq!(grid.get(pos), None);
         }
     }
 
@@ -257,10 +250,8 @@ mod tests {
         let s = format!("_________{}", "_".repeat(72));
         let grid: DigitGrid = s.parse().unwrap();
 
-        for y in 0..9 {
-            for x in 0..9 {
-                assert_eq!(grid.get(Position::new(x, y)), None);
-            }
+        for pos in Position::ALL {
+            assert_eq!(grid.get(pos), None);
         }
     }
 
@@ -286,14 +277,11 @@ mod tests {
     fn test_display_roundtrip() {
         let original = format!("123456789{}", ".".repeat(72));
         let grid: DigitGrid = original.parse().unwrap();
-        let displayed = grid.to_string();
-        let reparsed: DigitGrid = displayed.parse().unwrap();
+        let s = grid.to_string();
+        let reparsed: DigitGrid = s.parse().unwrap();
 
-        for y in 0..9 {
-            for x in 0..9 {
-                let pos = Position::new(x, y);
-                assert_eq!(grid.get(pos), reparsed.get(pos));
-            }
+        for pos in Position::ALL {
+            assert_eq!(grid.get(pos), reparsed.get(pos));
         }
     }
 
@@ -309,14 +297,11 @@ mod tests {
         assert_eq!(displayed.lines().count(), 9);
 
         // Parse it back - whitespace should be ignored
-        let reparsed: DigitGrid = displayed.parse().unwrap();
+        let s = format!("{grid:#}");
+        let reparsed: DigitGrid = s.parse().unwrap();
 
-        // Verify all cells match
-        for y in 0..9 {
-            for x in 0..9 {
-                let pos = Position::new(x, y);
-                assert_eq!(grid.get(pos), reparsed.get(pos));
-            }
+        for pos in Position::ALL {
+            assert_eq!(grid.get(pos), reparsed.get(pos));
         }
     }
 }

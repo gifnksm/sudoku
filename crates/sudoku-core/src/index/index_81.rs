@@ -217,13 +217,10 @@ mod tests {
 
         #[test]
         fn test_round_trip_all_positions() {
-            for y in 0..9 {
-                for x in 0..9 {
-                    let pos = Position::new(x, y);
-                    let index = PositionSemantics::to_index(pos);
-                    let result = PositionSemantics::from_index(index);
-                    assert_eq!(result, pos);
-                }
+            for pos in Position::ALL {
+                let index = PositionSemantics::to_index(pos);
+                let result = PositionSemantics::from_index(index);
+                assert_eq!(result, pos);
             }
         }
 

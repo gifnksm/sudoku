@@ -132,7 +132,18 @@ where
     /// The length of the array (always 81).
     pub const LEN: usize = 81;
 
-    const fn from_array(array: [T; 81]) -> Self {
+    /// Creates a new `Array81` from a raw array.
+    ///
+    /// This is a const function that can be used in const contexts.
+    ///
+    /// # Example
+    ///
+    /// ```
+    /// use sudoku_core::{containers::Array81, index::PositionSemantics};
+    ///
+    /// const MY_ARRAY: Array81<i32, PositionSemantics> = Array81::from_array([42; 81]);
+    /// ```
+    pub const fn from_array(array: [T; 81]) -> Self {
         Self {
             array,
             _marker: PhantomData,
@@ -310,11 +321,8 @@ mod tests {
     #[test]
     fn test_default() {
         let array: Array81<i32, PositionSemantics> = Array81::default();
-        for y in 0..9 {
-            for x in 0..9 {
-                let pos = Position::new(x, y);
-                assert_eq!(array[pos], 0);
-            }
+        for pos in Position::ALL {
+            assert_eq!(array[pos], 0);
         }
     }
 
@@ -361,19 +369,13 @@ mod tests {
         let mut array: Array81<bool, PositionSemantics> = Array81::from([false; 81]);
 
         // Set all positions to true
-        for y in 0..9 {
-            for x in 0..9 {
-                let pos = Position::new(x, y);
-                array[pos] = true;
-            }
+        for pos in Position::ALL {
+            array[pos] = true;
         }
 
         // Verify all are true
-        for y in 0..9 {
-            for x in 0..9 {
-                let pos = Position::new(x, y);
-                assert!(array[pos]);
-            }
+        for pos in Position::ALL {
+            assert!(array[pos]);
         }
     }
 

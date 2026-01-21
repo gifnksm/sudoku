@@ -139,14 +139,11 @@ mod tests {
         let solution = generator.generate_solution(&mut rng);
 
         // All cells should be filled
-        for row in 0..9 {
-            for col in 0..9 {
-                let pos = Position::new(col, row);
-                assert!(
-                    solution.get(pos).is_some(),
-                    "Cell at ({col}, {row}) should be filled"
-                );
-            }
+        for pos in Position::ALL {
+            assert!(
+                solution.get(pos).is_some(),
+                "Cell at ({pos:?}) should be filled"
+            );
         }
     }
 
@@ -159,8 +156,7 @@ mod tests {
         // Check all rows have digits 1-9
         for row in 0..9 {
             let mut digits = DigitSet::EMPTY;
-            for col in 0..9 {
-                let pos = Position::new(col, row);
+            for pos in Position::ROWS[row] {
                 if let Some(digit) = solution.get(pos) {
                     digits.insert(digit);
                 }
@@ -175,8 +171,7 @@ mod tests {
         // Check all columns have digits 1-9
         for col in 0..9 {
             let mut digits = DigitSet::EMPTY;
-            for row in 0..9 {
-                let pos = Position::new(col, row);
+            for pos in Position::COLUMNS[col] {
                 if let Some(digit) = solution.get(pos) {
                     digits.insert(digit);
                 }
@@ -191,8 +186,7 @@ mod tests {
         // Check all 3x3 boxes have digits 1-9
         for box_idx in 0..9 {
             let mut digits = DigitSet::EMPTY;
-            for i in 0..9 {
-                let pos = Position::from_box(box_idx, i);
+            for pos in Position::BOXES[box_idx] {
                 if let Some(digit) = solution.get(pos) {
                     digits.insert(digit);
                 }
@@ -242,12 +236,9 @@ mod tests {
 
         // Verify the solution by placing it in a CandidateGrid
         let mut candidate_grid = CandidateGrid::new();
-        for row in 0..9 {
-            for col in 0..9 {
-                let pos = Position::new(col, row);
-                if let Some(digit) = solution.get(pos) {
-                    candidate_grid.place(pos, digit);
-                }
+        for pos in Position::ALL {
+            if let Some(digit) = solution.get(pos) {
+                candidate_grid.place(pos, digit);
             }
         }
 
