@@ -35,7 +35,7 @@ crates/
 └── sudoku-app/        # GUI application (planned)
 ```
 
-See [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) for architecture and implementation plans.
+See [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) for architecture and implementation plans, and [docs/TODO.md](docs/TODO.md) for current tasks.
 
 ## Build and Test
 
@@ -51,6 +51,9 @@ cargo test
 
 # Run clippy
 cargo clippy --all-targets
+
+# Check markdown files
+npx markdownlint .
 
 # Generate documentation (project crates only, faster)
 cargo doc --no-deps
