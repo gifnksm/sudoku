@@ -2416,6 +2416,15 @@ dependencies = [
 ]
 
 [[package]]
+name = "rand_pcg"
+version = "0.9.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "b48ac3f7ffaab7fac4d2376632268aa5f89abdb55f7ebf8f4d11fffccb2320f7"
+dependencies = [
+ "rand_core",
+]
+
+[[package]]
 name = "rand_xorshift"
 version = "0.4.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -2776,6 +2785,16 @@ name = "sudoku-core"
 version = "0.1.0"
 dependencies = [
  "proptest",
+]
+
+[[package]]
+name = "sudoku-generator"
+version = "0.1.0"
+dependencies = [
+ "rand",
+ "rand_pcg",
+ "sudoku-core",
+ "sudoku-solver",
 ]
 
 [[package]]
