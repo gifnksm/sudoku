@@ -43,21 +43,27 @@ See [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) for architecture and implementa
 # Build all crates
 cargo build
 
+# Build with optimizations
+cargo build --release
+
 # Run tests
 cargo test
 
 # Run clippy
 cargo clippy --all-targets
 
-# Generate documentation
-cargo doc --open
+# Generate documentation (project crates only, faster)
+cargo doc --no-deps
+
+# Generate and open documentation
+cargo doc --no-deps --open
 ```
 
 ## Run
 
 ```bash
 # Desktop application (not yet implemented)
-cargo run -p sudoku-app
+cargo run --release
 ```
 
 ## License
