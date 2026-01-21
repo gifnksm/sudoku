@@ -50,12 +50,8 @@ mod tests {
         // from all cells in the same row, column, and box
         let mut grid = CandidateGrid::new();
 
-        // Make (0, 0) have only D5 as candidate
-        for digit in Digit::ALL {
-            if digit != Digit::D5 {
-                grid.remove_candidate(Position::new(0, 0), digit);
-            }
-        }
+        // Make (0, 0) have only D5 as candidate without propagating constraints
+        grid.place_no_propagation(Position::new(0, 0), Digit::D5);
 
         TechniqueTester::new(grid)
             .apply_once(&NakedSingle::new())
@@ -72,19 +68,11 @@ mod tests {
         // Multiple naked singles in different regions are all placed
         let mut grid = CandidateGrid::new();
 
-        // Create naked single at (0, 0) with D3
-        for digit in Digit::ALL {
-            if digit != Digit::D3 {
-                grid.remove_candidate(Position::new(0, 0), digit);
-            }
-        }
+        // Create naked single at (0, 0) with D3 without propagating
+        grid.place_no_propagation(Position::new(0, 0), Digit::D3);
 
-        // Create naked single at (5, 5) with D7
-        for digit in Digit::ALL {
-            if digit != Digit::D7 {
-                grid.remove_candidate(Position::new(5, 5), digit);
-            }
-        }
+        // Create naked single at (5, 5) with D7 without propagating
+        grid.place_no_propagation(Position::new(5, 5), Digit::D7);
 
         TechniqueTester::new(grid)
             .apply_once(&NakedSingle::new())

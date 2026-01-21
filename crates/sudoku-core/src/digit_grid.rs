@@ -78,16 +78,7 @@ impl<'a> IntoIterator for &'a mut DigitGrid {
 
 impl From<DigitGrid> for CandidateGrid {
     fn from(digit_grid: DigitGrid) -> Self {
-        let mut grid = CandidateGrid::new();
-        for x in 0..9 {
-            for y in 0..9 {
-                let pos = Position::new(x, y);
-                if let Some(digit) = digit_grid.get(pos) {
-                    grid.place(pos, digit);
-                }
-            }
-        }
-        grid
+        CandidateGrid::from_digit_grid(&digit_grid)
     }
 }
 

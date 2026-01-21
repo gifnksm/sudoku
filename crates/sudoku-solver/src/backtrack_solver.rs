@@ -333,13 +333,8 @@ mod tests {
         let solver = BacktrackSolver::with_all_techniques();
         let mut grid = CandidateGrid::new();
 
-        // Create a naked single
-        for digit in Digit::ALL {
-            if digit != Digit::D5 {
-                grid.remove_candidate(Position::new(4, 4), digit);
-            }
-        }
-        grid.place(Position::new(4, 4), Digit::D5);
+        // Create a naked single without propagating constraints
+        grid.place_no_propagation(Position::new(4, 4), Digit::D5);
 
         let result = solver.solve(grid);
         assert!(result.is_ok());
