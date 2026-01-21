@@ -33,7 +33,7 @@
 
 use std::str::FromStr as _;
 
-use sudoku_core::{CandidateGrid, Digit, DigitCandidates, DigitGrid, Position};
+use sudoku_core::{CandidateGrid, Digit, DigitSet, DigitGrid, Position};
 
 use crate::technique::Technique;
 
@@ -234,7 +234,7 @@ impl TechniqueTester {
     where
         C: IntoIterator<Item = Digit>,
     {
-        let digits = DigitCandidates::from_iter(digits);
+        let digits = DigitSet::from_iter(digits);
         let initial = self.initial.candidates_at(pos);
         let current = self.current.candidates_at(pos);
         assert_eq!(
@@ -263,7 +263,7 @@ impl TechniqueTester {
     where
         C: IntoIterator<Item = Digit>,
     {
-        let digits = DigitCandidates::from_iter(digits);
+        let digits = DigitSet::from_iter(digits);
         let initial = self.initial.candidates_at(pos);
         let current = self.current.candidates_at(pos);
         let removed = initial.difference(current);

@@ -42,14 +42,14 @@
 //!
 //! ## Candidate Type Aliases
 //!
-//! - [`DigitCandidates`] - Set of candidate digits (1-9) for a single cell.
+//! - [`DigitSet`] - A set of sudoku digits (1-9).
 //!   A specialized [`BitSet9`] using [`DigitSemantics`].
 //!
-//! - [`DigitPositions`] - Set of grid positions where a specific digit can be placed.
-//!   A type alias for `BitSet81<PositionSemantics>`.
+//! - [`DigitPositions`] - A set of grid positions.
+//!   A specialized [`BitSet81`] using [`PositionSemantics`].
 //!
-//! - [`HouseMask`] - Bitmask for candidate positions within a house (row/col/box).
-//!   A type alias for `BitSet9<CellIndexSemantics>`.
+//! - [`HouseMask`] - A set of cell indices (0-8) within a house (row, column, or box).
+//!   A specialized [`BitSet9`] using [`CellIndexSemantics`].
 //!
 //! # Generic Infrastructure
 //!
@@ -89,14 +89,14 @@
 //! ## Basic Usage
 //!
 //! ```
-//! use sudoku_core::{Digit, DigitCandidates, Position};
+//! use sudoku_core::{Digit, DigitSet, Position};
 //!
 //! // Create a position and digit
 //! let pos = Position::new(4, 4);
 //! let digit = Digit::D5;
 //!
 //! // Work with candidate sets
-//! let mut candidates = DigitCandidates::FULL;
+//! let mut candidates = DigitSet::FULL;
 //! candidates.remove(Digit::D1);
 //! candidates.remove(Digit::D9);
 //! assert_eq!(candidates.len(), 7);
@@ -105,7 +105,7 @@
 //! ## [`CandidateGrid`] - Solving and Constraint Propagation
 //!
 //! ```
-//! use sudoku_core::{CandidateGrid, Digit, DigitCandidates, Position};
+//! use sudoku_core::{CandidateGrid, Digit, DigitSet, Position};
 //!
 //! // Create a candidate grid with all positions having all candidates
 //! let mut grid = CandidateGrid::new();
@@ -114,7 +114,7 @@
 //! grid.place(Position::new(4, 4), Digit::D5);
 //!
 //! // Check remaining candidates at a position
-//! let candidates: DigitCandidates = grid.candidates_at(Position::new(4, 5));
+//! let candidates: DigitSet = grid.candidates_at(Position::new(4, 5));
 //! assert!(!candidates.contains(Digit::D5)); // D5 removed from same column
 //!
 //! // Check if the puzzle is consistent (no contradictions)

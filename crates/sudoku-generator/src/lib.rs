@@ -6,7 +6,7 @@ use rand::{
     seq::SliceRandom,
 };
 use rand_pcg::Pcg64;
-use sudoku_core::{CandidateGrid, Digit, DigitCandidates, DigitGrid, Position};
+use sudoku_core::{CandidateGrid, Digit, DigitGrid, DigitSet, Position};
 use sudoku_solver::TechniqueSolver;
 
 #[derive(Debug, Clone)]
@@ -90,7 +90,7 @@ impl<'a> PuzzleGenerator<'a> {
 }
 
 /// Find the cell with the minimum number of remaining candidates (MRV heuristic)
-fn find_best_assumption(grid: &CandidateGrid) -> (Position, DigitCandidates) {
+fn find_best_assumption(grid: &CandidateGrid) -> (Position, DigitSet) {
     // classify_cells::<10> groups cells by candidate count (0-9)
     // [0]: 0 candidates (contradiction), [1]: 1 candidate (decided), [2..]: 2-9 candidates
     let [empty, decided, cells @ ..] = grid.classify_cells::<10>();
@@ -158,7 +158,7 @@ mod tests {
 
         // Check all rows have digits 1-9
         for row in 0..9 {
-            let mut digits = DigitCandidates::EMPTY;
+            let mut digits = DigitSet::EMPTY;
             for col in 0..9 {
                 let pos = Position::new(col, row);
                 if let Some(digit) = solution.get(pos) {
@@ -167,14 +167,14 @@ mod tests {
             }
             assert_eq!(
                 digits,
-                DigitCandidates::FULL,
+                DigitSet::FULL,
                 "Row {row} should contain all digits 1-9"
             );
         }
 
         // Check all columns have digits 1-9
         for col in 0..9 {
-            let mut digits = DigitCandidates::EMPTY;
+            let mut digits = DigitSet::EMPTY;
             for row in 0..9 {
                 let pos = Position::new(col, row);
                 if let Some(digit) = solution.get(pos) {
@@ -183,14 +183,14 @@ mod tests {
             }
             assert_eq!(
                 digits,
-                DigitCandidates::FULL,
+                DigitSet::FULL,
                 "Column {col} should contain all digits 1-9"
             );
         }
 
         // Check all 3x3 boxes have digits 1-9
         for box_idx in 0..9 {
-            let mut digits = DigitCandidates::EMPTY;
+            let mut digits = DigitSet::EMPTY;
             for i in 0..9 {
                 let pos = Position::from_box(box_idx, i);
                 if let Some(digit) = solution.get(pos) {
@@ -199,7 +199,7 @@ mod tests {
             }
             assert_eq!(
                 digits,
-                DigitCandidates::FULL,
+                DigitSet::FULL,
                 "Box {box_idx} should contain all digits 1-9"
             );
         }

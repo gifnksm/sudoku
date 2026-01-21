@@ -4,7 +4,7 @@
 //! When techniques cannot make further progress, the solver makes assumptions and explores
 //! the search space to find solutions.
 
-use sudoku_core::{CandidateGrid, Digit, DigitCandidates, Position};
+use sudoku_core::{CandidateGrid, Digit, DigitSet, Position};
 
 use crate::{SolverError, TechniqueSolver, TechniqueSolverStats, technique::BoxedTechnique};
 
@@ -205,7 +205,7 @@ impl BacktrackSolver {
 /// # Preconditions
 ///
 /// The grid must be consistent (no cells with zero candidates) and not fully solved.
-fn find_best_assumption(grid: &CandidateGrid) -> (Position, DigitCandidates) {
+fn find_best_assumption(grid: &CandidateGrid) -> (Position, DigitSet) {
     let [empty, decided, cells @ ..] = grid.classify_cells::<10>();
     assert!(empty.is_empty() && decided.len() < 81);
     let pos = cells.iter().find_map(|cells| cells.first()).unwrap();
@@ -227,7 +227,7 @@ pub struct Solutions<'a> {
 struct SearchState {
     grid: CandidateGrid,
     stats: BacktrackSolverStats,
-    assumption: Option<(Position, DigitCandidates)>,
+    assumption: Option<(Position, DigitSet)>,
 }
 
 impl SearchState {
@@ -242,7 +242,7 @@ impl SearchState {
     fn with_assumption(
         grid: CandidateGrid,
         stats: BacktrackSolverStats,
-        assumption: (Position, DigitCandidates),
+        assumption: (Position, DigitSet),
     ) -> Self {
         Self {
             grid,
@@ -268,7 +268,7 @@ impl<'a> Solutions<'a> {
         solver: &'a BacktrackSolver,
         grid: CandidateGrid,
         stats: BacktrackSolverStats,
-        assumption: (Position, DigitCandidates),
+        assumption: (Position, DigitSet),
     ) -> Self {
         Self {
             solver,

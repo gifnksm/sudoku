@@ -34,9 +34,9 @@
 //! ## Using [`BitSet9`] with [`DigitSemantics`]
 //!
 //! ```
-//! use sudoku_core::{Digit, DigitCandidates};
+//! use sudoku_core::{Digit, DigitSet};
 //!
-//! let mut candidates = DigitCandidates::new();
+//! let mut candidates = DigitSet::new();
 //! candidates.insert(Digit::D1);
 //! candidates.insert(Digit::D5);
 //! candidates.insert(Digit::D9);

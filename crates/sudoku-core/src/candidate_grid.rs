@@ -10,14 +10,14 @@ use crate::{
     position::Position,
 };
 
-/// Set of candidate digits (1-9) for a single cell.
+/// A set of sudoku digits (1-9).
 ///
-/// Returned by [`CandidateGrid::candidates_at`].
-pub type DigitCandidates = BitSet9<DigitSemantics>;
+/// A specialized [`BitSet9`] using [`DigitSemantics`].
+pub type DigitSet = BitSet9<DigitSemantics>;
 
-/// Set of grid positions where a specific digit can be placed.
+/// A set of grid positions.
 ///
-/// Returned by [`CandidateGrid::digit_positions`].
+/// A specialized [`BitSet81`] using [`PositionSemantics`].
 pub type DigitPositions = BitSet81<PositionSemantics>;
 
 impl DigitPositions {
@@ -113,10 +113,9 @@ impl DigitPositions {
     }
 }
 
-/// Bitmask of candidate positions within a house (row, column, or box).
+/// A set of cell indices (0-8) within a house (row, column, or box).
 ///
-/// Returned by [`CandidateGrid::row_mask`], [`CandidateGrid::col_mask`], and
-/// [`CandidateGrid::box_mask`]. Useful for detecting Hidden Singles (when `len() == 1`).
+/// A specialized [`BitSet9`] using [`CellIndexSemantics`].
 pub type HouseMask = BitSet9<CellIndexSemantics>;
 
 /// Candidate grid for sudoku solving.
@@ -419,8 +418,8 @@ impl CandidateGrid {
 
     /// Returns the set of candidate digits that can be placed at a position.
     #[must_use]
-    pub fn candidates_at(&self, pos: Position) -> DigitCandidates {
-        let mut candidates = DigitCandidates::new();
+    pub fn candidates_at(&self, pos: Position) -> DigitSet {
+        let mut candidates = DigitSet::new();
         for (i, digit_pos) in (0..).zip(&self.digit_positions) {
             if digit_pos.contains(pos) {
                 candidates.insert(DigitSemantics::from_index(Index9::new(i)));
