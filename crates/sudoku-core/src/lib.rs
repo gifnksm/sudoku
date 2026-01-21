@@ -114,7 +114,7 @@
 //! grid.place(Position::new(4, 4), Digit::D5);
 //!
 //! // Check remaining candidates at a position
-//! let candidates: DigitCandidates = grid.get_candidates_at(Position::new(4, 5));
+//! let candidates: DigitCandidates = grid.candidates_at(Position::new(4, 5));
 //! assert!(!candidates.contains(Digit::D5)); // D5 removed from same column
 //!
 //! // Check if the puzzle is consistent (no contradictions)

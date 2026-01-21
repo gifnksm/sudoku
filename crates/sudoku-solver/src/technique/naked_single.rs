@@ -27,7 +27,7 @@ impl Technique for NakedSingle {
 
         let decided_cells = grid.decided_cells();
         for digit in Digit::ALL {
-            let decided_cells = grid.get_positions(digit) & decided_cells;
+            let decided_cells = grid.digit_positions(digit) & decided_cells;
             for pos in decided_cells {
                 changed |= grid.place(pos, digit);
             }

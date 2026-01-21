@@ -27,7 +27,7 @@ impl Technique for HiddenSingle {
 
         for digit in Digit::ALL {
             for y in 0..9 {
-                let row = grid.get_row(y, digit);
+                let row = grid.row_mask(y, digit);
                 if row.len() == 1 {
                     let x = row.first().unwrap();
                     changed |= grid.place(Position::new(x, y), digit);
@@ -35,7 +35,7 @@ impl Technique for HiddenSingle {
             }
 
             for x in 0..9 {
-                let col = grid.get_col(x, digit);
+                let col = grid.col_mask(x, digit);
                 if col.len() == 1 {
                     let y = col.first().unwrap();
                     changed |= grid.place(Position::new(x, y), digit);
@@ -43,7 +43,7 @@ impl Technique for HiddenSingle {
             }
 
             for box_index in 0..9 {
-                let block = grid.get_box(box_index, digit);
+                let block = grid.box_mask(box_index, digit);
                 if block.len() == 1 {
                     let i = block.first().unwrap();
                     changed |= grid.place(Position::from_box(box_index, i), digit);

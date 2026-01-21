@@ -155,8 +155,8 @@ impl TechniqueTester {
     /// Panics if the cell was not placed as expected.
     #[track_caller]
     pub fn assert_placed(self, pos: Position, digit: Digit) -> Self {
-        let initial = self.initial.get_candidates_at(pos);
-        let current = self.current.get_candidates_at(pos);
+        let initial = self.initial.candidates_at(pos);
+        let current = self.current.candidates_at(pos);
 
         assert!(
             initial.len() > 1,
@@ -195,8 +195,8 @@ impl TechniqueTester {
         C: IntoIterator<Item = Digit>,
     {
         let digits = DigitCandidates::from_iter(digits);
-        let initial = self.initial.get_candidates_at(pos);
-        let current = self.current.get_candidates_at(pos);
+        let initial = self.initial.candidates_at(pos);
+        let current = self.current.candidates_at(pos);
         assert_eq!(
             initial & digits,
             digits,
@@ -224,8 +224,8 @@ impl TechniqueTester {
         C: IntoIterator<Item = Digit>,
     {
         let digits = DigitCandidates::from_iter(digits);
-        let initial = self.initial.get_candidates_at(pos);
-        let current = self.current.get_candidates_at(pos);
+        let initial = self.initial.candidates_at(pos);
+        let current = self.current.candidates_at(pos);
         let removed = initial.difference(current);
         assert_eq!(
             removed, digits,
@@ -241,8 +241,8 @@ impl TechniqueTester {
     /// Panics if the cell's candidates differ from the initial state.
     #[track_caller]
     pub fn assert_no_change(self, pos: Position) -> Self {
-        let initial = self.initial.get_candidates_at(pos);
-        let current = self.current.get_candidates_at(pos);
+        let initial = self.initial.candidates_at(pos);
+        let current = self.current.candidates_at(pos);
         assert_eq!(
             initial, current,
             "Expected no change at {pos:?}, but candidates changed from {initial:?} to {current:?}"
@@ -288,7 +288,7 @@ mod tests {
 
         fn apply(&self, grid: &mut CandidateGrid) -> Result<bool, crate::SolverError> {
             let pos = Position::new(0, 0);
-            let candidates = grid.get_candidates_at(pos);
+            let candidates = grid.candidates_at(pos);
             if candidates.len() == 1 {
                 Ok(false)
             } else {
