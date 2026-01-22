@@ -326,6 +326,8 @@
 - [x] 既存コードを `check_consistency()?` に移行
 - [x] 冗長な `is_solved()` チェックを削除
 - [x] `is_consistent()` を削除
+- [x] `is_consistent()` の重複テスト4件を削除
+- [x] ドキュメント例を `check_consistency()` に更新
 - [x] テストの追加（`check_consistency`, `is_solved`, `From` 変換）
 - [x] ドキュメントコメントの追加
 - [x] `cargo test --all` で全テスト通過確認
@@ -428,6 +430,7 @@ ACTION-1 と ACTION-2 の完了後：
   - `is_consistent()` の呼び出しを `check_consistency()?` に置き換え
   - テストとドキュメントを追加
   - コミット: `b1e563c` - refactor(core,solver): replace is_consistent with check_consistency API
+  - **注記**: `is_consistent()` メソッド本体の削除が未完了だった（後日対応）
 
 - **2026-01-22**: ACTION-7 完了（BacktrackSolver のテスト調査）
   - `BacktrackSolver` のテストカバレッジを調査
@@ -448,3 +451,9 @@ ACTION-1 と ACTION-2 の完了後：
   - `#[inline]` 属性の付与（7ファイル）
   - ARCHITECTURE.md の拡充（Semantics Pattern, Two-grid, Core vs Solver）
   - コミット: `30164eb` - feat(review): Complete ACTION-4
+
+- **2026-01-22**: ACTION-6 追加対応（`is_consistent()` の削除漏れ対応）
+  - 残っていた `is_consistent()` メソッドとそのdocコメントを削除
+  - 重複テスト4件を削除（`test_is_consistent_*`）
+  - `lib.rs` のドキュメント例を `check_consistency().is_ok()` に更新
+  - コミット: `69ca2b4` - refactor(core): remove deprecated is_consistent() method
