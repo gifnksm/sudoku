@@ -210,7 +210,7 @@
 //! assert!(!candidates.contains(Digit::D5)); // D5 removed from same column
 //!
 //! // Check if the puzzle is consistent (no contradictions)
-//! assert!(grid.is_consistent());
+//! assert!(grid.check_consistency().is_ok());
 //! ```
 //!
 //! ## [`DigitGrid`] - Simple Cell-Centric Interface
