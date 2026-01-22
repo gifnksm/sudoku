@@ -21,6 +21,75 @@ pub type DigitSet = BitSet9<DigitSemantics>;
 pub type DigitPositions = BitSet81<PositionSemantics>;
 
 impl DigitPositions {
+    /// Precomputed positions for each row.
+    ///
+    /// `ROW_POSITIONS[y]` contains all 9 positions in row `y`.
+    pub const ROW_POSITIONS: Array9<DigitPositions, CellIndexSemantics> = {
+        let mut masks = [DigitPositions::EMPTY; 9];
+        let mut y = 0u8;
+        while y < 9 {
+            let mut bits = 0u128;
+            let mut x = 0u8;
+            while x < 9 {
+                // Position index: y * 9 + x
+                bits |= 1u128 << (y * 9 + x);
+                x += 1;
+            }
+            masks[y as usize] = DigitPositions::from_bits(bits);
+            y += 1;
+        }
+        Array9::from_array(masks)
+    };
+
+    /// Precomputed positions for each column.
+    ///
+    /// `COLUMN_POSITIONS[x]` contains all 9 positions in column `x`.
+    pub const COLUMN_POSITIONS: Array9<DigitPositions, CellIndexSemantics> = {
+        let mut masks = [DigitPositions::EMPTY; 9];
+        let mut x = 0u8;
+        while x < 9 {
+            let mut bits = 0u128;
+            let mut y = 0u8;
+            while y < 9 {
+                // Position index: y * 9 + x
+                bits |= 1u128 << (y * 9 + x);
+                y += 1;
+            }
+            masks[x as usize] = DigitPositions::from_bits(bits);
+            x += 1;
+        }
+        Array9::from_array(masks)
+    };
+
+    /// Precomputed positions for each 3×3 box.
+    ///
+    /// `BOX_POSITIONS[box_index]` contains all 9 positions in that box.
+    /// Boxes are numbered 0-8 from left to right, top to bottom.
+    pub const BOX_POSITIONS: Array9<DigitPositions, CellIndexSemantics> = {
+        let mut masks = [DigitPositions::EMPTY; 9];
+        let mut box_index = 0u8;
+        while box_index < 9 {
+            let mut bits = 0u128;
+            let box_x = (box_index % 3) * 3;
+            let box_y = (box_index / 3) * 3;
+            let mut dy = 0u8;
+            while dy < 3 {
+                let mut dx = 0u8;
+                while dx < 3 {
+                    let x = box_x + dx;
+                    let y = box_y + dy;
+                    // Position index: y * 9 + x
+                    bits |= 1u128 << (y * 9 + x);
+                    dx += 1;
+                }
+                dy += 1;
+            }
+            masks[box_index as usize] = DigitPositions::from_bits(bits);
+            box_index += 1;
+        }
+        Array9::from_array(masks)
+    };
+
     /// Returns a bitmask of positions in the specified row.
     ///
     /// The returned mask contains the column indices (0-8) where positions exist
@@ -44,10 +113,8 @@ impl DigitPositions {
     #[must_use]
     pub fn row_mask(&self, y: u8) -> HouseMask {
         let mut mask = HouseMask::new();
-        for pos in Position::ROWS[y] {
-            if self.contains(pos) {
-                mask.insert(pos.x());
-            }
+        for pos in *self & Self::ROW_POSITIONS[y] {
+            mask.insert(pos.x());
         }
         mask
     }
@@ -75,10 +142,8 @@ impl DigitPositions {
     #[must_use]
     pub fn col_mask(&self, x: u8) -> HouseMask {
         let mut mask = HouseMask::new();
-        for pos in Position::COLUMNS[x] {
-            if self.contains(pos) {
-                mask.insert(pos.y());
-            }
+        for pos in *self & Self::COLUMN_POSITIONS[x] {
+            mask.insert(pos.y());
         }
         mask
     }
@@ -104,10 +169,8 @@ impl DigitPositions {
     #[must_use]
     pub fn box_mask(&self, box_index: u8) -> HouseMask {
         let mut mask = HouseMask::new();
-        for pos in Position::BOXES[box_index] {
-            if self.contains(pos) {
-                mask.insert(pos.box_cell_index());
-            }
+        for pos in *self & Self::BOX_POSITIONS[box_index] {
+            mask.insert(pos.box_cell_index());
         }
         mask
     }
@@ -310,23 +373,17 @@ impl CandidateGrid {
             }
         }
 
+        let mut affected_pos = DigitPositions::ROW_POSITIONS[pos.y()]
+            | DigitPositions::COLUMN_POSITIONS[pos.x()]
+            | DigitPositions::BOX_POSITIONS[pos.box_index()];
+        affected_pos.remove(pos);
+
         let digit_pos = &mut self.digit_positions[digit];
-        for row_pos in Position::ROWS[pos.y()] {
-            if row_pos.x() != pos.x() {
-                changed |= digit_pos.remove(row_pos);
-            }
+        if !(*digit_pos & affected_pos).is_empty() {
+            changed = true;
+            *digit_pos &= !affected_pos;
         }
-        for col_pos in Position::COLUMNS[pos.x()] {
-            if col_pos.y() != pos.y() {
-                changed |= digit_pos.remove(col_pos);
-            }
-        }
-        let box_index = pos.box_index();
-        for box_pos in Position::BOXES[box_index] {
-            if box_pos != pos {
-                changed |= digit_pos.remove(box_pos);
-            }
-        }
+
         changed |= digit_pos.insert(pos);
         changed
     }
@@ -1495,6 +1552,99 @@ mod tests {
 
         let mask = positions.box_mask(2);
         assert_eq!(mask.len(), 0);
+    }
+
+    #[test]
+    fn test_digit_positions_row_masks_constant() {
+        // Test that ROW_MASKS contains the correct positions for each row
+        for y in 0..9 {
+            let row_mask = DigitPositions::ROW_POSITIONS[y];
+            assert_eq!(row_mask.len(), 9, "Row {y} should have 9 positions");
+
+            // Check that all positions in the row are present
+            for x in 0..9 {
+                let pos = Position::new(x, y);
+                assert!(
+                    row_mask.contains(pos),
+                    "Row {y} mask should contain position ({x}, {y})"
+                );
+            }
+
+            // Check that positions from other rows are not present
+            for other_y in 0..9 {
+                if other_y != y {
+                    for x in 0..9 {
+                        let pos = Position::new(x, other_y);
+                        assert!(
+                            !row_mask.contains(pos),
+                            "Row {y} mask should not contain position ({x}, {other_y})"
+                        );
+                    }
+                }
+            }
+        }
+    }
+
+    #[test]
+    fn test_digit_positions_col_masks_constant() {
+        // Test that COL_MASKS contains the correct positions for each column
+        for x in 0..9 {
+            let col_mask = DigitPositions::COLUMN_POSITIONS[x];
+            assert_eq!(col_mask.len(), 9, "Column {x} should have 9 positions");
+
+            // Check that all positions in the column are present
+            for y in 0..9 {
+                let pos = Position::new(x, y);
+                assert!(
+                    col_mask.contains(pos),
+                    "Column {x} mask should contain position ({x}, {y})"
+                );
+            }
+
+            // Check that positions from other columns are not present
+            for other_x in 0..9 {
+                if other_x != x {
+                    for y in 0..9 {
+                        let pos = Position::new(other_x, y);
+                        assert!(
+                            !col_mask.contains(pos),
+                            "Column {x} mask should not contain position ({other_x}, {y})"
+                        );
+                    }
+                }
+            }
+        }
+    }
+
+    #[test]
+    fn test_digit_positions_box_masks_constant() {
+        // Test that BOX_MASKS contains the correct positions for each box
+        for box_index in 0..9 {
+            let box_mask = DigitPositions::BOX_POSITIONS[box_index];
+            assert_eq!(box_mask.len(), 9, "Box {box_index} should have 9 positions");
+
+            // Check that all positions in the box are present
+            for cell_index in 0..9 {
+                let pos = Position::from_box(box_index, cell_index);
+                assert!(
+                    box_mask.contains(pos),
+                    "Box {box_index} mask should contain position at cell index {cell_index}"
+                );
+            }
+
+            // Check that positions from other boxes are not present
+            for other_box in 0..9 {
+                if other_box != box_index {
+                    for cell_index in 0..9 {
+                        let pos = Position::from_box(other_box, cell_index);
+                        assert!(
+                            !box_mask.contains(pos),
+                            "Box {box_index} mask should not contain position from box {other_box}"
+                        );
+                    }
+                }
+            }
+        }
     }
 
     #[test]

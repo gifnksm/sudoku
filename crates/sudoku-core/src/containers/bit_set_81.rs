@@ -95,7 +95,15 @@ where
     /// A full set containing all 81 possible elements.
     pub const FULL: Self = Self::from_bits((1u128 << 81) - 1);
 
-    const fn from_bits(bits: u128) -> Self {
+    /// Creates a new set from a raw bit pattern.
+    ///
+    /// This is useful for creating precomputed constants and low-level bit manipulation operations.
+    ///
+    /// # Panics
+    ///
+    /// Panics if `bits` contains any bits beyond the first 81 bits.
+    #[must_use]
+    pub const fn from_bits(bits: u128) -> Self {
         assert!(bits < (1u128 << 81));
         Self {
             bits,
