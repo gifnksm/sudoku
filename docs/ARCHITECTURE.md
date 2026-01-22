@@ -268,5 +268,5 @@ sudoku-app (desktop + web) (planned)
 
 ---
 
-**Last Updated**: 2024
+**Last Updated**: 2026-01-22
 **Version**: 0.1.0
