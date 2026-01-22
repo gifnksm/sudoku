@@ -187,7 +187,7 @@
 
 - **優先度**: 中
 - **依存**: なし
-- **ステータス**: [ ]
+- **ステータス**: [進] 部分完了（1-(a) 完了、1-(b) 以降作業中）
 - **作業量**: 中
 - **対応元**: 問題1-3, 問題3-1, 懸念1, 懸念3
 
@@ -195,28 +195,32 @@
 
 #### コードドキュメント改善
 
-1. **DigitGrid のドキュメント整備**
+1. **DigitGrid のドキュメント整備** ✅ **完了**
     - `Array81<Option<Digit>, PositionSemantics>` を使う理由を明記
     - `PositionSemantics` による型安全性のメリットを説明
     - 使用例の追加
+    - **実施内容**: クレートレベルに「Semantics Pattern」セクションを追加し、
+      すべての関連型（9ファイル、13の型/トレイト/エイリアス）からリンク
+    - **コミット**: `7f7ea41` - docs(core): Add comprehensive Semantics Pattern documentation
 
-2. **classify_cells のコメント修正**
+2. **classify_cells のコメント修正** ⬅️ **次はここから**
     - bitwise DP アルゴリズムの詳細説明を追加
     - `cells[0] = FULL` から始める理由を明記
     - N個以上の候補を持つセルは追跡されないことを明記
 
-#### `#[inline]` 属性の付与
+#### `#[inline]` 属性の付与 🔄 **未着手**
 
 - `Array81` / `Array9` / `BitSet` の `Index` / `IndexMut` impl
 - `to_index` / `from_index` 等の変換関数
 - その他の小さな関数（Position の `box_index` など）
 
-#### ARCHITECTURE.md の拡充
+#### ARCHITECTURE.md の拡充 🔄 **未着手**
 
 1. **Semantics Pattern の詳細説明**
     - Index9, Index81, Array9, Array81 の型安全性
     - PositionSemantics, DigitSemantics の役割
     - バグ防止のメリット
+    - **注**: 現在 `lib.rs` に追加済み。`ARCHITECTURE.md` への移動または参照形式を検討
 
 2. **Two-grid Architecture の詳細化**
     - Digit-centric vs Cell-centric のトレードオフ
@@ -230,10 +234,11 @@
 
 ### チェックリスト
 
-- [ ] DigitGrid の doc comment 更新
+- [x] DigitGrid の doc comment 更新（クレートレベルに Semantics Pattern セクション追加）
 - [ ] classify_cells の実装コメント修正
 - [ ] `#[inline]` 属性の付与
-- [ ] ARCHITECTURE.md に Semantics Pattern の説明追加
+- [ ] ARCHITECTURE.md の存在確認と作成（必要に応じて）
+- [ ] ARCHITECTURE.md に Semantics Pattern の説明追加（または lib.rs からの参照）
 - [ ] ARCHITECTURE.md に Two-grid architecture の詳細追加
 - [ ] ARCHITECTURE.md に Core vs Solver の責務分離の説明追加
 
@@ -405,6 +410,14 @@
 ## 対応履歴
 
 <!-- アクションが完了したら、ここに記録 -->
+
+- **2026-01-21**: ACTION-4 部分完了（1-(a) DigitGrid のドキュメント整備）
+  - クレートレベルに「Semantics Pattern: Type-Safe Indexing」セクションを追加
+  - 3つの主要な目的を明確化：型安全性、実装の共通化、効率的なデータ構造
+  - すべての関連型（9ファイル、13の型/トレイト/エイリアス）からクレートレベルへリンク
+  - 用語の統一：Array は "indexing"、BitSet は "set operations"
+  - すべてのリンク文を統一："See the [crate-level documentation](...) for details."
+  - コミット: `7f7ea41` - docs(core): Add comprehensive Semantics Pattern documentation
 
 - **2026-01-21**: ACTION-7 完了
   - `BacktrackSolver` のテストカバレッジを調査

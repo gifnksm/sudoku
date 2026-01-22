@@ -38,8 +38,8 @@
 
 | ステータス | 件数 | 内容                                               |
 | ---------- | ---- | -------------------------------------------------- |
-| 未着手     | 5    | ACTION-1 ～ ACTION-4, ACTION-7                     |
-| 作業中     | 0    | -                                                  |
+| 未着手     | 4    | ACTION-1 ～ ACTION-3, ACTION-7                     |
+| 作業中     | 1    | ACTION-4 (ドキュメント整備) - 部分完了             |
 | 完了       | 2    | ACTION-5 (Box::leak), ACTION-6 (check_consistency) |
 
 ### 優先度別
@@ -55,7 +55,7 @@
 **Phase 1** として、以下のアクションから着手できます（並行作業可能）：
 
 - ACTION-2: ベンチマークの追加
-- ACTION-4: ドキュメント整備とコード改善
+- ACTION-4: ドキュメント整備とコード改善（作業中 - 1-(a) 完了、1-(b) 以降継続）
 - ACTION-7: BacktrackSolver のテスト調査
 
 **Phase 2** の最優先タスク：
@@ -66,5 +66,6 @@
 
 - ✅ ACTION-5: Box::leak 修正（テストコードの品質改善）
 - ✅ ACTION-6: check_consistency API への置き換え（エラーハンドリング改善）
+- ✅ ACTION-4 (1-(a)): Semantics Pattern ドキュメント整備（コミット: 7f7ea41）
 
 詳細は [`action.md`](./action.md) を参照してください。
