@@ -46,25 +46,42 @@
     - digit-centric設計は事実。`digit_positions: Array9<DigitPositions, DigitSemantics>` という実装
     - `candidates_at` は9回のループで全 digit_positions をチェック（ただしBitSet81の128bitビット演算）
     - **レビューの「81×9回のチェック」は誤り**: 実際はBitSet演算なので遥かに少ない
-  - 影響度:
-    - 頻繁に呼ばれる: `to_digit_grid`, `find_best_assumption`, `classify_cells`経由で`decided_cells`など
-    - 特にパズル生成のバックトラック探索で累積的な影響がある可能性
+  - レビュー指摘の内容（2026-01-22 再確認）:
+    - `candidates_at` の性能: position → candidates のクエリが O(9) の線形走査
+    - `classify_cells` の性能: 全セルの候補数計算で 81×9 回のチェックが発生
+    - `decided_cells` の性能: `classify_cells` を経由するため同様に非効率
+  - 呼び出し箇所の詳細調査（2026-01-22）:
+    - **実際の呼び出し**: `find_best_assumption` のみ（バックトラック探索の各ステップで1回）
+    - **最適化済みの箇所**: `to_digit_grid` はコミット `5cdd9302` で `candidates_at` を使わない実装に最適化済み
+    - `find_best_assumption` の重複: `sudoku-generator` と `sudoku-solver` に同じ実装が存在（共通化が必要、方法は要検討）
+  - cell-oriented で高速化される可能性がある処理（2026-01-22 調査）:
+    - `CandidateGrid` の全公開メソッドを調査
+    - **cell-oriented かつ読み取り専用のメソッド**: `candidates_at` のみ
+      - Position を引数に取り、position → candidates の情報を返す（`&self`）
+      - 双方向マッピングで O(9) → O(1) に改善可能
+    - **書き込み操作**（`place`, `remove_candidate`）: 双方向マッピングでは同期が必要なため、処理量が増えるだけ
+    - **digit-oriented なメソッド**（`digit_positions`, `row_mask` など）: Digit を引数に取るため対象外
   - digit-centric設計の意図:
     - Hidden Single検出の高速化（`row_mask`, `col_mask`, `box_mask`がO(1)）
     - メモリ効率（単方向マッピングのみ）
   - パフォーマンス測定: 未実施（ベンチマーク追加が必要）
 - **対応方針**:
-  1. **ベンチマークを追加し、`candidates_at` の呼び出しコストがボトルネックか確認**
-  2. **問題 2-1 (Pure Data Structure 化) を先に実施**
-  3. Pure 化後に双方向マッピング（`cell_candidates: Array81<DigitSet, PositionSemantics>`）を実装
-  4. `place`/`remove_candidate`で同期を取る（propagation がない方が実装が簡単）
-  5. ベンチマークで効果測定し、実装要否を最終判断
+  1. **前提作業**: `find_best_assumption` の共通化（共通化方法は要検討）
+  2. **ベンチマークを追加し、`candidates_at` の呼び出しコストがボトルネックか確認**
+     - ベンチマークフレームワークの選定（要検討、選択肢の例: Criterion.rs, cargo bench, Divan など）
+     - 測定対象: `candidates_at` 単体、`find_best_assumption`、エンドツーエンド（パズル生成・解決）
+     - 一般的なベンチマークの追加も検討（今後の最適化に有用）
+  3. **判断基準**: エンドツーエンドで 10% 以上の改善が見込めれば ACTION-3 を実施
+  4. 必要と判断された場合、双方向マッピング（`cell_candidates: Array81<DigitSet, PositionSemantics>`）を実装
+  5. `place`/`remove_candidate`で同期を取る（propagation がない方が実装が簡単）
+  6. ベンチマークで効果測定
 - **優先度**: 高（初期段階なので破壊的変更の影響が小さい。パズル生成の性能に効く）
 - **依存関係**: 問題 2-1 (完了済み) - Pure Data Structure 化により実装が簡単になる
 - **関連Issue/PR**:
 - **備考**:
   - ACTION-1 完了により、propagation がないため双方向マッピングの同期ロジックがシンプルになった
-  - `place` の複雑さがなくなり、実装が容易
+  - 実装コスト: メモリ +91バイト、コード複雑度増加（双方向同期）、メンテナンス負担増
+  - 呼び出し頻度が想定より低い（`find_best_assumption` のみ）ため、改善効果は限定的な可能性
 
 **→ 対応: [ACTION-2](./action.md#action-2-ベンチマークの追加), [ACTION-3](./action.md#action-3-双方向マッピングの実装)**
 
@@ -715,14 +732,3 @@
 4. **小さな改善**: 破壊的変更なしで対応可能な項目から順次対応
 
 実装の優先順位と依存関係、推奨作業順序については [`action.md`](./action.md) を参照してください。
-
----
-
-## 対応履歴
-
-<!-- 対応が完了した項目について、日付と概要を記録 -->
-
-<!-- 例:
-### 2026-01-21
-- 問題 4-2: `SolverError::Contradiction` を実際に使用するよう修正 (#123)
--->
