@@ -392,7 +392,7 @@ mod tests {
 
         let result = solver.solve(grid);
         assert!(result.is_err());
-        assert!(matches!(result.unwrap_err(), SolverError::Contradiction));
+        assert!(matches!(result.unwrap_err(), SolverError::Inconsistent(_)));
     }
 
     #[test]

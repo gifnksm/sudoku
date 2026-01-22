@@ -314,6 +314,13 @@ impl Default for CandidateGrid {
 /// An inconsistent grid cannot be solved and typically results from
 /// incorrect placements or contradictory constraints.
 ///
+/// This error distinguishes between two types of inconsistencies that can occur in a candidate grid:
+/// - [`NoCandidates`]: A cell has no remaining candidates, making it impossible to place a digit
+/// - [`DuplicatedDecidedDigits`]: Multiple cells in the same row, column, or box have the same decided digit
+///
+/// [`NoCandidates`]: ConsistencyError::NoCandidates
+/// [`DuplicatedDecidedDigits`]: ConsistencyError::DuplicatedDecidedDigits
+///
 /// # Examples
 ///
 /// ```
@@ -327,12 +334,24 @@ impl Default for CandidateGrid {
 ///     grid.remove_candidate(pos, digit);
 /// }
 ///
-/// // check_consistency will detect this
+/// // check_consistency will detect this as NoCandidates error
 /// assert!(grid.check_consistency().is_err());
 /// ```
 #[derive(Debug, Clone, Copy, derive_more::Display, derive_more::Error)]
-#[display("candidate grid has cells with no candidates")]
-pub struct ConsistencyError;
+pub enum ConsistencyError {
+    /// A cell has no remaining candidates.
+    ///
+    /// This occurs when constraint propagation or manual candidate removal results in
+    /// a cell with no possible digits, making the puzzle unsolvable.
+    #[display("candidate grid has cells with no candidates")]
+    NoCandidates,
+    /// Multiple cells in the same constraint region have the same decided digit.
+    ///
+    /// This occurs when the same digit appears more than once in a row, column, or box,
+    /// violating Sudoku rules.
+    #[display("candidate grid has duplicated decided digits")]
+    DuplicatedDecidedDigits,
+}
 
 impl CandidateGrid {
     /// Creates a new candidate grid with all positions available for all digits.
@@ -580,8 +599,11 @@ impl CandidateGrid {
     /// [`is_solved`]: CandidateGrid::is_solved
     pub fn check_consistency(&self) -> Result<(), ConsistencyError> {
         let [empty_cells, decided_cells] = self.classify_cells();
-        if !empty_cells.is_empty() || !self.placed_digits_are_unique(decided_cells) {
-            return Err(ConsistencyError);
+        if !empty_cells.is_empty() {
+            return Err(ConsistencyError::NoCandidates);
+        }
+        if !self.placed_digits_are_unique(decided_cells) {
+            return Err(ConsistencyError::DuplicatedDecidedDigits);
         }
         Ok(())
     }
@@ -608,8 +630,11 @@ impl CandidateGrid {
     /// ```
     pub fn is_solved(&self) -> Result<bool, ConsistencyError> {
         let [empty_cells, decided_cells] = self.classify_cells();
-        if !empty_cells.is_empty() || !self.placed_digits_are_unique(decided_cells) {
-            return Err(ConsistencyError);
+        if !empty_cells.is_empty() {
+            return Err(ConsistencyError::NoCandidates);
+        }
+        if !self.placed_digits_are_unique(decided_cells) {
+            return Err(ConsistencyError::DuplicatedDecidedDigits);
         }
         Ok(decided_cells.len() == 81)
     }
