@@ -125,7 +125,7 @@ impl TechniqueSolverStats {
 ///
 /// while solver.step(&mut grid, &mut stats)? {
 ///     println!("Progress made! Step {}", stats.total_steps());
-///     if grid.is_solved() {
+///     if grid.is_solved()? {
 ///         break;
 ///     }
 /// }
@@ -221,17 +221,13 @@ impl TechniqueSolver {
         grid: &mut CandidateGrid,
         stats: &mut TechniqueSolverStats,
     ) -> Result<bool, SolverError> {
-        if !grid.is_consistent() {
-            return Err(SolverError::Contradiction);
-        }
+        grid.check_consistency()?;
 
         for technique in &self.techniques {
             if technique.apply(grid)? {
                 *stats.applications.entry(technique.name()).or_default() += 1;
                 stats.total_steps += 1;
-                if !grid.is_consistent() {
-                    return Err(SolverError::Contradiction);
-                }
+                grid.check_consistency()?;
                 return Ok(true);
             }
         }
@@ -330,11 +326,11 @@ impl TechniqueSolver {
         stats: &mut TechniqueSolverStats,
     ) -> Result<bool, SolverError> {
         while self.step(grid, stats)? {
-            if grid.is_solved() {
+            if grid.is_solved()? {
                 return Ok(true);
             }
         }
-        Ok(grid.is_solved())
+        Ok(grid.is_solved()?)
     }
 }
 

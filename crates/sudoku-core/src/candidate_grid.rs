@@ -293,6 +293,35 @@ impl Default for CandidateGrid {
     }
 }
 
+/// Error returned when a candidate grid is in an inconsistent state.
+///
+/// This error indicates that the grid violates Sudoku constraints:
+/// - At least one cell has no remaining candidates (empty cell), or
+/// - Duplicate decided digits (cells with exactly one candidate) exist in the same row, column, or box
+///
+/// An inconsistent grid cannot be solved and typically results from
+/// incorrect placements or contradictory constraints.
+///
+/// # Examples
+///
+/// ```
+/// use sudoku_core::{CandidateGrid, Digit, Position};
+///
+/// let mut grid = CandidateGrid::new();
+///
+/// // Create a contradiction by removing all candidates from a cell
+/// let pos = Position::new(0, 0);
+/// for digit in Digit::ALL {
+///     grid.remove_candidate(pos, digit);
+/// }
+///
+/// // check_consistency will detect this
+/// assert!(grid.check_consistency().is_err());
+/// ```
+#[derive(Debug, Clone, Copy, derive_more::Display, derive_more::Error)]
+#[display("candidate grid has cells with no candidates")]
+pub struct ConsistencyError;
+
 impl CandidateGrid {
     /// Creates a new candidate grid with all positions available for all digits.
     #[must_use]
@@ -531,16 +560,58 @@ impl CandidateGrid {
         empty_cells.is_empty() && self.placed_digits_are_unique(decided_cells)
     }
 
+    /// Checks if the grid is in a consistent state.
+    ///
+    /// Returns `Ok(())` if the grid is consistent, or `Err(ConsistencyError)` if:
+    /// - Any cell has no remaining candidates (empty cell), or
+    /// - Duplicate decided digits (cells with exactly one candidate) exist in the same row, column, or box
+    ///
+    /// This method is useful during solving to detect contradictions early.
+    /// Unlike [`is_solved`], this does NOT require all cells to be decided.
+    ///
+    /// # Errors
+    ///
+    /// Returns [`ConsistencyError`] if the grid violates Sudoku constraints.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use sudoku_core::{CandidateGrid, Digit, Position};
+    ///
+    /// let mut grid = CandidateGrid::new();
+    /// assert!(grid.check_consistency().is_ok());
+    ///
+    /// grid.place(Position::new(0, 0), Digit::D5);
+    /// assert!(grid.check_consistency().is_ok()); // Still consistent after placing
+    ///
+    /// // Create a contradiction
+    /// let pos = Position::new(1, 1);
+    /// for digit in Digit::ALL {
+    ///     grid.remove_candidate(pos, digit);
+    /// }
+    /// assert!(grid.check_consistency().is_err()); // Now inconsistent
+    /// ```
+    ///
+    /// [`is_solved`]: CandidateGrid::is_solved
+    pub fn check_consistency(&self) -> Result<(), ConsistencyError> {
+        let [empty_cells, decided_cells] = self.classify_cells();
+        if !empty_cells.is_empty() || !self.placed_digits_are_unique(decided_cells) {
+            return Err(ConsistencyError);
+        }
+        Ok(())
+    }
+
     /// Checks if the puzzle is **solved** (complete and consistent).
     ///
     /// A grid is solved if:
-    ///
     /// - All 81 positions have exactly one candidate (complete)
     /// - No position has zero candidates (no contradictions)
     /// - All definite digits satisfy sudoku uniqueness constraints (no duplicates)
     ///
-    /// This is equivalent to `is_complete() && is_consistent()`, but more efficient
-    /// as it only computes the cell classification once.
+    /// # Errors
+    ///
+    /// Returns [`ConsistencyError`] if the grid is inconsistent (has empty cells
+    /// or duplicate digits).
     ///
     /// # Examples
     ///
@@ -548,14 +619,14 @@ impl CandidateGrid {
     /// use sudoku_core::CandidateGrid;
     ///
     /// let grid = CandidateGrid::new();
-    /// assert!(!grid.is_solved()); // Empty grid is not solved
+    /// assert!(!grid.is_solved().unwrap()); // Empty grid is not solved but is consistent
     /// ```
-    #[must_use]
-    pub fn is_solved(&self) -> bool {
+    pub fn is_solved(&self) -> Result<bool, ConsistencyError> {
         let [empty_cells, decided_cells] = self.classify_cells();
-        empty_cells.is_empty()
-            && decided_cells.len() == 81
-            && self.placed_digits_are_unique(decided_cells)
+        if !empty_cells.is_empty() || !self.placed_digits_are_unique(decided_cells) {
+            return Err(ConsistencyError);
+        }
+        Ok(decided_cells.len() == 81)
     }
 
     /// Returns all positions that have exactly one candidate (decided cells).
@@ -1135,9 +1206,42 @@ mod tests {
     }
 
     #[test]
+    fn test_check_consistency_empty_grid() {
+        let grid = CandidateGrid::new();
+        assert!(grid.check_consistency().is_ok());
+    }
+
+    #[test]
+    fn test_check_consistency_after_placement() {
+        let mut grid = CandidateGrid::new();
+        grid.place(Position::new(0, 0), D5);
+        assert!(grid.check_consistency().is_ok());
+    }
+
+    #[test]
+    fn test_check_consistency_with_empty_cell() {
+        let mut grid = CandidateGrid::new();
+        let pos = Position::new(4, 4);
+        // Remove all candidates from a position
+        for digit in Digit::ALL {
+            grid.remove_candidate(pos, digit);
+        }
+        assert!(grid.check_consistency().is_err());
+    }
+
+    #[test]
+    fn test_check_consistency_with_duplicate() {
+        let mut grid = CandidateGrid::new();
+        // Place the same digit twice in the same row using place_no_propagation
+        grid.place_no_propagation(Position::new(0, 0), D5);
+        grid.place_no_propagation(Position::new(0, 1), D5);
+        assert!(grid.check_consistency().is_err());
+    }
+
+    #[test]
     fn test_is_solved_empty_grid() {
         let grid = CandidateGrid::new();
-        assert!(!grid.is_solved());
+        assert!(!grid.is_solved().unwrap());
     }
 
     #[test]
@@ -1145,7 +1249,18 @@ mod tests {
         let mut grid = CandidateGrid::new();
         grid.place(Position::new(0, 0), D1);
         grid.place(Position::new(1, 1), D2);
-        assert!(!grid.is_solved());
+        assert!(!grid.is_solved().unwrap());
+    }
+
+    #[test]
+    fn test_is_solved_returns_error_on_contradiction() {
+        let mut grid = CandidateGrid::new();
+        let pos = Position::new(0, 0);
+        // Remove all candidates to create a contradiction
+        for digit in Digit::ALL {
+            grid.remove_candidate(pos, digit);
+        }
+        assert!(grid.is_solved().is_err());
     }
 
     #[test]

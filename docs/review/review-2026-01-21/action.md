@@ -23,7 +23,7 @@
 | ACTION-3 | 中     | ACTION-1, ACTION-2 | [ ]        | 双方向マッピングの実装                 | 問題1-1                             |
 | ACTION-4 | 中     | -                  | [ ]        | ドキュメント整備とコード改善           | 問題1-3, 問題3-1, 懸念1, 懸念3      |
 | ACTION-5 | 低     | -                  | [✓]        | Box::leak 修正                         | 問題2-2                             |
-| ACTION-6 | 中     | -                  | [ ]        | check_consistency API への置き換え     | 問題4-2                             |
+| ACTION-6 | 中     | -                  | [✓]        | check_consistency API への置き換え     | 問題4-2                             |
 | ACTION-7 | 低     | -                  | [ ]        | BacktrackSolver のテスト調査           | 問題5-2                             |
 
 ---
@@ -268,7 +268,7 @@
 
 - **優先度**: 中
 - **依存**: なし
-- **ステータス**: [ ]
+- **ステータス**: [✓]
 - **作業量**: 中
 - **対応元**: 問題4-2（レビューの改善提案）
 
@@ -277,25 +277,50 @@
 レビューでは「`SolverError::Contradiction` が使われていない」と指摘されたが、これは事実誤認。
 実際には使用されている。ただし、レビューで提案された `check_consistency() -> Result` API 自体は有用な改善である。
 
-### 作業内容
+### 実装結果
 
-1. `is_consistent() -> bool` の利用箇所を調査
+レイヤー間の依存関係を考慮し、以下のように実装：
 
-2. `check_consistency() -> Result<(), SolverError>` API を追加
+1. **`sudoku-core` に `ConsistencyError` を追加**
+   - `derive_more` を使用してエラー型を実装
+   - `SolverError` は solver レイヤーのエラー型なので core では使用できない
 
-3. `is_consistent()` の呼び出しを `check_consistency()` に置き換え
+2. **`check_consistency() -> Result<(), ConsistencyError>` を実装**
+   - `is_consistent()` の実装を基に、`Result` を返すAPIに変更
 
-4. `is_consistent()` を削除
+3. **`sudoku-solver` に `From<ConsistencyError>` を実装**
+   - `ConsistencyError` が自動的に `SolverError::Contradiction` に変換される
+   - `?` オペレータで簡潔なエラーハンドリングが可能
 
-5. `?` オペレータでエラーハンドリングを簡潔化
+4. **`is_solved()` も `Result` 型に変更**
+   - 矛盾検出時はエラーを返すように改善
+
+5. **既存コードの置き換え**
+   - `if !grid.is_consistent() { return Err(...) }` → `grid.check_consistency()?`
+   - 冗長な `is_solved()` チェックを削除（technique solver内でチェック済み）
+
+6. **`is_consistent()` を削除**
+   - `check_consistency()` に完全に置き換え
+
+7. **テストとドキュメントの追加**
+   - `ConsistencyError`, `check_consistency()`, `is_solved()` のドキュメント
+   - 各種テストケース（正常系/異常系）
+   - `From<ConsistencyError>` の変換テスト
 
 ### チェックリスト
 
-- [ ] `is_consistent()` の利用箇所を調査
-- [ ] `check_consistency()` API を実装
-- [ ] 既存コードを `check_consistency()` に移行
-- [ ] `is_consistent()` を削除
-- [ ] テストの更新
+- [x] `is_consistent()` の利用箇所を調査
+- [x] `ConsistencyError` を `sudoku-core` に追加
+- [x] `check_consistency()` API を実装
+- [x] `sudoku-solver` に `From<ConsistencyError>` を実装
+- [x] `is_solved()` を `Result` 型に変更
+- [x] 既存コードを `check_consistency()?` に移行
+- [x] 冗長な `is_solved()` チェックを削除
+- [x] `is_consistent()` を削除
+- [x] テストの追加（`check_consistency`, `is_solved`, `From` 変換）
+- [x] ドキュメントコメントの追加
+- [x] `cargo test --all` で全テスト通過確認
+- [x] `cargo clippy --all-targets` で警告なし確認
 
 ---
 
@@ -358,3 +383,14 @@
   - `create_test_generator()` ヘルパー関数を削除し、各テスト関数内で `TechniqueSolver` を直接作成
   - 通常のライフタイム管理に修正
   - lint、コンパイル、テスト通過確認済み
+
+- **2026-01-21**: ACTION-6 完了
+  - `sudoku-core` に `ConsistencyError` を追加（`derive_more` 使用）
+  - `CandidateGrid::check_consistency() -> Result<(), ConsistencyError>` を実装
+  - `CandidateGrid::is_solved()` を `Result<bool, ConsistencyError>` に変更
+  - `sudoku-solver` に `From<ConsistencyError> for SolverError` を実装
+  - `is_consistent()` の呼び出しを `check_consistency()?` に置き換え
+  - 冗長な `is_solved()` チェックを削除
+  - `is_consistent()` を完全に削除
+  - テストとドキュメントを追加
+  - レイヤー間の依存関係を適切に保ちつつ、エラーハンドリングを改善

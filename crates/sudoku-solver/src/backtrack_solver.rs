@@ -295,9 +295,6 @@ impl Iterator for Solutions<'_> {
 
             stats.assumptions.push((pos, digit));
             grid.place(pos, digit);
-            if grid.is_solved() {
-                return Some((grid, stats));
-            }
             let Ok(solved) = self.solver.solve_by_technique(&mut grid, &mut stats) else {
                 stats.backtrack_count += 1;
                 continue;

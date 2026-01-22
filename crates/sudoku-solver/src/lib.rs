@@ -90,7 +90,7 @@
 //! while solver.step(&mut grid, &mut stats)? {
 //!     println!("Progress! Total steps: {}", stats.total_steps());
 //!
-//!     if grid.is_solved() {
+//!     if grid.is_solved()? {
 //!         println!("Puzzle solved!");
 //!         break;
 //!     }

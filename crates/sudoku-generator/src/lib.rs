@@ -207,9 +207,6 @@ impl<'a> PuzzleGenerator<'a> {
             let digit = digits.pop_nth(rng.random_range(0..digits.len())).unwrap();
             stack.push((grid.clone(), (pos, digits)));
             grid.place(pos, digit);
-            if grid.is_solved() {
-                return grid.to_digit_grid();
-            }
             // Use the solver to fill in cells that can be determined logically
             let Ok((solved, _)) = self.solver.solve(&mut grid) else {
                 continue; // Contradiction found, backtrack
@@ -467,7 +464,7 @@ mod tests {
         }
 
         // Should be completely solved without contradictions
-        assert!(candidate_grid.is_solved());
+        assert!(candidate_grid.is_solved().unwrap());
     }
 
     #[test]
