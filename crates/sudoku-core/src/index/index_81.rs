@@ -22,6 +22,7 @@ impl Index81 {
     ///
     /// Panics if `index` is not in the range 0-80.
     #[must_use]
+    #[inline]
     pub const fn new(index: u8) -> Self {
         assert!(index < 81);
         Self { index }
@@ -29,10 +30,12 @@ impl Index81 {
 
     /// Returns the underlying index value (0-80).
     #[must_use]
+    #[inline]
     pub const fn index(self) -> u8 {
         self.index
     }
 
+    #[inline]
     pub(crate) const fn bit(self) -> u128 {
         1 << self.index
     }
@@ -156,10 +159,12 @@ pub struct PositionSemantics;
 impl Index81Semantics for PositionSemantics {
     type Value = crate::Position;
 
+    #[inline]
     fn to_index(value: Self::Value) -> Index81 {
         Index81::new(value.y() * 9 + value.x())
     }
 
+    #[inline]
     fn from_index(index: Index81) -> Self::Value {
         let i = index.index();
         Self::Value::new(i % 9, i / 9)

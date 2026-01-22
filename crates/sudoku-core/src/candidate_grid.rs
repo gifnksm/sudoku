@@ -688,7 +688,26 @@ impl CandidateGrid {
     /// - ...
     /// - `cells[i]`: Positions with exactly `i` candidates
     ///
-    /// Positions with `N` or more candidates are not included in any element.
+    /// **Important**: Positions with `N` or more candidates are not included in any element.
+    /// They are implicitly ignored by the algorithm.
+    ///
+    /// # Algorithm
+    ///
+    /// This method uses a **bitwise dynamic programming** approach to classify cells efficiently:
+    ///
+    /// 1. **Initialization**: Start with `cells[0] = FULL` (all 81 positions).
+    ///    This represents the state "before processing any digits, all positions have 0 candidates".
+    ///
+    /// 2. **Digit Processing**: For each of the 9 digits (D1 through D9):
+    ///    - For each candidate count `i` (in reverse order from `min(n, N-1)` down to 1):
+    ///      - Remove positions where the current digit exists: `cells[i] &= !digit_pos`
+    ///      - Add positions that transition from `i-1` to `i` candidates: `cells[i] |= cells[i-1] & digit_pos`
+    ///    - Update `cells[0]` by removing positions with this digit: `cells[0] &= !digit_pos`
+    ///
+    /// 3. **Result**: After processing all 9 digits, `cells[i]` contains positions with exactly `i` candidates.
+    ///
+    /// This approach achieves **O(9 × N)** time complexity with efficient bitwise operations,
+    /// where N is typically small (2-10), making it much faster than checking each of 81 cells individually.
     ///
     /// # Examples
     ///
@@ -707,19 +726,27 @@ impl CandidateGrid {
     /// let [empty, one, two, three] = grid.classify_cells();
     /// // empty: 0 candidates, one: 1 candidate, two: 2 candidates, three: 3 candidates
     /// ```
-    ///
-    /// This method performs a single pass over all digits to efficiently compute
-    /// all classifications simultaneously using bitwise operations.
     #[must_use]
     pub fn classify_cells<const N: usize>(&self) -> [DigitPositions; N] {
         let mut cells = [DigitPositions::EMPTY; N];
+
+        // Initialize: all positions start with 0 candidates (before processing any digits)
         cells[0] = DigitPositions::FULL;
+
+        // Process each digit (D1..D9) and update candidate counts
         for (n, digit_pos) in iter::zip(1.., self.digit_positions.iter().copied()) {
             let end = usize::min(n + 1, N);
+
+            // Update each candidate count in reverse order to avoid overwriting
+            // positions we need to read from in the same iteration
             for i in (1..end).rev() {
+                // Remove positions where this digit exists (they already had i candidates)
                 cells[i] &= !digit_pos;
+                // Add positions transitioning from (i-1) to i candidates
                 cells[i] |= cells[i - 1] & digit_pos;
             }
+
+            // Remove positions with this digit from the "0 candidates" set
             cells[0] &= !digit_pos;
         }
         cells

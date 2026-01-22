@@ -436,8 +436,7 @@ mod tests {
             assert_eq!(digit_grid_i[Position::new(2, 2)], Some(Digit::D3));
 
             // Verify solutions are distinct
-            for j in (i + 1)..solutions.len() {
-                let (grid_j, _) = &solutions[j];
+            for (grid_j, _) in &solutions[i + 1..] {
                 assert_ne!(grid_i.to_digit_grid(), grid_j.to_digit_grid());
             }
         }

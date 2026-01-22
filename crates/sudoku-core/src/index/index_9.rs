@@ -25,6 +25,7 @@ impl Index9 {
     ///
     /// Panics if `index` is not in the range 0-8.
     #[must_use]
+    #[inline]
     pub const fn new(index: u8) -> Self {
         assert!(index < 9);
         Self { index }
@@ -32,10 +33,12 @@ impl Index9 {
 
     /// Returns the underlying index value (0-8).
     #[must_use]
+    #[inline]
     pub const fn index(self) -> u8 {
         self.index
     }
 
+    #[inline]
     pub(crate) const fn bit(self) -> u16 {
         1 << self.index
     }
@@ -154,10 +157,12 @@ pub struct DigitSemantics;
 impl Index9Semantics for DigitSemantics {
     type Value = Digit;
 
+    #[inline]
     fn to_index(value: Self::Value) -> Index9 {
         Index9::new(value.value() - 1)
     }
 
+    #[inline]
     fn from_index(index: Index9) -> Self::Value {
         Self::Value::from_value(index.index() + 1)
     }
@@ -198,11 +203,13 @@ pub struct CellIndexSemantics;
 impl Index9Semantics for CellIndexSemantics {
     type Value = u8;
 
+    #[inline]
     fn to_index(value: Self::Value) -> Index9 {
         assert!(value < 9, "Cell index must be 0-8, got {value}");
         Index9::new(value)
     }
 
+    #[inline]
     fn from_index(index: Index9) -> Self::Value {
         index.index()
     }

@@ -149,6 +149,7 @@ where
     /// const MY_ARRAY: Array9<i32, CellIndexSemantics> = Array9::from_array([1, 2, 3, 4, 5, 6, 7, 8, 9]);
     /// assert_eq!(MY_ARRAY[0], 1);
     /// ```
+    #[inline]
     pub const fn from_array(array: [T; 9]) -> Self {
         Self {
             array,
@@ -167,6 +168,7 @@ where
     /// let sum: i32 = array.iter().sum();
     /// assert_eq!(sum, 45);
     /// ```
+    #[inline]
     pub fn iter(&self) -> slice::Iter<'_, T> {
         self.array.iter()
     }
@@ -184,6 +186,7 @@ where
     /// }
     /// assert_eq!(array[Digit::D1], 42);
     /// ```
+    #[inline]
     pub fn iter_mut(&mut self) -> slice::IterMut<'_, T> {
         self.array.iter_mut()
     }
@@ -195,6 +198,7 @@ where
 {
     type Output = T;
 
+    #[inline]
     fn index(&self, value: S::Value) -> &Self::Output {
         let index = usize::from(S::to_index(value).index());
         &self.array[index]
@@ -205,6 +209,7 @@ impl<T, S> IndexMut<S::Value> for Array9<T, S>
 where
     S: Index9Semantics,
 {
+    #[inline]
     fn index_mut(&mut self, value: S::Value) -> &mut Self::Output {
         let index = usize::from(S::to_index(value).index());
         &mut self.array[index]

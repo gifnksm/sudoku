@@ -221,17 +221,20 @@ where
 
     /// Returns the smallest element in the set, or `None` if the set is empty.
     #[must_use]
+    #[inline]
     pub fn first(self) -> Option<S::Value> {
         self.first_index().map(S::from_index)
     }
 
     /// Returns the largest element in the set, or `None` if the set is empty.
     #[must_use]
+    #[inline]
     pub fn last(self) -> Option<S::Value> {
         self.last_index().map(S::from_index)
     }
 
     /// Removes and returns the smallest element in the set, or `None` if the set is empty.
+    #[inline]
     pub fn pop_first(&mut self) -> Option<S::Value> {
         let index = self.first_index()?;
         self.bits &= !index.bit();
@@ -239,6 +242,7 @@ where
     }
 
     /// Removes and returns the largest element in the set, or `None` if the set is empty.
+    #[inline]
     pub fn pop_last(&mut self) -> Option<S::Value> {
         let index = self.last_index()?;
         self.bits &= !index.bit();

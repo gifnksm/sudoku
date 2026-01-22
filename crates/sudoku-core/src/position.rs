@@ -145,6 +145,7 @@ impl Position {
     ///
     /// Panics if `x` or `y` is greater than or equal to 9.
     #[must_use]
+    #[inline]
     pub const fn new(x: u8, y: u8) -> Self {
         assert!(x < 9 && y < 9);
         Self { x, y }
@@ -156,6 +157,7 @@ impl Position {
     ///
     /// Panics if `box_index` or `cell_index` is greater than or equal to 9.
     #[must_use]
+    #[inline]
     pub const fn from_box(box_index: u8, cell_index: u8) -> Self {
         assert!(box_index < 9 && cell_index < 9);
         let origin = Self::box_origin(box_index);
@@ -164,24 +166,28 @@ impl Position {
 
     /// Returns the column (x coordinate) of this position.
     #[must_use]
+    #[inline]
     pub const fn x(self) -> u8 {
         self.x
     }
 
     /// Returns the row (y coordinate) of this position.
     #[must_use]
+    #[inline]
     pub const fn y(self) -> u8 {
         self.y
     }
 
     /// Returns the box index (0-8) that this position belongs to.
     #[must_use]
+    #[inline]
     pub const fn box_index(&self) -> u8 {
         (self.y / 3) * 3 + (self.x / 3)
     }
 
     /// Returns the relative position (0-8) within the box.
     #[must_use]
+    #[inline]
     pub const fn box_cell_index(&self) -> u8 {
         (self.y % 3) * 3 + (self.x % 3)
     }
@@ -192,6 +198,7 @@ impl Position {
     ///
     /// Panics if `box_index` is greater than or equal to 9.
     #[must_use]
+    #[inline]
     pub const fn box_origin(box_index: u8) -> Self {
         assert!(box_index < 9);
         Self::new((box_index % 3) * 3, (box_index / 3) * 3)

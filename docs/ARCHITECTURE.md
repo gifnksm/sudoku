@@ -44,19 +44,17 @@ sudoku/
 
 **Design Decisions**:
 
+- **Semantics Pattern**: Type-safe indexing via generic containers
+  - See [Semantics Pattern](#semantics-pattern-type-safe-indexing) section below for details
+  - Zero runtime cost with compile-time type safety
+
 - **Two-Grid Architecture**: Separation of concerns between solving and simple data access
-  - `CandidateGrid`: Digit-centric interface optimized for constraint propagation and solving algorithms
-  - `DigitGrid`: Cell-centric interface for intuitive "what's in this cell?" queries
-    - Uses `Array81<Option<Digit>, PositionSemantics>` for type-safe cell storage
-    - Supports string parsing (`FromStr`) and formatting (`Display`)
-    - Provides conversion to/from `CandidateGrid`
-  - Allows each type to provide the most natural interface for its use case
+  - See [Two-Grid Architecture](#two-grid-architecture) section below for detailed analysis
+  - `CandidateGrid`: Digit-centric interface optimized for constraint propagation
+  - `DigitGrid`: Cell-centric interface for intuitive data access
 
-- **Type Safety via Semantics**: Generic containers prevent mixing incompatible index types at compile time
-
-- **Conversion Design**: One-way conversion from `DigitGrid` to `CandidateGrid` via `From` trait
-  - `CandidateGrid` → `DigitGrid` is intentionally not provided as `From` to avoid lossy conversions
-  - For extracting decided cells, use explicit methods when needed in higher-level crates
+- **Pure Data Structure Philosophy**: Core provides data structures only, no solving logic
+  - See [Core vs Solver Responsibilities](#core-vs-solver-responsibilities) section below
 
 For implementation details, see the [crate documentation](../crates/sudoku-core/src/lib.rs).
 
@@ -203,25 +201,87 @@ sudoku-app (desktop + web) (planned)
 
 ## Key Design Decisions
 
+### Semantics Pattern: Type-Safe Indexing
+
+**Decision**: Use generic containers parameterized by "semantics types" that define index/element mappings.
+
+**Problem**: In sudoku code, digits (1-9), positions (x,y), and cell indices (0-8) are all integers. Using raw arrays allows accidental misuse (e.g., indexing a digit array with a position).
+
+**Solution**: Generic containers (`Array9`, `Array81`, `BitSet9`, `BitSet81`) parameterized by semantics:
+
+- `BitSet9<DigitSemantics>` can only contain `Digit` elements
+- `Array81<T, PositionSemantics>` can only be indexed by `Position`
+- Type aliases for convenience: `DigitSet`, `DigitPositions`, `HouseMask`
+
+**Benefits**:
+
+- Compile-time type safety prevents index confusion
+- Generic implementations shared across all semantics (no code duplication)
+- Self-documenting code (type signature reveals purpose)
+- Zero runtime cost (PhantomData, inlined arithmetic)
+
+**Trade-offs**: More complex type signatures, but eliminates entire classes of bugs.
+
+For complete documentation, see the [Semantics Pattern section in sudoku-core](../crates/sudoku-core/src/lib.rs#L87-L250).
+
+---
+
 ### Two-Grid Architecture
 
 **Decision**: Use separate types for solving (`CandidateGrid`) and data exchange (`DigitGrid`).
 
-**Rationale**:
+**Problem**: Sudoku has two fundamentally different access patterns:
 
-- Solving algorithms need fast candidate tracking and constraint propagation (digit-centric view)
-- Simple data access needs intuitive "what's in this cell?" interface (cell-centric view)
-- Each grid type can be optimized for its specific use case without compromise
-- Clean separation prevents mixing solving logic with I/O concerns
-- `DigitGrid` provides human-friendly string parsing/formatting for puzzle I/O
+- **Solving**: "Where can digit X go?" (digit-centric, needs fast candidate tracking)
+- **Display/I/O**: "What's in cell (x,y)?" (cell-centric, needs simple access)
 
-**Trade-offs**:
+A single data structure optimized for one pattern performs poorly on the other.
 
-- Requires conversion between grid types (via `From`/`Into` traits)
-- Two types to maintain instead of one
-- Benefits: Better performance, cleaner API, easier to understand and test, natural interfaces for each use case
+**Solution**:
 
-### Separation of Solver Techniques
+- **`CandidateGrid`**: Digit-centric representation (`digit_positions[D5]` = bitset of possible positions)
+  - O(1) digit queries, fast constraint propagation via bitwise operations
+  - Optimized for solving techniques (hidden singles, naked pairs, etc.)
+- **`DigitGrid`**: Cell-centric representation (`cells[Position]` = `Option<Digit>`)
+  - O(1) cell access, natural string parsing/formatting
+  - Optimized for I/O and display
+
+**Conversion**: One-way `DigitGrid` → `CandidateGrid` via `From` trait. Reverse direction uses explicit methods (lossy conversion).
+
+**Benefits**:
+
+- Each type optimized for its access pattern (performance)
+- Clear separation of concerns (solving vs I/O)
+- Each type testable independently
+
+**Trade-offs**: Two types to maintain, but no compromise on performance or API clarity.
+
+---
+
+### Core vs Solver Responsibilities
+
+**Decision**: `sudoku-core` provides pure data structures only; no solving logic.
+
+**Separation**:
+
+- **Core provides**: Type definitions (`Digit`, `Position`), data structures (`CandidateGrid`, `DigitGrid`), low-level operations (`place()`, `remove_candidate()`), state validation (`is_consistent()`)
+- **Core does NOT provide**: Solving techniques (naked singles, hidden singles), search algorithms (backtracking), puzzle generation
+
+**Design Principle**: "Core provides mechanisms, Solver provides policies"
+
+- **Mechanism** (Core): How to place a digit and update candidates
+- **Policy** (Solver): When to place (e.g., when only one candidate remains)
+
+**Benefits**:
+
+- **Reusability**: Core can be used by different solver strategies (technique-based, backtracking, SAT, etc.)
+- **Testability**: Core operations tested independently of solving logic
+- **Maintainability**: Add new techniques without touching core
+- **Extensibility**: Supports sudoku variants (Killer, Irregular, X-sudoku) by composing core primitives
+
+**Trade-offs**: More crates to maintain, but clear separation of concerns and flexibility.
+
+### Technique-Based Solving Architecture
 
 **Decision**: Each solving technique is implemented as a separate module.
 

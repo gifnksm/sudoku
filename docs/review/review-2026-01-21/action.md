@@ -16,15 +16,15 @@
 
 ## アクション一覧
 
-| ID       | 優先度 | 依存               | ステータス | 概要                                   | 対応元                              |
-| -------- | ------ | ------------------ | ---------- | -------------------------------------- | ----------------------------------- |
-| ACTION-1 | 高     | -                  | [ ]        | Pure Data Structure 化（テスト追加含） | 問題2-1, 問題3-2, 問題5-1, 懸念2    |
-| ACTION-2 | 高     | -                  | [ ]        | ベンチマークの追加                     | 問題1-1                             |
-| ACTION-3 | 中     | ACTION-1, ACTION-2 | [ ]        | 双方向マッピングの実装                 | 問題1-1                             |
-| ACTION-4 | 中     | -                  | [ ]        | ドキュメント整備とコード改善           | 問題1-3, 問題3-1, 懸念1, 懸念3      |
-| ACTION-5 | 低     | -                  | [✓]        | Box::leak 修正                         | 問題2-2                             |
-| ACTION-6 | 中     | -                  | [✓]        | check_consistency API への置き換え     | 問題4-2                             |
-| ACTION-7 | 低     | -                  | [✓]        | BacktrackSolver のテスト調査           | 問題5-2                             |
+| ID       | 優先度 | 依存               | ステータス | 概要                                   | 対応元                           |
+| -------- | ------ | ------------------ | ---------- | -------------------------------------- | -------------------------------- |
+| ACTION-1 | 高     | -                  | [ ]        | Pure Data Structure 化（テスト追加含） | 問題2-1, 問題3-2, 問題5-1, 懸念2 |
+| ACTION-2 | 高     | -                  | [ ]        | ベンチマークの追加                     | 問題1-1                          |
+| ACTION-3 | 中     | ACTION-1, ACTION-2 | [ ]        | 双方向マッピングの実装                 | 問題1-1                          |
+| ACTION-4 | 中     | -                  | [✓]        | ドキュメント整備とコード改善           | 問題1-3, 問題3-1, 懸念1, 懸念3   |
+| ACTION-5 | 低     | -                  | [✓]        | Box::leak 修正                         | 問題2-2                          |
+| ACTION-6 | 中     | -                  | [✓]        | check_consistency API への置き換え     | 問題4-2                          |
+| ACTION-7 | 低     | -                  | [✓]        | BacktrackSolver のテスト調査           | 問題5-2                          |
 
 ---
 
@@ -46,18 +46,18 @@
 **なぜ Naked Single に制約伝播を組み込むか**:
 
 1. **TechniqueSolver の reset 戦略**:
-   - 任意の technique で変更があると、最初の technique（Naked Single）に戻る
-   - HiddenSingle で配置 → NakedSingle が実行 → 制約伝播が自動的に実行される
-   - すべての technique の後に Naked Single が実行されることが保証される
+    - 任意の technique で変更があると、最初の technique（Naked Single）に戻る
+    - HiddenSingle で配置 → NakedSingle が実行 → 制約伝播が自動的に実行される
+    - すべての technique の後に Naked Single が実行されることが保証される
 
 2. **Naked Single は fundamental technique**:
-   - 実用的なすべての Sudoku solver に含まれる
-   - 「確定セルを見つけ、その結果（制約伝播）を反映する」基盤 technique
-   - 他の technique は「どのセルが確定するか」を見つけるだけ
+    - 実用的なすべての Sudoku solver に含まれる
+    - 「確定セルを見つけ、その結果（制約伝播）を反映する」基盤 technique
+    - 他の technique は「どのセルが確定するか」を見つけるだけ
 
 3. **実装がシンプル**:
-   - 独立した `ConstraintPropagation` technique が不要
-   - technique リストの重複がない
+    - 独立した `ConstraintPropagation` technique が不要
+    - technique リストの重複がない
 
 ### 作業内容
 
@@ -69,17 +69,17 @@
 2. **Naked Single に制約伝播を組み込む**
     - ファイル: `crates/sudoku-solver/src/technique/naked_single.rs`
     - 変更: 確定セル（候補が1つ）を検出し、以下を実行:
-      1. `grid.place(pos, digit)` で配置（Pure 化後は制約伝播なし）
-      2. 手動で row/col/box から `digit` を除外
+        1. `grid.place(pos, digit)` で配置（Pure 化後は制約伝播なし）
+        2. 手動で row/col/box から `digit` を除外
 
-      ```rust
-         for row_pos in Position::ROWS[pos.y()] {
-             if row_pos != pos {
-                 grid.remove_candidate(row_pos, digit);
-             }
-         }
-         // col, box も同様
-         ```
+        ```rust
+           for row_pos in Position::ROWS[pos.y()] {
+               if row_pos != pos {
+                   grid.remove_candidate(row_pos, digit);
+               }
+           }
+           // col, box も同様
+        ```
 
 3. **`place_no_propagation` を削除**
     - Pure 化により不要になる
@@ -187,7 +187,7 @@
 
 - **優先度**: 中
 - **依存**: なし
-- **ステータス**: [進] 部分完了（1-(a) 完了、1-(b) 以降作業中）
+- **ステータス**: [完] 完了
 - **作業量**: 中
 - **対応元**: 問題1-3, 問題3-1, 懸念1, 懸念3
 
@@ -203,44 +203,48 @@
       すべての関連型（9ファイル、13の型/トレイト/エイリアス）からリンク
     - **コミット**: `7f7ea41` - docs(core): Add comprehensive Semantics Pattern documentation
 
-2. **classify_cells のコメント修正** ⬅️ **次はここから**
+2. **classify_cells のコメント修正** ✅ **完了**
     - bitwise DP アルゴリズムの詳細説明を追加
     - `cells[0] = FULL` から始める理由を明記
     - N個以上の候補を持つセルは追跡されないことを明記
+    - **実施内容**: doc commentとインラインコメントに詳細なアルゴリズム説明を追加
 
-#### `#[inline]` 属性の付与 🔄 **未着手**
+#### `#[inline]` 属性の付与 ✅ **完了**
 
-- `Array81` / `Array9` / `BitSet` の `Index` / `IndexMut` impl
-- `to_index` / `from_index` 等の変換関数
-- その他の小さな関数（Position の `box_index` など）
+- `Array81` / `Array9` / `BitSet81` の `Index` / `IndexMut` impl
+- `to_index` / `from_index` 等の変換関数（Index9/Index81のSemantics実装）
+- その他の小さな関数（Position の `new`, `x`, `y`, `box_index` など）
+- **実施内容**: 7ファイル（array_9.rs, array_81.rs, index_9.rs, index_81.rs, position.rs, bit_set_81.rs）に`#[inline]`を付与
 
-#### ARCHITECTURE.md の拡充 🔄 **未着手**
+#### ARCHITECTURE.md の拡充 ✅ **完了**
 
 1. **Semantics Pattern の詳細説明**
     - Index9, Index81, Array9, Array81 の型安全性
     - PositionSemantics, DigitSemantics の役割
     - バグ防止のメリット
-    - **注**: 現在 `lib.rs` に追加済み。`ARCHITECTURE.md` への移動または参照形式を検討
+    - **実施内容**: lib.rsへのリンクを含む簡潔な設計判断を追加
 
 2. **Two-grid Architecture の詳細化**
     - Digit-centric vs Cell-centric のトレードオフ
     - 各アプローチの性能特性
     - 設計判断の根拠
+    - **実施内容**: 問題・解決策・メリット・トレードオフを明確化
 
 3. **Core vs Solver の責務分離**
     - Pure Data Structure 化の意図
     - 制約ロジックの配置方針
     - 拡張性の考慮
+    - **実施内容**: "mechanisms vs policies"原則を含む設計判断を追加
 
 ### チェックリスト
 
 - [x] DigitGrid の doc comment 更新（クレートレベルに Semantics Pattern セクション追加）
-- [ ] classify_cells の実装コメント修正
-- [ ] `#[inline]` 属性の付与
-- [ ] ARCHITECTURE.md の存在確認と作成（必要に応じて）
-- [ ] ARCHITECTURE.md に Semantics Pattern の説明追加（または lib.rs からの参照）
-- [ ] ARCHITECTURE.md に Two-grid architecture の詳細追加
-- [ ] ARCHITECTURE.md に Core vs Solver の責務分離の説明追加
+- [x] classify_cells の実装コメント修正
+- [x] `#[inline]` 属性の付与
+- [x] ARCHITECTURE.md の存在確認と作成（必要に応じて）
+- [x] ARCHITECTURE.md に Semantics Pattern の説明追加（または lib.rs からの参照）
+- [x] ARCHITECTURE.md に Two-grid architecture の詳細追加
+- [x] ARCHITECTURE.md に Core vs Solver の責務分離の説明追加
 
 ---
 
@@ -287,30 +291,30 @@
 レイヤー間の依存関係を考慮し、以下のように実装：
 
 1. **`sudoku-core` に `ConsistencyError` を追加**
-   - `derive_more` を使用してエラー型を実装
-   - `SolverError` は solver レイヤーのエラー型なので core では使用できない
+    - `derive_more` を使用してエラー型を実装
+    - `SolverError` は solver レイヤーのエラー型なので core では使用できない
 
 2. **`check_consistency() -> Result<(), ConsistencyError>` を実装**
-   - `is_consistent()` の実装を基に、`Result` を返すAPIに変更
+    - `is_consistent()` の実装を基に、`Result` を返すAPIに変更
 
 3. **`sudoku-solver` に `From<ConsistencyError>` を実装**
-   - `ConsistencyError` が自動的に `SolverError::Contradiction` に変換される
-   - `?` オペレータで簡潔なエラーハンドリングが可能
+    - `ConsistencyError` が自動的に `SolverError::Contradiction` に変換される
+    - `?` オペレータで簡潔なエラーハンドリングが可能
 
 4. **`is_solved()` も `Result` 型に変更**
-   - 矛盾検出時はエラーを返すように改善
+    - 矛盾検出時はエラーを返すように改善
 
 5. **既存コードの置き換え**
-   - `if !grid.is_consistent() { return Err(...) }` → `grid.check_consistency()?`
-   - 冗長な `is_solved()` チェックを削除（technique solver内でチェック済み）
+    - `if !grid.is_consistent() { return Err(...) }` → `grid.check_consistency()?`
+    - 冗長な `is_solved()` チェックを削除（technique solver内でチェック済み）
 
 6. **`is_consistent()` を削除**
-   - `check_consistency()` に完全に置き換え
+    - `check_consistency()` に完全に置き換え
 
 7. **テストとドキュメントの追加**
-   - `ConsistencyError`, `check_consistency()`, `is_solved()` のドキュメント
-   - 各種テストケース（正常系/異常系）
-   - `From<ConsistencyError>` の変換テスト
+    - `ConsistencyError`, `check_consistency()`, `is_solved()` のドキュメント
+    - 各種テストケース（正常系/異常系）
+    - `From<ConsistencyError>` の変換テスト
 
 ### チェックリスト
 
@@ -356,21 +360,21 @@
 ### 追加したテスト
 
 1. **`test_multiple_solutions`** を拡張
-   - 2つの解が実際に異なることを検証
+    - 2つの解が実際に異なることを検証
 
 2. **`test_multiple_solutions_with_partial_grid`**
-   - 部分的に埋まったグリッドから複数解を生成
-   - 全ての解が有効で異なることを検証
-   - 元の配置が保持されることを確認
+    - 部分的に埋まったグリッドから複数解を生成
+    - 全ての解が有効で異なることを検証
+    - 元の配置が保持されることを確認
 
 3. **`test_backtracking_occurs`**
-   - バックトラックが必要な状況でassumptionsが記録されることを検証
+    - バックトラックが必要な状況でassumptionsが記録されることを検証
 
 4. **`test_backtrack_count_increments`**
-   - 複数解の探索中にバックトラックカウントが追跡されることを確認
+    - 複数解の探索中にバックトラックカウントが追跡されることを確認
 
 5. **`test_solution_is_complete`**
-   - 解が完全（全81セル）であることを検証
+    - 解が完全（全81セル）であることを検証
 
 ### チェックリスト
 
