@@ -36,37 +36,47 @@
 
 ## 対応状況サマリー
 
-| ステータス | 件数 | 内容                                                                            |
-| ---------- | ---- | ------------------------------------------------------------------------------- |
-| 未着手     | 4    | ACTION-1 ～ ACTION-3, ACTION-7                                                  |
-| 完了       | 3    | ACTION-4 (ドキュメント整備), ACTION-5 (Box::leak), ACTION-6 (check_consistency) |
+| ステータス | 件数 |
+| ---------- | ---- |
+| 未着手     | 2    |
+| 完了       | 5    |
 
 ### 優先度別
 
-| 優先度 | 件数 | アクション                                                         |
-| ------ | ---- | ------------------------------------------------------------------ |
-| 高     | 2    | ACTION-1 (Core の Pure Data Structure 化), ACTION-2 (ベンチマーク) |
-| 中     | 1    | ACTION-3 (双方向マッピング)                                        |
+| 優先度 | 件数 |
+| ------ | ---- |
+| 高     | 1    |
+| 中     | 1    |
 
 ### 次のステップ
 
-**Phase 1** として、以下のアクションから着手できます（並行作業可能）：
+次に着手すべきアクション：
 
-- ACTION-1: Core の Pure Data Structure 化（テスト追加含む）
-- ACTION-2: ベンチマークの追加
+- **ACTION-2**: ベンチマークの追加（高優先度）
+  - `candidates_at` の呼び出しコストを測定
+  - ACTION-3 の実装要否を判断するための材料
 
-**Phase 2** (ACTION-1, ACTION-2 完了後):
+その後（ACTION-2 の結果に基づいて）：
 
-- ACTION-3: 双方向マッピングの実装（パフォーマンス最適化）
+- **ACTION-3**: 双方向マッピングの実装（中優先度）
+  - ベンチマーク結果でボトルネックと判明した場合のみ実施
 
-**完了済み**:
+詳細な作業順序は [`action.md`](./action.md) の「推奨作業順序」セクションを参照してください。
 
-- ✅ ACTION-4: ドキュメント整備とコード改善
+### 完了済み
+
+- ✅ ACTION-1: Pure Data Structure 化（2026-01-23）
+  - `CandidateGrid::place` から制約伝播を削除
+  - `NakedSingle::apply` に制約伝播を追加
+  - `place_no_propagation` 等を削除
+  - `BacktrackSolver::pure_backtrack()` を `without_techniques()` にリネーム
+  - `docs/ARCHITECTURE.md` を更新
+- ✅ ACTION-4: ドキュメント整備とコード改善（2026-01-22）
   - classify_cells のコメント修正（bitwise DP アルゴリズム説明）
   - `#[inline]` 属性の付与（7ファイル、パフォーマンス最適化）
   - ARCHITECTURE.md の拡充（Semantics Pattern, Two-grid, Core vs Solver）
-- ✅ ACTION-5: Box::leak 修正（テストコードの品質改善）
-- ✅ ACTION-6: check_consistency API への置き換え（エラーハンドリング改善）
-- ✅ ACTION-7: BacktrackSolver のテスト調査（テストカバレッジ確認）
+- ✅ ACTION-5: Box::leak 修正（2026-01-22）
+- ✅ ACTION-6: check_consistency API への置き換え（2026-01-22）
+- ✅ ACTION-7: BacktrackSolver のテスト調査（2026-01-22）
 
 詳細は [`action.md`](./action.md) を参照してください。

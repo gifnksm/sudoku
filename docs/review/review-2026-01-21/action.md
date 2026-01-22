@@ -18,7 +18,7 @@
 
 | ID       | 優先度 | 依存               | ステータス | 概要                                   | 対応元                           |
 | -------- | ------ | ------------------ | ---------- | -------------------------------------- | -------------------------------- |
-| ACTION-1 | 高     | -                  | [ ]        | Pure Data Structure 化（テスト追加含） | 問題2-1, 問題3-2, 問題5-1, 懸念2 |
+| ACTION-1 | 高     | -                  | [✓]        | Pure Data Structure 化（テスト追加含） | 問題2-1, 問題3-2, 問題5-1, 懸念2 |
 | ACTION-2 | 高     | -                  | [ ]        | ベンチマークの追加                     | 問題1-1                          |
 | ACTION-3 | 中     | ACTION-1, ACTION-2 | [ ]        | 双方向マッピングの実装                 | 問題1-1                          |
 | ACTION-4 | 中     | -                  | [✓]        | ドキュメント整備とコード改善           | 問題1-3, 問題3-1, 懸念1, 懸念3   |
@@ -32,7 +32,7 @@
 
 - **優先度**: 高（ブロッカー）
 - **依存**: なし
-- **ステータス**: [ ]
+- **ステータス**: [✓]
 - **作業量**: 大
 - **対応元**: 問題2-1, 懸念2
 
@@ -96,13 +96,15 @@
 
 ### チェックリスト
 
-- [ ] `CandidateGrid::place` の実装変更（制約伝播の削除）
-- [ ] `NakedSingle::apply` の実装変更（制約伝播の追加）
-- [ ] `place_no_propagation` の削除
-- [ ] `CandidateGrid` のテスト更新
-- [ ] `NakedSingle` のテスト更新（制約伝播の検証）
-- [ ] 既存の統合テストが通ることを確認
-- [ ] ドキュメントの更新（Pure Data Structure の説明）
+- [x] `CandidateGrid::place` の実装変更（制約伝播の削除）
+- [x] `NakedSingle::apply` の実装変更（制約伝播の追加）
+- [x] `place_no_propagation` の削除
+- [x] `CandidateGrid` のテスト更新
+- [x] `NakedSingle` のテスト更新（制約伝播の検証）
+- [x] 既存の統合テストが通ることを確認
+- [x] ドキュメントの更新（Pure Data Structure の説明）
+- [x] `BacktrackSolver::pure_backtrack()` を `without_techniques()` にリネーム（"pure" 用語の混同を回避）
+- [x] `docs/ARCHITECTURE.md` の更新（constraint propagation 関連の記述を修正）
 
 ---
 
@@ -389,32 +391,30 @@
 
 ## 推奨作業順序
 
-### Phase 1: 高優先度タスク（並行作業可能）
+### Phase 1: 高優先度タスク（ACTION-1 完了後）
 
-以下は互いに依存せず、並行して作業できます：
-
-- **ACTION-1**: Core を Pure Data Structure 化
-  - 問題3-2（NakedSingle の実装変更）を含む
-  - 問題5-1（テストコードの修正）を含む
 - **ACTION-2**: ベンチマークの追加（ACTION-3 の判断材料）
 
 ### Phase 2: ベンチマーク結果に基づく判断
 
-ACTION-1 と ACTION-2 の完了後：
+ACTION-2 の完了後：
 
 - ACTION-2 のベンチマーク結果を評価
 - 必要であれば **ACTION-3** (双方向マッピング) を実装
 
 ### 完了済み
 
-- ✅ ACTION-4: ドキュメント整備とコード改善
-- ✅ ACTION-5: Box::leak 修正
-- ✅ ACTION-6: check_consistency API への置き換え
-- ✅ ACTION-7: BacktrackSolver のテスト調査
+- ✅ ACTION-1: Pure Data Structure 化（2026-01-23）
+- ✅ ACTION-4: ドキュメント整備とコード改善（2026-01-22）
+- ✅ ACTION-5: Box::leak 修正（2026-01-22）
+- ✅ ACTION-6: check_consistency API への置き換え（2026-01-22）
+- ✅ ACTION-7: BacktrackSolver のテスト調査（2026-01-22）
 
 ---
 
 ## 対応履歴
+
+**注**: 新しいものほど下に記載されています（時系列順）。
 
 - **2026-01-22**: ACTION-5 完了（Box::leak 修正）
   - `crates/sudoku-generator/src/lib.rs` のテストコードから `Box::leak` を削除
@@ -457,3 +457,15 @@ ACTION-1 と ACTION-2 の完了後：
   - 重複テスト4件を削除（`test_is_consistent_*`）
   - `lib.rs` のドキュメント例を `check_consistency().is_ok()` に更新
   - コミット: `69ca2b4` - refactor(core): remove deprecated is_consistent() method
+
+- **2026-01-23**: ACTION-1 完了（Pure Data Structure 化）
+  - `CandidateGrid::place` から制約伝播を削除（配置セルの候補のみを更新）
+  - `NakedSingle::apply` に制約伝播を追加（row/column/box からの候補除外）
+  - `place_no_propagation`, `from_digit_grid_no_propagation`, `from_str_no_propagation` を削除
+  - テストを更新（propagation 関連のテストを削除、decided_cells テストを追加）
+  - **最終確認作業で追加対応**:
+    - `BacktrackSolver::pure_backtrack()` を `without_techniques()` にリネーム
+      - 理由: "pure" という用語が ACTION-1 の "Pure Data Structure" と混同されるため
+      - "pure backtracking" → "backtracking without techniques" に変更
+    - `docs/ARCHITECTURE.md` を更新（3箇所の constraint propagation 関連記述を修正）
+  - コミット: `eab41ed`
