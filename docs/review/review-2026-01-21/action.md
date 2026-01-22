@@ -39,25 +39,54 @@
 ### Pure Data Structure 化とは
 
 `CandidateGrid` から Sudoku のルール（制約伝播）を削除し、単なる「候補の状態管理」のみを行うデータ構造にする。
-制約伝播は Solver/Technique 層で明示的に実行する設計に変更する。
+制約伝播は **Naked Single technique** に組み込む。
+
+### 設計の根拠
+
+**なぜ Naked Single に制約伝播を組み込むか**:
+
+1. **TechniqueSolver の reset 戦略**:
+   - 任意の technique で変更があると、最初の technique（Naked Single）に戻る
+   - HiddenSingle で配置 → NakedSingle が実行 → 制約伝播が自動的に実行される
+   - すべての technique の後に Naked Single が実行されることが保証される
+
+2. **Naked Single は fundamental technique**:
+   - 実用的なすべての Sudoku solver に含まれる
+   - 「確定セルを見つけ、その結果（制約伝播）を反映する」基盤 technique
+   - 他の technique は「どのセルが確定するか」を見つけるだけ
+
+3. **実装がシンプル**:
+   - 独立した `ConstraintPropagation` technique が不要
+   - technique リストの重複がない
 
 ### 作業内容
 
-1. `CandidateGrid::place` から制約伝播を削除
+1. **`CandidateGrid::place` から制約伝播を削除**
     - ファイル: `crates/sudoku-core/src/candidate_grid.rs`
-    - 変更: セル自身の候補削除のみを行う
+    - 変更: セル自身の候補削除のみを行う（他のセルに影響しない）
+    - メソッド名は `place` のまま維持
 
-2. 制約伝播を `NakedSingle` technique に組み込む
+2. **Naked Single に制約伝播を組み込む**
     - ファイル: `crates/sudoku-solver/src/technique/naked_single.rs`
-    - 変更: digit 配置後に row/col/box から候補を削除
-    - **なぜ NakedSingle に組み込むか**: 制約伝播（確定したセルの候補を周囲から除外）は、実質的に Naked Single の一部である。他の Technique は propagation を意識せず、Naked Single の繰り返し適用で自然に伝播する。
+    - 変更: 確定セル（候補が1つ）を検出し、以下を実行:
+      1. `grid.place(pos, digit)` で配置（Pure 化後は制約伝播なし）
+      2. 手動で row/col/box から `digit` を除外
 
-3. `place_no_propagation` を削除
-    - 制約伝播がなくなれば、このメソッドは不要になる
+      ```rust
+         for row_pos in Position::ROWS[pos.y()] {
+             if row_pos != pos {
+                 grid.remove_candidate(row_pos, digit);
+             }
+         }
+         // col, box も同様
+         ```
 
-4. テストの修正
+3. **`place_no_propagation` を削除**
+    - Pure 化により不要になる
+
+4. **テストの修正**
     - `place_no_propagation` の使用箇所を `place` に書き換え
-    - 制約伝播のタイミングが変わるため、テストを調整
+    - Naked Single のテストを更新（制約伝播を検証）
 
 ### 影響範囲
 
@@ -67,12 +96,13 @@
 
 ### チェックリスト
 
-- [ ] `CandidateGrid::place` の実装変更
-- [ ] `NakedSingle::apply` の実装変更
+- [ ] `CandidateGrid::place` の実装変更（制約伝播の削除）
+- [ ] `NakedSingle::apply` の実装変更（制約伝播の追加）
 - [ ] `place_no_propagation` の削除
-- [ ] テストコードの `place_no_propagation` 使用箇所を `place` に書き換え
-- [ ] 既存テストの修正（制約伝播のタイミング変更への対応）
-- [ ] ドキュメントの更新
+- [ ] `CandidateGrid` のテスト更新
+- [ ] `NakedSingle` のテスト更新（制約伝播の検証）
+- [ ] 既存の統合テストが通ることを確認
+- [ ] ドキュメントの更新（Pure Data Structure の説明）
 
 ---
 

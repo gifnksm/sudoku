@@ -166,7 +166,12 @@
   - **Pure Data Structure 化とは**:
     - `CandidateGrid` から Sudoku のルール（制約伝播）を削除
     - 単なる「候補の状態管理」のみを行うデータ構造にする
-    - 制約伝播は Solver/Technique 層で明示的に実行
+    - 制約伝播は **Naked Single technique** に組み込む
+  - **なぜ Naked Single に制約伝播を組み込むか**:
+    - TechniqueSolver の reset 戦略: 任意の technique で変更があると、最初の technique（Naked Single）に戻る
+    - HiddenSingle で配置 → NakedSingle が実行 → 制約伝播が自動的に実行される
+    - すべての technique の後に Naked Single が実行されることが保証される
+    - Naked Single は fundamental technique であり、実用的なすべての Sudoku solver に含まれる
 - **対応方針**:
   1. Core を Pure Data Structure 化
      - `place` から propagation を削除（この位置の他候補を削除のみ）
@@ -174,9 +179,10 @@
      - `remove_candidate` は既存のまま
      - `place_no_propagation` は削除（不要になる）
   2. Solver 側で constraint propagation を実装
-     - **Naked Singles に組み込む**（配置後に propagation を実行）
+     - **Naked Single に組み込む**（配置後に propagation を実行）
+     - 確定セル検出後: `grid.place(pos, digit)` で配置 → 手動で row/col/box から `digit` を除外
      - 理由: 制約伝播は実質的に Naked Single の一部（確定したセルの候補を周囲から除外）
-     - 他の Technique は propagation を意識不要（Naked Singles の繰り返し適用で自然に伝播）
+     - 他の Technique は propagation を意識不要（Naked Single の繰り返し適用で自然に伝播）
   3. テストを更新（`place_no_propagation` → `place`）
 - **優先度**: 高（問題 1-1 の前提条件、移行コストは想定より低い）
 - **依存関係**: この問題を先に解決することで、問題 1-1 の実装が簡単になる
