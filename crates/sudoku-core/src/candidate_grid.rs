@@ -12,12 +12,18 @@ use crate::{
 
 /// A set of sudoku digits (1-9).
 ///
-/// A specialized [`BitSet9`] using [`DigitSemantics`].
+/// A specialized [`BitSet9`] using [`DigitSemantics`], providing type-safe set operations
+/// on digits through the [Semantics Pattern](crate#semantics-pattern-type-safe-indexing).
+///
+/// See the [crate-level documentation](crate#semantics-pattern-type-safe-indexing) for details.
 pub type DigitSet = BitSet9<DigitSemantics>;
 
 /// A set of grid positions.
 ///
-/// A specialized [`BitSet81`] using [`PositionSemantics`].
+/// A specialized [`BitSet81`] using [`PositionSemantics`], providing type-safe set operations
+/// on positions through the [Semantics Pattern](crate#semantics-pattern-type-safe-indexing).
+///
+/// See the [crate-level documentation](crate#semantics-pattern-type-safe-indexing) for details.
 pub type DigitPositions = BitSet81<PositionSemantics>;
 
 impl DigitPositions {
@@ -178,7 +184,10 @@ impl DigitPositions {
 
 /// A set of cell indices (0-8) within a house (row, column, or box).
 ///
-/// A specialized [`BitSet9`] using [`CellIndexSemantics`].
+/// A specialized [`BitSet9`] using [`CellIndexSemantics`], providing type-safe set operations
+/// on cell indices through the [Semantics Pattern](crate#semantics-pattern-type-safe-indexing).
+///
+/// See the [crate-level documentation](crate#semantics-pattern-type-safe-indexing) for details.
 pub type HouseMask = BitSet9<CellIndexSemantics>;
 
 /// Candidate grid for sudoku solving.
@@ -186,6 +195,9 @@ pub type HouseMask = BitSet9<CellIndexSemantics>;
 /// Manages possible placements for each digit (1-9) across the entire 9x9 grid.
 /// Internally stores 9 [`DigitPositions`] (one per digit), each tracking the 81 grid
 /// positions where that digit can be placed.
+///
+/// The internal representation uses [`Array9`] with [`DigitSemantics`] to ensure
+/// type-safe indexing through the [Semantics Pattern](crate#semantics-pattern-type-safe-indexing).
 ///
 /// Used for detecting Hidden Singles, Naked Singles, and other solving techniques.
 ///

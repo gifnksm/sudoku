@@ -62,16 +62,22 @@ impl Index9 {
 /// to work with different value types and mappings. Implementors define how user-facing
 /// values are converted to and from internal indices (0-8).
 ///
+/// This trait is the foundation of the [Semantics Pattern](crate#semantics-pattern-type-safe-indexing),
+/// providing compile-time type safety for 9-element containers.
+///
 /// This trait is used by:
 /// - [`BitSet9`] - 9-bit sets
-/// - (Future) `Array9` - 9-element arrays with semantic indexing
+/// - [`Array9`] - 9-element arrays with semantic indexing
 ///
 /// [`BitSet9`]: crate::containers::BitSet9
+/// [`Array9`]: crate::containers::Array9
 ///
 /// # Common Implementations
 ///
 /// - [`DigitSemantics`] - Maps digits 1-9 to indices 0-8
 /// - [`CellIndexSemantics`] - Direct 0-8 mapping
+///
+/// See the [crate-level documentation](crate#semantics-pattern-type-safe-indexing) for details.
 ///
 /// # Examples
 ///
@@ -112,7 +118,8 @@ pub trait Index9Semantics {
 /// Semantics for digits 1-9.
 ///
 /// This type implements [`Index9Semantics`]
-/// to map user-facing digit values (1-9) to internal bit indices (0-8).
+/// to map user-facing digit values (1-9) to internal bit indices (0-8),
+/// providing type safety through the [Semantics Pattern](crate#semantics-pattern-type-safe-indexing).
 ///
 /// This is the standard semantics for sudoku digits, where digit 1 maps to
 /// index 0, digit 2 to index 1, and so on.
@@ -159,7 +166,8 @@ impl Index9Semantics for DigitSemantics {
 /// Semantics for cell indices (0-8) within a house.
 ///
 /// This type implements [`Index9Semantics`] with a direct identity mapping
-/// where values 0-8 map to indices 0-8.
+/// where values 0-8 map to indices 0-8, providing type safety through the
+/// [Semantics Pattern](crate#semantics-pattern-type-safe-indexing).
 ///
 /// This is useful for representing positions within a sudoku house (row, column, or box),
 /// where cells are naturally indexed 0-8.

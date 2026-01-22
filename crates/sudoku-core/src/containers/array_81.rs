@@ -23,6 +23,10 @@ use crate::index::Index81Semantics;
 /// This allows natural domain-specific indexing, such as using [`Position`] to
 /// index cells in a Sudoku grid.
 ///
+/// The `S` parameter provides **compile-time type safety** through the
+/// [Semantics Pattern](crate#semantics-pattern-type-safe-indexing), preventing
+/// accidental use of incorrect index types.
+///
 /// [`Position`]: crate::Position
 ///
 /// # Type Parameters
@@ -44,6 +48,8 @@ use crate::index::Index81Semantics;
 ///
 /// assert_eq!(grid[pos], 42);
 /// ```
+///
+/// See the [crate-level documentation](crate#semantics-pattern-type-safe-indexing) for details.
 pub struct Array81<T, S>
 where
     S: Index81Semantics,

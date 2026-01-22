@@ -59,17 +59,23 @@ impl Index81 {
 /// to work with different value types and mappings. Implementors define how user-facing
 /// values are converted to and from internal indices (0-80).
 ///
+/// This trait is the foundation of the [Semantics Pattern](crate#semantics-pattern-type-safe-indexing),
+/// providing compile-time type safety for 81-element containers.
+///
 /// This trait is used by:
 /// - [`BitSet81`] - 81-bit sets
-/// - (Future) `Array81` - 81-element arrays with semantic indexing
+/// - [`Array81`] - 81-element arrays with semantic indexing
 ///
 /// [`BitSet81`]: crate::containers::BitSet81
+/// [`Array81`]: crate::containers::Array81
 ///
 /// # Common Implementations
 ///
 /// - [`PositionSemantics`] - Maps [`Position`] to row-major indices
 ///
 /// [`Position`]: crate::Position
+///
+/// See the [crate-level documentation](crate#semantics-pattern-type-safe-indexing) for details.
 ///
 /// # Examples
 ///
@@ -112,7 +118,8 @@ pub trait Index81Semantics {
 /// Semantics for board positions.
 ///
 /// This type implements [`Index81Semantics`] to map
-/// [`Position`] coordinates to row-major indices (index = y * 9 + x).
+/// [`Position`] coordinates to row-major indices (index = y * 9 + x),
+/// providing type safety through the [Semantics Pattern](crate#semantics-pattern-type-safe-indexing).
 ///
 /// This is the standard semantics for sudoku board positions, where a position
 /// at (x, y) maps to index y * 9 + x (row-major order).

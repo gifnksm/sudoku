@@ -21,6 +21,10 @@ use crate::index::{Index9, Index9Semantics};
 /// The specific semantics of the elements are determined by the `S` type parameter,
 /// which must implement [`Index9Semantics`].
 ///
+/// The `S` parameter provides **compile-time type safety** through the
+/// [Semantics Pattern](crate#semantics-pattern-type-safe-indexing), preventing
+/// accidental use of incorrect element types in set operations.
+///
 /// # Type Parameters
 ///
 /// * `S` - The semantics implementation (from [`index`] module)
@@ -35,7 +39,9 @@ use crate::index::{Index9, Index9Semantics};
 /// [`DigitSet`]: crate::DigitSet
 /// [`DigitSemantics`]: crate::index::DigitSemantics
 ///
-/// For information on defining custom semantics, see [`Index9Semantics`].
+/// For defining custom semantics, see [`Index9Semantics`].
+///
+/// See the [crate-level documentation](crate#semantics-pattern-type-safe-indexing) for details.
 pub struct BitSet9<S>
 where
     S: Index9Semantics,

@@ -21,6 +21,10 @@ use crate::index::{Index81, Index81Semantics};
 /// The specific semantics of the elements are determined by the `S` type parameter,
 /// which must implement [`Index81Semantics`].
 ///
+/// The `S` parameter provides **compile-time type safety** through the
+/// [Semantics Pattern](crate#semantics-pattern-type-safe-indexing), preventing
+/// accidental use of incorrect element types in set operations.
+///
 /// # Type Parameters
 ///
 /// * `S` - The semantics implementation (from [`index`] module)
@@ -36,7 +40,9 @@ use crate::index::{Index81, Index81Semantics};
 /// [`DigitPositions`]: crate::DigitPositions
 /// [`Position`]: crate::Position
 ///
-/// For information on defining custom semantics, see [`Index81Semantics`].
+/// For defining custom semantics, see [`Index81Semantics`].
+///
+/// See the [crate-level documentation](crate#semantics-pattern-type-safe-indexing) for details.
 pub struct BitSet81<S>
 where
     S: Index81Semantics,

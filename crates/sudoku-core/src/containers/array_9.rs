@@ -23,6 +23,10 @@ use crate::index::Index9Semantics;
 /// This allows natural domain-specific indexing, such as using digits 1-9 instead
 /// of raw indices 0-8.
 ///
+/// The `S` parameter provides **compile-time type safety** through the
+/// [Semantics Pattern](crate#semantics-pattern-type-safe-indexing), preventing
+/// accidental use of incorrect index types.
+///
 /// # Type Parameters
 ///
 /// * `T` - The element type stored in the array
@@ -43,6 +47,8 @@ use crate::index::Index9Semantics;
 /// assert_eq!(counts[Digit::D1], 10);
 /// assert_eq!(counts[Digit::D9], 20);
 /// ```
+///
+/// See the [crate-level documentation](crate#semantics-pattern-type-safe-indexing) for details.
 pub struct Array9<T, S>
 where
     S: Index9Semantics,

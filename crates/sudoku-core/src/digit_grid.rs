@@ -12,6 +12,14 @@ use crate::{CandidateGrid, Digit, Position, containers::Array81, index::Position
 /// `DigitGrid` provides an intuitive interface for storing and accessing digits
 /// in a Sudoku puzzle. Each cell can either contain a digit (1-9) or be empty.
 ///
+/// # Type-Safe Indexing
+///
+/// `DigitGrid` uses [`Array81<Option<Digit>, PositionSemantics>`][Array81] to provide
+/// **compile-time safety** through the [Semantics Pattern](crate#semantics-pattern-type-safe-indexing),
+/// ensuring cells can only be indexed by [`Position`].
+///
+/// See the [crate-level documentation](crate#semantics-pattern-type-safe-indexing) for details.
+///
 /// # Examples
 ///
 /// ```
@@ -31,6 +39,8 @@ use crate::{CandidateGrid, Digit, Position, containers::Array81, index::Position
 ///
 /// let grid: DigitGrid = "123456789........................................................................".parse().unwrap();
 /// ```
+///
+/// [Array81]: crate::containers::Array81
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct DigitGrid {
     cells: Array81<Option<Digit>, PositionSemantics>,
