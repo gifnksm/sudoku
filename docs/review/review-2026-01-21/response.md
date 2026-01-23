@@ -66,15 +66,21 @@
     - メモリ効率（単方向マッピングのみ）
   - パフォーマンス測定: 未実施（ベンチマーク追加が必要）
 - **対応方針**:
-  1. **前提作業**: `find_best_assumption` の共通化（共通化方法は要検討）
-  2. **ベンチマークを追加し、`candidates_at` の呼び出しコストがボトルネックか確認**
-     - ベンチマークフレームワークの選定（要検討、選択肢の例: Criterion.rs, cargo bench, Divan など）
-     - 測定対象: `candidates_at` 単体、`find_best_assumption`、エンドツーエンド（パズル生成・解決）
-     - 一般的なベンチマークの追加も検討（今後の最適化に有用）
-  3. **判断基準**: エンドツーエンドで 10% 以上の改善が見込めれば ACTION-3 を実施
-  4. 必要と判断された場合、双方向マッピング（`cell_candidates: Array81<DigitSet, PositionSemantics>`）を実装
-  5. `place`/`remove_candidate`で同期を取る（propagation がない方が実装が簡単）
-  6. ベンチマークで効果測定
+  1. **前提作業**: `find_best_assumption` の共通化
+     - **決定**: `sudoku-solver/src/backtrack.rs` に新規モジュールを作成し、`pub mod backtrack` として公開
+     - 関数名: `find_best_assumption` (元の名前を維持)
+  2. **テクニックセットの固定**: `fundamental_techniques()` 関数を追加
+     - 将来テクニックが追加されても、ベンチマーク結果の意味が変わらないようにする
+     - `TechniqueSolver::with_fundamental_techniques()` と `BacktrackSolver::with_fundamental_techniques()` を追加
+  3. **ベンチマークを追加し、`candidates_at` の呼び出しコストがボトルネックか確認**
+     - **決定**: Criterion.rs を使用（統計的分析、HTMLレポート、回帰検出が可能）
+     - 測定対象: `find_best_assumption` 単体、エンドツーエンド（パズル生成・解決）
+     - バックトラック回数も記録（性能への寄与を分析）
+     - テストデータ: `PuzzleGenerator` で生成（seed 固定、現在のテクニックで解けるパズル）
+  4. **判断基準**: エンドツーエンドで 10% 以上の改善が見込めれば ACTION-3 を実施
+  5. 必要と判断された場合、双方向マッピング（`cell_candidates: Array81<DigitSet, PositionSemantics>`）を実装
+  6. `place`/`remove_candidate`で同期を取る（propagation がない方が実装が簡単）
+  7. ベンチマークで効果測定
 - **優先度**: 高（初期段階なので破壊的変更の影響が小さい。パズル生成の性能に効く）
 - **依存関係**: 問題 2-1 (完了済み) - Pure Data Structure 化により実装が簡単になる
 - **関連Issue/PR**:
@@ -82,6 +88,7 @@
   - ACTION-1 完了により、propagation がないため双方向マッピングの同期ロジックがシンプルになった
   - 実装コスト: メモリ +91バイト、コード複雑度増加（双方向同期）、メンテナンス負担増
   - 呼び出し頻度が想定より低い（`find_best_assumption` のみ）ため、改善効果は限定的な可能性
+  - 検討事項の決定完了（2026-01-22）: 詳細は [ACTION-2](./action.md#action-2-ベンチマークの追加) 参照
 
 **→ 対応: [ACTION-2](./action.md#action-2-ベンチマークの追加), [ACTION-3](./action.md#action-3-双方向マッピングの実装)**
 

@@ -46,47 +46,47 @@
 **なぜ Naked Single に制約伝播を組み込むか**:
 
 1. **TechniqueSolver の reset 戦略**:
-    - 任意の technique で変更があると、最初の technique（Naked Single）に戻る
-    - HiddenSingle で配置 → NakedSingle が実行 → 制約伝播が自動的に実行される
-    - すべての technique の後に Naked Single が実行されることが保証される
+   - 任意の technique で変更があると、最初の technique（Naked Single）に戻る
+   - HiddenSingle で配置 → NakedSingle が実行 → 制約伝播が自動的に実行される
+   - すべての technique の後に Naked Single が実行されることが保証される
 
 2. **Naked Single は fundamental technique**:
-    - 実用的なすべての Sudoku solver に含まれる
-    - 「確定セルを見つけ、その結果（制約伝播）を反映する」基盤 technique
-    - 他の technique は「どのセルが確定するか」を見つけるだけ
+   - 実用的なすべての Sudoku solver に含まれる
+   - 「確定セルを見つけ、その結果（制約伝播）を反映する」基盤 technique
+   - 他の technique は「どのセルが確定するか」を見つけるだけ
 
 3. **実装がシンプル**:
-    - 独立した `ConstraintPropagation` technique が不要
-    - technique リストの重複がない
+   - 独立した `ConstraintPropagation` technique が不要
+   - technique リストの重複がない
 
 ### 作業内容
 
 1. **`CandidateGrid::place` から制約伝播を削除**
-    - ファイル: `crates/sudoku-core/src/candidate_grid.rs`
-    - 変更: セル自身の候補削除のみを行う（他のセルに影響しない）
-    - メソッド名は `place` のまま維持
+   - ファイル: `crates/sudoku-core/src/candidate_grid.rs`
+   - 変更: セル自身の候補削除のみを行う（他のセルに影響しない）
+   - メソッド名は `place` のまま維持
 
 2. **Naked Single に制約伝播を組み込む**
-    - ファイル: `crates/sudoku-solver/src/technique/naked_single.rs`
-    - 変更: 確定セル（候補が1つ）を検出し、以下を実行:
-        1. `grid.place(pos, digit)` で配置（Pure 化後は制約伝播なし）
-        2. 手動で row/col/box から `digit` を除外
+   - ファイル: `crates/sudoku-solver/src/technique/naked_single.rs`
+   - 変更: 確定セル（候補が1つ）を検出し、以下を実行:
+     1. `grid.place(pos, digit)` で配置（Pure 化後は制約伝播なし）
+     2. 手動で row/col/box から `digit` を除外
 
-        ```rust
-           for row_pos in Position::ROWS[pos.y()] {
-               if row_pos != pos {
-                   grid.remove_candidate(row_pos, digit);
-               }
-           }
-           // col, box も同様
-        ```
+     ```rust
+        for row_pos in Position::ROWS[pos.y()] {
+            if row_pos != pos {
+                grid.remove_candidate(row_pos, digit);
+            }
+        }
+        // col, box も同様
+     ```
 
 3. **`place_no_propagation` を削除**
-    - Pure 化により不要になる
+   - Pure 化により不要になる
 
 4. **テストの修正**
-    - `place_no_propagation` の使用箇所を `place` に書き換え
-    - Naked Single のテストを更新（制約伝播を検証）
+   - `place_no_propagation` の使用箇所を `place` に書き換え
+   - Naked Single のテストを更新（制約伝播を検証）
 
 ### 影響範囲
 
@@ -149,53 +149,181 @@
   - `sudoku-generator/src/lib.rs` と `sudoku-solver/src/backtrack_solver.rs` に同じ実装が存在
   - ベンチマーク追加前に共通化が必要（共通化方法は要検討）
 
-### 検討事項
+### 検討事項と決定事項
 
-#### ベンチマークフレームワークの選定
+#### 1. ベンチマークフレームワークの選定
 
-ベンチマークフレームワークを選定する必要がある。
+**決定**: **Criterion.rs** を使用
 
-選択肢の例：Criterion.rs, cargo bench, Divan など
+**理由**:
 
-**TODO**: どのフレームワークを使用するか決定する
+- Rust エコシステムで最も広く使われている（tokio, serde, regex など）
+- 統計的分析が充実（平均、中央値、標準偏差、外れ値検出）
+- HTMLレポート生成（グラフ付き）
+- ベースラインとの比較機能、回帰検出
+- stable Rust で動作
+- 将来的に CI での追跡も可能
 
-#### その他の検討事項
+**トレードオフ**: 実行時間が長い（統計的信頼性のため）が、10%の改善を検出するには必要な精度
 
-- テストデータの準備方法（既存のテストから流用、新規作成、など）
-- ベンチマーク項目の具体的な設計（関数名、パラメータなど）
-- プロファイリング方法の選定
-- 結果の記録形式
+#### 2. `find_best_assumption` の共通化方法
+
+**決定**: `sudoku-solver` クレートに新しい `backtrack` モジュールを作成し、公開する
+
+**配置**:
+
+- ファイル: `sudoku-solver/src/backtrack.rs` (新規作成)
+- 公開: `pub mod backtrack` として公開（re-export なし）
+- 関数名: `find_best_assumption` (元の名前を維持)
+- 使用例: `sudoku_solver::backtrack::find_best_assumption(&grid)`
+
+**理由**:
+
+- `sudoku-generator` は既に `sudoku-solver` に依存している
+- バックトラック探索のヒューリスティックは「解決アルゴリズム」の一部
+- モジュール名前空間により、関数名の文脈が明確になる
+- 将来的に他のバックトラック関連ユーティリティも追加可能
+
+#### 3. ベンチマーク対象の選定原則
+
+**決定**: 最初は最小限（ACTION-3 判断用のみ）に集中
+
+**測定する価値がある操作**:
+
+- 複雑な計算を含む（ループ、条件分岐、ビット演算など）
+- 頻繁に呼ばれる（ホットパスにある操作）
+- 最適化の余地がある
+- パフォーマンスが重要
+
+**測定不要な操作**:
+
+- 単純なメモリ確保と初期化（例: `CandidateGrid::new`）
+- トリビアルなゲッター
+- コンパイラが完全に最適化できる操作
+
+**ACTION-3 判断用の測定項目**:
+
+- ~~`candidates_at` 単体~~（スキップ: `find_best_assumption` で間接的に測定される）
+- `find_best_assumption` 単体（実際の使用パターン）
+- エンドツーエンド（パズル生成・解決）
+  - バックトラック回数も記録（性能への寄与を分析）
+
+#### 4. ベンチマークのクレート配置
+
+**決定**: 各クレートの `benches/` ディレクトリに配置
+
+**配置例**:
+
+- `sudoku-solver/benches/backtrack.rs` - `find_best_assumption` のベンチマーク
+- `sudoku-solver/benches/solver.rs` - `BacktrackSolver::solve` のベンチマーク
+- `sudoku-generator/benches/generator.rs` - パズル生成のベンチマーク
+
+**理由**:
+
+- Rust の標準的なプラクティス
+- Criterion.rs の推奨構成
+- 各クレートの public API を測定（内部 API へのアクセスは不要）
+
+#### 5. テストデータの準備方法
+
+**決定**: `PuzzleGenerator` で生成したパズルを使用（seed 固定）
+
+**理由**:
+
+- 現在のソルバー（NakedSingle + HiddenSingle のみ）では難問が解けない
+- 生成したパズルは現在のテクニックで確実に解ける
+- seed を固定することで再現性を確保
+- 将来テクニックが増えても、ベンチマークは安定
+
+**手順**:
+
+1. `PuzzleGenerator` でパズルを数個生成
+2. seed を記録
+3. ベンチマークでは seed から再生成して使用
+
+#### 6. テクニックセットの固定
+
+**決定**: `fundamental_techniques()` 関数を追加
+
+**実装**:
+
+```rust
+// sudoku-solver/src/technique/mod.rs
+
+/// Returns the fundamental techniques (current baseline).
+///
+/// This function provides a stable set of techniques for benchmarking purposes.
+/// The techniques included here represent the baseline implementation and should
+/// not change when new techniques are added.
+///
+/// Current techniques: Naked Single, Hidden Single
+pub fn fundamental_techniques() -> Vec<BoxedTechnique> {
+    vec![Box::new(NakedSingle::new()), Box::new(HiddenSingle::new())]
+}
+
+/// Returns all available techniques.
+///
+/// Techniques are ordered from easiest to hardest.
+/// This list may grow as new techniques are implemented.
+pub fn all_techniques() -> Vec<BoxedTechnique> {
+    fundamental_techniques()
+    // Future: add more techniques here
+}
+```
+
+**ソルバーのコンストラクタ追加**:
+
+```rust
+// TechniqueSolver, BacktrackSolver に追加
+pub fn with_fundamental_techniques() -> Self {
+    Self::with_techniques(technique::fundamental_techniques())
+}
+```
+
+**ベンチマークでの使用**:
+
+```rust
+let solver = BacktrackSolver::with_fundamental_techniques();
+```
+
+**理由**:
+
+- 将来テクニックが追加されても、ベンチマーク結果の意味が変わらない
+- 性能比較のベースラインが安定
+- `all_techniques()` は将来の拡張に対応
 
 ### 作業内容
 
 #### 1. リファクタリング（前提作業）
 
-`find_best_assumption` の共通化
+1. `sudoku-solver/src/backtrack.rs` を新規作成
+2. `find_best_assumption` を実装
+3. `sudoku-solver/src/lib.rs` で `pub mod backtrack` として公開
+4. `sudoku-generator` と `sudoku-solver` の既存コードを書き換え
 
-#### 2. ベンチマーク環境のセットアップ
+#### 2. テクニックセットの固定
 
-ベンチマークフレームワークの選定と導入、テストデータの準備
+1. `fundamental_techniques()` 関数を追加
+2. `TechniqueSolver::with_fundamental_techniques()` を追加
+3. `BacktrackSolver::with_fundamental_techniques()` を追加
 
-#### 3. ベンチマーク実装
+#### 3. ベンチマーク環境のセットアップ
 
-##### 3-1. ACTION-3 判断用のベンチマーク
+1. Criterion.rs を `workspace.dependencies` と各クレートの `dev-dependencies` に追加
+2. テストデータを準備
+   - `with_fundamental_techniques()` でパズルを生成
+   - seed を記録（ドキュメント or コード内）
 
-双方向マッピング（ACTION-3）の実装判断に必要な測定：
+#### 4. ベンチマーク実装
 
-- **`candidates_at` 単体**（参考値）
-  - 盤面の埋まり具合を変えて測定（空 / 部分的 / ほぼ満杯）
-- **`find_best_assumption`**（実際の使用パターン）
-  - 盤面の埋まり具合を変えて測定
-- **エンドツーエンド**（実際の影響度）
-  - パズル生成・解決（難易度別）
+ACTION-3 判断用のベンチマークを実装：
 
-##### 3-2. 一般的なベンチマーク（今後の最適化に有用）
-
-プロジェクト全体のパフォーマンスベースラインとして有用な操作のベンチマーク。
-
-例：Core 操作（`place`, `classify_cells` など）、Solver 操作（各種テクニック）、Generator 操作（パズル生成）
-
-**TODO**: 具体的な項目を決定
+1. **`find_best_assumption` 単体** (`sudoku-solver/benches/backtrack.rs`)
+   - 盤面の埋まり具合を変えて測定（空 / 部分的 / ほぼ満杯）
+2. **エンドツーエンド**
+   - パズル生成 (`sudoku-generator/benches/generator.rs`)
+   - パズル解決 (`sudoku-solver/benches/solver.rs`)
+   - バックトラック回数も記録
 
 ### 判断基準
 
@@ -205,6 +333,9 @@
 - **判断基準**:
   - エンドツーエンド（パズル生成・解決）で **10% 以上の改善**が見込めれば ACTION-3 を実施
   - 改善幅が小さい場合（< 10%）は実装コストに見合わないためスキップ
+- **補助指標**:
+  - バックトラック回数: `find_best_assumption` の呼び出し頻度
+  - `find_best_assumption` 単体の性能: 改善の上限値
 - **考慮事項**:
   - メモリ増加: +91バイト（`Array81<DigitSet>` = 81 × 9bit）
   - コード複雑度: `place`/`remove_candidate` で双方向同期が必要
@@ -214,30 +345,40 @@
 
 #### 1. リファクタリング
 
-- [ ] `find_best_assumption` の共通化方法を決定
-- [ ] 共通化を実装
+- [ ] `sudoku-solver/src/backtrack.rs` を新規作成
+- [ ] `backtrack::find_best_assumption` を実装
+- [ ] `sudoku-solver/src/lib.rs` で公開
+- [ ] `sudoku-generator` の既存コードを書き換え
+- [ ] `sudoku-solver/src/backtrack_solver.rs` の既存コードを書き換え
 
-#### 2. ベンチマーク環境のセットアップ
+#### 2. テクニックセットの固定
 
-- [ ] ベンチマークフレームワークを選定
-- [ ] フレームワークを導入
-- [ ] テストデータ準備方法を決定
-- [ ] テストデータを準備
+- [ ] `technique::fundamental_techniques()` を実装
+- [ ] `technique::all_techniques()` を更新
+- [ ] `TechniqueSolver::with_fundamental_techniques()` を追加
+- [ ] `BacktrackSolver::with_fundamental_techniques()` を追加
 
-#### 3. ベンチマーク実装
+#### 3. ベンチマーク環境のセットアップ
 
-- [ ] ACTION-3 判断用ベンチマークを実装
-  - [ ] `candidates_at` 単体
-  - [ ] `find_best_assumption`
-  - [ ] エンドツーエンド（パズル生成・解決）
-- [ ] 一般的なベンチマーク項目を決定
-- [ ] 一般的なベンチマークを実装
+- [ ] Criterion.rs を依存関係に追加
+- [ ] テストデータを準備（パズル生成 + seed 記録）
+- [ ] 各クレートに `benches/` ディレクトリを作成
 
-#### 4. 測定・分析
+#### 4. ベンチマーク実装
 
-- [ ] ベースライン測定
-- [ ] 結果を記録
-- [ ] 必要に応じてプロファイリング
+- [ ] `sudoku-solver/benches/backtrack.rs` を実装
+  - [ ] `find_best_assumption` 単体（盤面の埋まり具合別）
+- [ ] `sudoku-solver/benches/solver.rs` を実装
+  - [ ] エンドツーエンド（パズル解決）
+  - [ ] バックトラック回数の記録
+- [ ] `sudoku-generator/benches/generator.rs` を実装
+  - [ ] エンドツーエンド（パズル生成）
+
+#### 5. 測定・分析
+
+- [ ] ベースライン測定を実行
+- [ ] 結果を記録（docs/ または action.md に追記）
+- [ ] 必要に応じてプロファイリング（flamegraph など）
 - [ ] ベンチマーク結果を分析
 - [ ] ACTION-3 の要否を判断（10% 改善基準）
 
@@ -259,9 +400,9 @@
 
 1. `CandidateGrid` に `cell_candidates` フィールドを追加
 
-    ```rust
-    cell_candidates: Array81<DigitSet, PositionSemantics>
-    ```
+   ```rust
+   cell_candidates: Array81<DigitSet, PositionSemantics>
+   ```
 
 2. `place` と `remove_candidate` で同期を取る
 
@@ -293,18 +434,18 @@
 #### コードドキュメント改善
 
 1. **DigitGrid のドキュメント整備** ✅ **完了**
-    - `Array81<Option<Digit>, PositionSemantics>` を使う理由を明記
-    - `PositionSemantics` による型安全性のメリットを説明
-    - 使用例の追加
-    - **実施内容**: クレートレベルに「Semantics Pattern」セクションを追加し、
-      すべての関連型（9ファイル、13の型/トレイト/エイリアス）からリンク
-    - **コミット**: `7f7ea41` - docs(core): Add comprehensive Semantics Pattern documentation
+   - `Array81<Option<Digit>, PositionSemantics>` を使う理由を明記
+   - `PositionSemantics` による型安全性のメリットを説明
+   - 使用例の追加
+   - **実施内容**: クレートレベルに「Semantics Pattern」セクションを追加し、
+     すべての関連型（9ファイル、13の型/トレイト/エイリアス）からリンク
+   - **コミット**: `7f7ea41` - docs(core): Add comprehensive Semantics Pattern documentation
 
 2. **classify_cells のコメント修正** ✅ **完了**
-    - bitwise DP アルゴリズムの詳細説明を追加
-    - `cells[0] = FULL` から始める理由を明記
-    - N個以上の候補を持つセルは追跡されないことを明記
-    - **実施内容**: doc commentとインラインコメントに詳細なアルゴリズム説明を追加
+   - bitwise DP アルゴリズムの詳細説明を追加
+   - `cells[0] = FULL` から始める理由を明記
+   - N個以上の候補を持つセルは追跡されないことを明記
+   - **実施内容**: doc commentとインラインコメントに詳細なアルゴリズム説明を追加
 
 #### `#[inline]` 属性の付与 ✅ **完了**
 
@@ -316,22 +457,22 @@
 #### ARCHITECTURE.md の拡充 ✅ **完了**
 
 1. **Semantics Pattern の詳細説明**
-    - Index9, Index81, Array9, Array81 の型安全性
-    - PositionSemantics, DigitSemantics の役割
-    - バグ防止のメリット
-    - **実施内容**: lib.rsへのリンクを含む簡潔な設計判断を追加
+   - Index9, Index81, Array9, Array81 の型安全性
+   - PositionSemantics, DigitSemantics の役割
+   - バグ防止のメリット
+   - **実施内容**: lib.rsへのリンクを含む簡潔な設計判断を追加
 
 2. **Two-grid Architecture の詳細化**
-    - Digit-centric vs Cell-centric のトレードオフ
-    - 各アプローチの性能特性
-    - 設計判断の根拠
-    - **実施内容**: 問題・解決策・メリット・トレードオフを明確化
+   - Digit-centric vs Cell-centric のトレードオフ
+   - 各アプローチの性能特性
+   - 設計判断の根拠
+   - **実施内容**: 問題・解決策・メリット・トレードオフを明確化
 
 3. **Core vs Solver の責務分離**
-    - Pure Data Structure 化の意図
-    - 制約ロジックの配置方針
-    - 拡張性の考慮
-    - **実施内容**: "mechanisms vs policies"原則を含む設計判断を追加
+   - Pure Data Structure 化の意図
+   - 制約ロジックの配置方針
+   - 拡張性の考慮
+   - **実施内容**: "mechanisms vs policies"原則を含む設計判断を追加
 
 ### チェックリスト
 
@@ -388,30 +529,30 @@
 レイヤー間の依存関係を考慮し、以下のように実装：
 
 1. **`sudoku-core` に `ConsistencyError` を追加**
-    - `derive_more` を使用してエラー型を実装
-    - `SolverError` は solver レイヤーのエラー型なので core では使用できない
+   - `derive_more` を使用してエラー型を実装
+   - `SolverError` は solver レイヤーのエラー型なので core では使用できない
 
 2. **`check_consistency() -> Result<(), ConsistencyError>` を実装**
-    - `is_consistent()` の実装を基に、`Result` を返すAPIに変更
+   - `is_consistent()` の実装を基に、`Result` を返すAPIに変更
 
 3. **`sudoku-solver` に `From<ConsistencyError>` を実装**
-    - `ConsistencyError` が自動的に `SolverError::Contradiction` に変換される
-    - `?` オペレータで簡潔なエラーハンドリングが可能
+   - `ConsistencyError` が自動的に `SolverError::Contradiction` に変換される
+   - `?` オペレータで簡潔なエラーハンドリングが可能
 
 4. **`is_solved()` も `Result` 型に変更**
-    - 矛盾検出時はエラーを返すように改善
+   - 矛盾検出時はエラーを返すように改善
 
 5. **既存コードの置き換え**
-    - `if !grid.is_consistent() { return Err(...) }` → `grid.check_consistency()?`
-    - 冗長な `is_solved()` チェックを削除（technique solver内でチェック済み）
+   - `if !grid.is_consistent() { return Err(...) }` → `grid.check_consistency()?`
+   - 冗長な `is_solved()` チェックを削除（technique solver内でチェック済み）
 
 6. **`is_consistent()` を削除**
-    - `check_consistency()` に完全に置き換え
+   - `check_consistency()` に完全に置き換え
 
 7. **テストとドキュメントの追加**
-    - `ConsistencyError`, `check_consistency()`, `is_solved()` のドキュメント
-    - 各種テストケース（正常系/異常系）
-    - `From<ConsistencyError>` の変換テスト
+   - `ConsistencyError`, `check_consistency()`, `is_solved()` のドキュメント
+   - 各種テストケース（正常系/異常系）
+   - `From<ConsistencyError>` の変換テスト
 
 ### チェックリスト
 
@@ -459,21 +600,21 @@
 ### 追加したテスト
 
 1. **`test_multiple_solutions`** を拡張
-    - 2つの解が実際に異なることを検証
+   - 2つの解が実際に異なることを検証
 
 2. **`test_multiple_solutions_with_partial_grid`**
-    - 部分的に埋まったグリッドから複数解を生成
-    - 全ての解が有効で異なることを検証
-    - 元の配置が保持されることを確認
+   - 部分的に埋まったグリッドから複数解を生成
+   - 全ての解が有効で異なることを検証
+   - 元の配置が保持されることを確認
 
 3. **`test_backtracking_occurs`**
-    - バックトラックが必要な状況でassumptionsが記録されることを検証
+   - バックトラックが必要な状況でassumptionsが記録されることを検証
 
 4. **`test_backtrack_count_increments`**
-    - 複数解の探索中にバックトラックカウントが追跡されることを確認
+   - 複数解の探索中にバックトラックカウントが追跡されることを確認
 
 5. **`test_solution_is_complete`**
-    - 解が完全（全81セル）であることを検証
+   - 解が完全（全81セル）であることを検証
 
 ### チェックリスト
 
