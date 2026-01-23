@@ -650,53 +650,53 @@ ACTION-2 の完了後：
 
 ## 対応履歴
 
-### 2026-01-22
-
 **注**: 新しいものほど下に記載されています（時系列順）。
 
-- **2026-01-22**: ACTION-5 完了（Box::leak 修正）
+### 2026-01-22
+
+- ACTION-5 完了（Box::leak 修正）
   - `crates/sudoku-generator/src/lib.rs` のテストコードから `Box::leak` を削除
   - `create_test_generator()` ヘルパー関数を削除し、各テスト関数内で `TechniqueSolver` を直接作成
   - 通常のライフタイム管理に修正
-  - コミット: `e8ef0d5` - test(generator): remove Box::leak from test helper
+  - コミット: [e8ef0d5](https://github.com/gifnksm/sudoku/commit/e8ef0d5) - test(generator): remove Box::leak from test helper
 
-- **2026-01-22**: ACTION-6 完了（check_consistency API への置き換え）
+- ACTION-6 完了（check_consistency API への置き換え）
   - `sudoku-core` に `ConsistencyError` を追加（`derive_more` 使用）
   - `CandidateGrid::check_consistency() -> Result<(), ConsistencyError>` を実装
   - `CandidateGrid::is_solved()` を `Result<bool, ConsistencyError>` に変更
   - `sudoku-solver` に `From<ConsistencyError> for SolverError` を実装
   - `is_consistent()` の呼び出しを `check_consistency()?` に置き換え
   - テストとドキュメントを追加
-  - コミット: `b1e563c` - refactor(core,solver): replace is_consistent with check_consistency API
+  - コミット: [b1e563c](https://github.com/gifnksm/sudoku/commit/b1e563c) - refactor(core,solver): replace is_consistent with check_consistency API
   - **注記**: `is_consistent()` メソッド本体の削除が未完了だった（後日対応）
 
-- **2026-01-22**: ACTION-7 完了（BacktrackSolver のテスト調査）
+- ACTION-7 完了（BacktrackSolver のテスト調査）
   - `BacktrackSolver` のテストカバレッジを調査
   - 既存の `test_multiple_solutions` を拡張し、解の差異を検証
   - 5つの新しいテストケースを追加
   - バックトラックの正当性とstatistics収集が適切に動作することを確認
   - 全テスト（14個）が通過することを確認
-  - コミット: `6b8f87a` - Complete ACTION-7: Add comprehensive tests for BacktrackSolver
+  - コミット: [6b8f87a](https://github.com/gifnksm/sudoku/commit/6b8f87a) - Complete ACTION-7: Add comprehensive tests for BacktrackSolver
 
-- **2026-01-22**: ACTION-4 部分完了（1-(a) DigitGrid のドキュメント整備）
+- ACTION-4 部分完了（1-(a) DigitGrid のドキュメント整備）
   - クレートレベルに「Semantics Pattern: Type-Safe Indexing」セクションを追加
   - すべての関連型（9ファイル、13の型/トレイト/エイリアス）からリンク
   - 3つの主要な目的を明確化：型安全性、実装の共通化、効率的なデータ構造
-  - コミット: `7f7ea41` - docs(core): Add comprehensive Semantics Pattern documentation
+  - コミット: [7f7ea41](https://github.com/gifnksm/sudoku/commit/7f7ea41) - docs(core): Add comprehensive Semantics Pattern documentation
 
-- **2026-01-22**: ACTION-4 完了（ドキュメント整備とコード改善）
+- ACTION-4 完了（ドキュメント整備とコード改善）
   - classify_cells のコメント修正（bitwise DP アルゴリズム説明）
   - `#[inline]` 属性の付与（7ファイル）
   - ARCHITECTURE.md の拡充（Semantics Pattern, Two-grid, Core vs Solver）
-  - コミット: `30164eb` - feat(review): Complete ACTION-4
+  - コミット: [30164eb](https://github.com/gifnksm/sudoku/commit/30164eb) - feat(review): Complete ACTION-4
 
-- **2026-01-22**: ACTION-6 追加対応（`is_consistent()` の削除漏れ対応）
+- ACTION-6 追加対応（`is_consistent()` の削除漏れ対応）
   - 残っていた `is_consistent()` メソッドとそのdocコメントを削除
   - 重複テスト4件を削除（`test_is_consistent_*`）
   - `lib.rs` のドキュメント例を `check_consistency().is_ok()` に更新
-  - コミット: `69ca2b4` - refactor(core): remove deprecated is_consistent() method
+  - コミット: [69ca2b4](https://github.com/gifnksm/sudoku/commit/69ca2b4) - refactor(core): remove deprecated is_consistent() method
 
-- **2026-01-23**: ACTION-1 完了（Pure Data Structure 化）
+- ACTION-1 完了（Pure Data Structure 化）
   - `CandidateGrid::place` から制約伝播を削除（配置セルの候補のみを更新）
   - `NakedSingle::apply` に制約伝播を追加（row/column/box からの候補除外）
   - `place_no_propagation`, `from_digit_grid_no_propagation`, `from_str_no_propagation` を削除
@@ -706,16 +706,40 @@ ACTION-2 の完了後：
       - 理由: "pure" という用語が ACTION-1 の "Pure Data Structure" と混同されるため
       - "pure backtracking" → "backtracking without techniques" に変更
     - `docs/ARCHITECTURE.md` を更新（3箇所の constraint propagation 関連記述を修正）
-  - コミット: `eab41ed`
+  - コミット: [eab41ed](https://github.com/gifnksm/sudoku/commit/eab41ed)
 
-- **ACTION-2 の内容を更新**:
+- ACTION-2 の内容を更新
   - レビュー指摘の内容を再確認（`candidates_at`, `classify_cells`, `decided_cells` の性能問題）
   - `candidates_at` の呼び出し箇所を調査（実際には `find_best_assumption` のみで使用）
   - `CandidateGrid` の全公開メソッドを調査し、cell-oriented で高速化される読み取り専用メソッドは `candidates_at` のみと確認
-  - `to_digit_grid` の最適化経緯（コミット `5cdd9302`）を背景情報として追加
+  - `to_digit_grid` の最適化経緯（コミット [5cdd9302](https://github.com/gifnksm/sudoku/commit/5cdd9302)）を背景情報として追加
   - 検討事項セクションを追加：ベンチマークフレームワーク選定、テストデータ準備方法など
   - ベンチマーク対象を整理：`candidates_at` 単体、`find_best_assumption`、エンドツーエンド
   - 一般的なベンチマークの追加を提案（今後の最適化に有用）
   - 判断基準を明確化：10% 以上の改善が見込めれば ACTION-3 を実施
   - 前提条件として `find_best_assumption` の共通化を追加（方法は要検討）
   - チェックリストをグループ化（リファクタリング、環境セットアップ、ベンチマーク実装、測定・分析）
+  - コミット: [3385964](https://github.com/gifnksm/sudoku/commit/3385964) - docs(review): Update ACTION-2 with detailed investigation results
+
+### 2026-01-23
+
+- ACTION-2 検討事項決定
+  - **ベンチマークフレームワーク**: Criterion.rs を採用
+    - 理由: 統計的分析、HTMLレポート、回帰検出、stable Rust 対応、CI 対応可能
+  - **`find_best_assumption` の共通化方法**: `sudoku-solver/src/backtrack.rs` に新規モジュールを作成
+    - `pub mod backtrack` として公開（re-export なし）
+    - 関数名は `find_best_assumption` のまま維持
+    - 使用例: `sudoku_solver::backtrack::find_best_assumption(&grid)`
+  - **ベンチマーク対象の選定原則**: 最小限（ACTION-3 判断用）に集中
+    - 測定する価値がある操作: 複雑な計算、頻繁な呼び出し、最適化の余地、重要な性能
+    - 測定不要: 単純なメモリ確保、トリビアルなゲッター、コンパイラ最適化可能な操作
+    - `candidates_at` 単体はスキップ（`find_best_assumption` で間接測定）
+  - **ベンチマークのクレート配置**: 各クレートの `benches/` ディレクトリ
+    - Rust の標準的なプラクティスに従う
+  - **テストデータ**: `PuzzleGenerator` で生成（seed 固定）
+    - 現在のソルバー（NakedSingle + HiddenSingle のみ）では難問が解けないため
+    - 再現性確保のため seed を記録
+  - **テクニックセットの固定**: `fundamental_techniques()` 関数を追加
+    - 将来テクニックが追加されても、ベンチマーク結果の意味が変わらないようにする
+    - `TechniqueSolver::with_fundamental_techniques()` と `BacktrackSolver::with_fundamental_techniques()` を追加
+  - コミット: [442113d](https://github.com/gifnksm/sudoku/commit/442113d) - docs: Complete ACTION-2 design decisions
