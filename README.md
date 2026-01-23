@@ -28,7 +28,10 @@ A Sudoku application written in Rust, supporting both desktop and web platforms.
   - Hybrid solution generation (random + backtracking with solver assistance)
   - Verification using `TechniqueSolver` ensures unique, human-solvable puzzles
   - Comprehensive testing (unit tests, property tests, doctests)
-- 📋 **Next**: Game logic, GUI
+- 🚧 **sudoku-game**: Game logic **in progress**
+  - Design document completed
+  - Implementation of minimum viable game logic in progress
+- 📋 **Next**: GUI implementation
 
 ## Project Structure
 

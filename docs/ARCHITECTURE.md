@@ -159,11 +159,39 @@ For detailed API documentation, see the [crate documentation](../crates/sudoku-g
 
 ### sudoku-game
 
-**Status**: Planned 📋
+**Status**: In Progress 🚧
 
 **Purpose**: Manages game state, user interactions, and game logic.
 
+**Key Components** (Minimum Viable Implementation):
+
+- **`Game`**: Main game session struct
+  - Tracks initial puzzle (fixed cells) and current board state
+  - Manages player input vs initial cells distinction
+  - Provides completion detection (all cells filled + no rule violations)
+
+- **Basic Operations**:
+  - `new(puzzle)`: Start new game from generated puzzle
+  - `set_digit(pos, digit)`: Place digit in editable cell
+  - `clear_cell(pos)`: Clear editable cell
+  - `is_initial_cell(pos)`: Query if cell is fixed
+  - `is_completed()`: Check game completion
+
+- **`GameError`**: Error type for operation failures
+  - Prevents editing of initial (fixed) cells
+  - Permissive validation: allows rule-violating inputs
+
 **Dependencies**: `sudoku-core`, `sudoku-solver`, `sudoku-generator`
+
+**Design Decisions**:
+
+- **Permissive Input**: Allows rule-violating inputs for player experimentation
+- **Completion Definition**: All cells filled AND no conflicts (accepts any valid solution)
+- **No Thread Safety**: Single-threaded design (can wrap in `Mutex` if needed later)
+
+**Future Enhancements**: Candidate marks, undo/redo, hints, mistake detection, save/load functionality
+
+For detailed design rationale, see design document at `docs/design/sudoku-game.md` (will be moved to crate documentation upon completion).
 
 ---
 

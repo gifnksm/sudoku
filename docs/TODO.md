@@ -16,8 +16,9 @@ This file tracks tasks that must be done to achieve the project goals.
 
 3. **Completion Phase** (after all tests pass):
    - Mark all tasks as completed in this TODO
-   - Delete the design document
    - Preserve essential design decisions in crate documentation and ARCHITECTURE.md
+   - Move future enhancement ideas from design document to ARCHITECTURE.md
+   - Delete the design document
    - Update status in README.md (Current Status section)
    - Update status in ARCHITECTURE.md (Crate Descriptions section and status markers)
    - Commit all documentation updates together: `docs: complete COMPONENT and update project documentation`
@@ -30,44 +31,22 @@ This file tracks tasks that must be done to achieve the project goals.
 
 ---
 
-## sudoku-generator: Puzzle Generation
-
-- [x] Create design document at `docs/design/sudoku-generator.md`
-  - Consider aspects such as: generation algorithm, API design, difficulty evaluation, etc.
-- [x] Add specific implementation tasks to this TODO based on design decisions
-  - [x] Create `crates/sudoku-generator` crate
-  - [x] Implement `PuzzleGenerator` struct with `TechniqueSolver` dependency
-  - [x] Implement complete grid generation using random placement + backtracking
-  - [x] Implement cell removal algorithm with shuffled positions
-  - [x] Implement solvability verification using `TechniqueSolver`
-  - [x] Add `rand` and `rand_pcg` dependencies
-  - [x] Write unit tests for generation logic
-  - [x] Write property-based tests using `proptest`
-  - [x] Update workspace `Cargo.toml` to include new crate
-- [x] On completion:
-  - [x] Delete design document
-  - [x] Preserve essential design decisions in crate documentation and ARCHITECTURE.md
-  - [x] Update README.md status (Current Status section)
-  - [x] Update ARCHITECTURE.md status (Crate Descriptions section)
-  - [x] Mark all tasks as completed in this TODO
-
-**Status**: ✅ Completed. Design decisions preserved in ARCHITECTURE.md and crate documentation.
-
----
-
 ## sudoku-game: Game Logic
 
-- [ ] Create design document at `docs/design/sudoku-game.md`
-  - Consider aspects such as: game state structure, operation APIs, undo/redo mechanism, save/load format, interaction with other components, etc.
-- [ ] Add specific implementation tasks to this TODO based on design decisions
+- [x] Create design document at `docs/design/sudoku-game.md`
+- [ ] Create `crates/sudoku-game` crate and implement minimum viable game logic
+  - Game state management, basic operations, completion detection
+  - See design document for detailed requirements
+- [ ] Write unit tests and doctests
 - [ ] On completion:
-  - [ ] Delete design document
   - [ ] Preserve essential design decisions in crate documentation and ARCHITECTURE.md
+  - [ ] Move future enhancement ideas to ARCHITECTURE.md
+  - [ ] Delete design document
   - [ ] Update README.md status (Current Status section)
   - [ ] Update ARCHITECTURE.md status (Crate Descriptions section)
   - [ ] Mark all tasks as completed in this TODO
 
-**Note**: This is marked as "Planned" in ARCHITECTURE.md and README.md
+**Note**: After completion, move to `sudoku-app` for basic GUI implementation.
 
 ---
 
@@ -77,10 +56,21 @@ This file tracks tasks that must be done to achieve the project goals.
   - Consider aspects such as: UI layout, user interaction flow, egui/eframe integration, desktop/WASM build configuration, state management, etc.
 - [ ] Add specific implementation tasks to this TODO based on design decisions
 - [ ] On completion:
-  - [ ] Delete design document
   - [ ] Preserve essential design decisions in crate documentation and ARCHITECTURE.md
+  - [ ] Move future enhancement ideas to ARCHITECTURE.md
+  - [ ] Delete design document
   - [ ] Update README.md status (Current Status section)
   - [ ] Update ARCHITECTURE.md status (Crate Descriptions section)
   - [ ] Mark all tasks as completed in this TODO
 
-**Note**: This is marked as "Planned" in ARCHITECTURE.md and README.md. Desktop GUI support using egui/eframe is explicitly mentioned in project goals.
+**Note**: Desktop GUI support using egui/eframe is explicitly mentioned in project goals.
+
+---
+
+## sudoku-solver: Technique Extensions
+
+- [ ] Identify and prioritize additional solving techniques to implement
+- [ ] Implement new techniques with tests and documentation
+- [ ] Update ARCHITECTURE.md with technique descriptions
+
+**Note**: This is an enhancement task to expand solver capabilities. Not blocking core application development.
