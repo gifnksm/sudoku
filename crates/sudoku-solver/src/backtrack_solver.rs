@@ -6,7 +6,9 @@
 
 use sudoku_core::{CandidateGrid, Digit, DigitSet, Position};
 
-use crate::{SolverError, TechniqueSolver, TechniqueSolverStats, technique::BoxedTechnique};
+use crate::{
+    SolverError, TechniqueSolver, TechniqueSolverStats, backtrack, technique::BoxedTechnique,
+};
 
 /// Statistics collected during backtracking solving.
 ///
@@ -180,7 +182,7 @@ impl BacktrackSolver {
         let solutions = if solved {
             Solutions::solved(self, grid, stats)
         } else {
-            let assumption = find_best_assumption(&grid);
+            let assumption = backtrack::find_best_assumption(&grid);
             Solutions::with_assumptions(self, grid, stats, assumption)
         };
         Ok(solutions)
@@ -196,20 +198,6 @@ impl BacktrackSolver {
             .solve_with_stats(grid, &mut stats.technique)?;
         Ok(solved)
     }
-}
-
-/// Finds the best cell to make an assumption for.
-///
-/// Selects the cell with the minimum number of remaining candidates (MRV heuristic).
-///
-/// # Preconditions
-///
-/// The grid must be consistent (no cells with zero candidates) and not fully solved.
-fn find_best_assumption(grid: &CandidateGrid) -> (Position, DigitSet) {
-    let [empty, decided, cells @ ..] = grid.classify_cells::<10>();
-    assert!(empty.is_empty() && decided.len() < 81);
-    let pos = cells.iter().find_map(|cells| cells.first()).unwrap();
-    (pos, grid.candidates_at(pos))
 }
 
 /// An iterator over solutions to a Sudoku puzzle.
@@ -302,7 +290,7 @@ impl Iterator for Solutions<'_> {
             if solved {
                 return Some((grid, stats));
             }
-            let assumption = find_best_assumption(&grid);
+            let assumption = backtrack::find_best_assumption(&grid);
             self.stack
                 .push(SearchState::with_assumption(grid, stats, assumption));
         }

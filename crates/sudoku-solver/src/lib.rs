@@ -195,6 +195,7 @@
 //!
 pub use self::{backtrack_solver::*, error::*, technique_solver::*};
 
+pub mod backtrack;
 mod backtrack_solver;
 mod error;
 pub mod technique;

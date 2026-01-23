@@ -147,8 +147,8 @@ impl IndexMut<Position> for DigitGrid {
 
 impl Display for DigitGrid {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        for (i, pos) in Position::ALL.iter().enumerate() {
-            if let Some(digit) = self.get(*pos) {
+        for (i, pos) in Position::ALL.into_iter().enumerate() {
+            if let Some(digit) = self.get(pos) {
                 write!(f, "{digit}")?;
             } else {
                 write!(f, ".")?;

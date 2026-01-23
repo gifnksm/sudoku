@@ -73,8 +73,8 @@ use rand::{
     seq::SliceRandom,
 };
 use rand_pcg::Pcg64;
-use sudoku_core::{CandidateGrid, Digit, DigitGrid, DigitSet, Position};
-use sudoku_solver::TechniqueSolver;
+use sudoku_core::{CandidateGrid, Digit, DigitGrid, Position};
+use sudoku_solver::{TechniqueSolver, backtrack};
 
 /// A Sudoku puzzle generator that creates puzzles with unique solutions.
 ///
@@ -168,8 +168,9 @@ impl<'a> PuzzleGenerator<'a> {
     /// 2. Fill the remaining cells in the top-left box (avoiding the first row)
     /// 3. Use backtracking with solver assistance to fill the remaining cells
     ///
-    /// The solver is used to eliminate obviously impossible candidates, making
-    /// the backtracking more efficient.
+    /// The backtracking uses [`sudoku_solver::backtrack::find_best_assumption`] to
+    /// select cells with minimum candidates (MRV heuristic), and the solver is used
+    /// to eliminate obviously impossible candidates, making the search more efficient.
     fn generate_solution<R>(&self, rng: &mut R) -> DigitGrid
     where
         R: Rng,
@@ -196,7 +197,7 @@ impl<'a> PuzzleGenerator<'a> {
 
         // Step 3: Fill the rest of the grid using backtracking with solver assistance
         let mut stack = vec![];
-        let assumption = find_best_assumption(&grid);
+        let assumption = backtrack::find_best_assumption(&grid);
         stack.push((grid, assumption));
 
         while let Some((mut grid, (pos, mut digits))) = stack.pop() {
@@ -215,7 +216,7 @@ impl<'a> PuzzleGenerator<'a> {
                 return grid.to_digit_grid();
             }
             // Pick the next cell to fill
-            let assumption = find_best_assumption(&grid);
+            let assumption = backtrack::find_best_assumption(&grid);
             stack.push((grid, assumption));
         }
         unreachable!("Failed to generate complete grid - this should never happen");
@@ -251,32 +252,6 @@ impl<'a> PuzzleGenerator<'a> {
         }
         problem
     }
-}
-
-/// Finds the cell with the minimum number of remaining candidates (MRV heuristic).
-///
-/// This heuristic is used during solution generation to choose which cell to fill next.
-/// Choosing cells with fewer candidates reduces the branching factor in backtracking,
-/// making the search more efficient.
-///
-/// # Returns
-///
-/// A tuple of `(Position, DigitSet)` where:
-/// - `Position` is the cell with the fewest candidates
-/// - `DigitSet` contains the valid candidate digits for that cell
-///
-/// # Panics
-///
-/// Panics if there are no undecided cells (should not happen during generation).
-fn find_best_assumption(grid: &CandidateGrid) -> (Position, DigitSet) {
-    // classify_cells::<10> groups cells by candidate count (0-9)
-    // [0]: 0 candidates (contradiction), [1]: 1 candidate (decided), [2..]: 2-9 candidates
-    let [empty, decided, cells @ ..] = grid.classify_cells::<10>();
-    assert!(empty.is_empty() && decided.len() < 81);
-
-    // Pick the first undecided cell with minimum candidates
-    let pos = cells.iter().find_map(|cells| cells.first()).unwrap();
-    (pos, grid.candidates_at(pos))
 }
 
 /// A 256-bit seed for reproducible puzzle generation.
@@ -346,6 +321,8 @@ pub struct GeneratedPuzzle {
 
 #[cfg(test)]
 mod tests {
+    use sudoku_core::DigitSet;
+
     use super::*;
 
     #[test]
