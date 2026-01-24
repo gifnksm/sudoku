@@ -19,8 +19,8 @@ sudoku/
 │   ├── sudoku-core/          # Core data structures and types
 │   ├── sudoku-solver/        # Solving algorithms
 │   ├── sudoku-generator/     # Puzzle generation
-│   ├── sudoku-game/          # Game logic and state management (planned)
-│   └── sudoku-app/           # GUI application (desktop + web) (planned)
+│   ├── sudoku-game/          # Game logic and state management
+│   └── sudoku-app/           # GUI application (desktop, web planned)
 └── docs/
     ├── ARCHITECTURE.md       # This file
     └── TESTING.md            # Testing guidelines
@@ -100,11 +100,21 @@ See [sudoku-game documentation](../crates/sudoku-game/src/lib.rs) for detailed d
 
 ### sudoku-app
 
-**Status**: Planned 📋
+**Status**: GUI minimally implemented ⚙️
 
-**Purpose**: GUI application for both desktop and web platforms using egui/eframe.
+**Purpose**: Desktop GUI application using egui/eframe (web planned).
 
-**Dependencies**: `sudoku-game`, `eframe`
+**Key Components**: `SudokuApp`, board rendering, keyboard input, selection handling
+
+**Dependencies**: `sudoku-core`, `sudoku-game`, `sudoku-generator`, `sudoku-solver`, `eframe`
+
+**Design Notes**:
+
+- Desktop-focused MVP with a 9x9 grid and clear 3x3 boundaries
+- Keyboard-driven input (digits, arrows, delete/backspace) with mouse selection
+- Status display derived from `Game::is_solved()`
+
+**Future Enhancements**: Candidate marks, undo/redo, hints, mistake detection, save/load, timer/statistics, web/WASM support
 
 ---
 
@@ -146,7 +156,7 @@ sudoku-generator
     ↓
 sudoku-game
     ↓
-sudoku-app (desktop + web)
+sudoku-app (desktop, web planned)
 ```
 
 **Principles**:

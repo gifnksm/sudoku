@@ -31,25 +31,6 @@ This file tracks tasks that must be done to achieve the project goals.
 
 ---
 
-## sudoku-game: Game Logic
-
-- [x] Create design document at `docs/design/sudoku-game.md`
-- [x] Create `crates/sudoku-game` crate and implement minimum viable game logic
-  - Game state management, basic operations, completion detection
-  - See design document for detailed requirements
-- [x] Write unit tests and doctests
-- [x] On completion:
-  - [x] Preserve essential design decisions in crate documentation and ARCHITECTURE.md
-  - [x] Move future enhancement ideas to ARCHITECTURE.md
-  - [x] Delete design document
-  - [x] Update README.md status (Current Status section)
-  - [x] Update ARCHITECTURE.md status (Crate Descriptions section)
-  - [x] Mark all tasks as completed in this TODO
-
-**Note**: After completion, move to `sudoku-app` for basic GUI implementation.
-
----
-
 ## sudoku-app: GUI Implementation
 
 - [x] Create design document at `docs/design/sudoku-app.md`
@@ -64,13 +45,13 @@ This file tracks tasks that must be done to achieve the project goals.
   - [x] Show status text for in-progress vs solved state
   - [x] Add window sizing: initial size, resizable, and minimum size constraints
   - [x] Extract input handling into small methods for testability (optional)
-- [ ] On completion:
-  - [ ] Preserve essential design decisions in crate documentation and ARCHITECTURE.md
-  - [ ] Move future enhancement ideas to ARCHITECTURE.md
-  - [ ] Delete design document
-  - [ ] Update README.md status (Current Status section)
-  - [ ] Update ARCHITECTURE.md status (Crate Descriptions section)
-  - [ ] Mark all tasks as completed in this TODO
+- [x] On completion:
+  - [x] Preserve essential design decisions in crate documentation and ARCHITECTURE.md
+  - [x] Move future enhancement ideas to ARCHITECTURE.md
+  - [x] Delete design document
+  - [x] Update README.md status (Current Status section)
+  - [x] Update ARCHITECTURE.md status (Crate Descriptions section)
+  - [x] Mark all tasks as completed in this TODO
 
 **Note**: Desktop GUI support using egui/eframe is explicitly mentioned in project goals.
 

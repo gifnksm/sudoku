@@ -1,3 +1,13 @@
+//! Sudoku desktop application UI.
+//!
+//! # Design Notes
+//! - Desktop-focused MVP with a 9x9 grid and clear 3x3 boundaries.
+//! - Keyboard-driven input (digits, arrows, delete/backspace) with mouse selection.
+//! - Status display derived from `Game::is_solved()`.
+//!
+//! # Future Enhancements
+//! - Candidate marks, undo/redo, hints, mistake detection.
+//! - Save/load, timer/statistics, and web/WASM support.
 use std::sync::Arc;
 
 use eframe::{

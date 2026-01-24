@@ -27,7 +27,10 @@ A Sudoku application written in Rust, supporting both desktop and web platforms.
   - Game session management with basic operations
   - TODO: candidate marks, undo/redo, hints, save/load
 
-- 📋 **Next**: GUI implementation
+- ⚙️ **sudoku-app**: GUI **minimally implemented**
+  - 9x9 board rendering with 3x3 boundaries
+  - Mouse selection and keyboard input
+  - New game and solved status display
 
 ## Project Structure
 
@@ -36,8 +39,8 @@ crates/
 ├── sudoku-core/       # Core data structures (CandidateGrid, DigitGrid, Digit, Position)
 ├── sudoku-solver/     # Solving algorithms (technique-based + backtracking)
 ├── sudoku-generator/  # Puzzle generation
-├── sudoku-game/       # Game logic (planned)
-└── sudoku-app/        # GUI application (planned)
+├── sudoku-game/       # Game logic
+└── sudoku-app/        # GUI application (desktop)
 ```
 
 See [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) for architecture and implementation plans, [docs/TESTING.md](docs/TESTING.md) for testing guidelines, and [docs/TODO.md](docs/TODO.md) for current tasks.
@@ -58,7 +61,7 @@ cargo test
 For development commands (clippy, benchmarks, documentation generation, etc.), see [CONTRIBUTING.md](CONTRIBUTING.md).
 
 ```bash
-# Desktop application (not yet implemented)
+# Desktop application
 cargo run --release
 ```
 
