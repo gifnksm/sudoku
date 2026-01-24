@@ -4,12 +4,37 @@ Casual backlog for ideas, experiments, and future work. Order is not strict.
 
 ## Ideas / Wishlist
 
-- Candidate marks in the UI
-- Undo/redo
-- Hints and mistake detection
-- Save/load game state
+### UI / UX
+
+- Selection row/column/box highlight
+- Same digit highlight
+- Light/Dark mode toggle
+- Mouse-only input (number pad/buttons)
+- New Game confirmation dialog
+- Feature toggles UI (assist on/off)
+- Rendering refactor (widgets/components)
+
+### Gameplay
+
+- Candidate marks (player notes)
+- Auto candidate updates (optional)
+- Mistake highlighting (row/col/box conflicts)
+- Hint system (show applicable technique or next step)
+- Save/resume automatically on startup
 - Timer and statistics
+- Puzzle paste/import
+
+### Generator / Solver
+
+- Difficulty-based puzzle generation
+- Seeded generation and regenerate by seed
+- Technique explanations for hints
 - Solver technique extensions (pairs, pointing, box/line, X-Wing)
+
+### Platform / Settings
+
+- WASM build
+- Settings auto-save (theme, assists, etc.)
 
 ## Bugs / Fixes
 
