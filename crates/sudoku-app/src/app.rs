@@ -20,13 +20,14 @@ use sudoku_solver::TechniqueSolver;
 
 use crate::ui::{
     self, Action, MoveDirection, game_screen::GameScreenViewModel, grid::GridViewModel,
-    keypad::KeypadViewModel,
+    keypad::KeypadViewModel, sidebar::SidebarViewModel,
 };
 
 #[derive(Debug)]
 pub struct SudokuApp {
     game: Game,
     selected_cell: Option<Position>,
+    highlight_config: HighlightConfig,
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -35,11 +36,34 @@ pub enum GameStatus {
     Solved,
 }
 
+#[derive(Debug, Clone)]
+pub struct HighlightConfig {
+    pub same_digit: bool,
+    pub rcb: RcbHighlight,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum RcbHighlight {
+    None,
+    SelectedCell,
+    SameDigit,
+}
+
+impl Default for HighlightConfig {
+    fn default() -> Self {
+        Self {
+            same_digit: true,
+            rcb: RcbHighlight::SameDigit,
+        }
+    }
+}
+
 impl SudokuApp {
     pub fn new(_cc: &CreationContext<'_>) -> Self {
         Self {
             game: new_game(),
             selected_cell: None,
+            highlight_config: HighlightConfig::default(),
         }
     }
 
@@ -98,6 +122,9 @@ impl SudokuApp {
             Action::NewGame => {
                 self.new_game();
             }
+            Action::UpdateHighlightConfig(config) => {
+                self.highlight_config = config;
+            }
         }
     }
 }
@@ -125,13 +152,19 @@ impl App for SudokuApp {
         let selected_digit = self
             .selected_cell
             .and_then(|pos| self.game.cell(pos).as_digit());
-        let grid_vm = GridViewModel::new(&self.game, self.selected_cell, selected_digit);
+        let grid_vm = GridViewModel::new(
+            &self.game,
+            self.selected_cell,
+            selected_digit,
+            &self.highlight_config,
+        );
         let keypad_vm = KeypadViewModel::new(
             can_set_digit,
             has_removable_digit,
             self.game.decided_digit_count(),
         );
-        let game_screen_vm = GameScreenViewModel::new(grid_vm, keypad_vm, self.status());
+        let sidebar_vm = SidebarViewModel::new(self.status(), &self.highlight_config);
+        let game_screen_vm = GameScreenViewModel::new(grid_vm, keypad_vm, sidebar_vm);
 
         let mut actions = vec![];
         CentralPanel::default().show(ctx, |ui| {

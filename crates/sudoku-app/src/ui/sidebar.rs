@@ -1,18 +1,74 @@
-use eframe::egui::{RichText, Ui};
+use eframe::egui::{Button, CollapsingHeader, RichText, ScrollArea, Ui};
 
-use crate::{app::GameStatus, ui::Action};
+use crate::{
+    app::{GameStatus, HighlightConfig, RcbHighlight},
+    ui::Action,
+};
 
-pub fn show(ui: &mut Ui, status: GameStatus) -> Vec<Action> {
+#[derive(Debug, Clone)]
+pub struct SidebarViewModel<'a> {
+    status: GameStatus,
+    highlight_config: &'a HighlightConfig,
+}
+
+impl<'a> SidebarViewModel<'a> {
+    pub fn new(status: GameStatus, highlight_config: &'a HighlightConfig) -> Self {
+        Self {
+            status,
+            highlight_config,
+        }
+    }
+}
+
+pub fn show(ui: &mut Ui, vm: &SidebarViewModel) -> Vec<Action> {
     let mut actions = vec![];
     ui.vertical(|ui| {
-        let text = match status {
-            GameStatus::InProgress => "Game in progress",
-            GameStatus::Solved => "Congratulations! You solved the puzzle!",
-        };
-        ui.label(RichText::new(text).size(20.0));
-        if ui.button(RichText::new("New Game").size(20.0)).clicked() {
-            actions.push(Action::NewGame);
-        }
+        ui.group(|ui| {
+            let status_text = match vm.status {
+                GameStatus::InProgress => "Game in progress",
+                GameStatus::Solved => "Congratulations! You solved the puzzle!",
+            };
+            let status_label = match vm.status {
+                GameStatus::InProgress => RichText::new(status_text),
+                GameStatus::Solved => RichText::new(status_text).color(ui.visuals().warn_fg_color),
+            };
+            ui.label(status_label.size(20.0));
+            ui.add_space(8.0);
+            let button = ui.add_sized(
+                [ui.available_width(), 36.0],
+                Button::new(RichText::new("New Game").size(20.0)),
+            );
+            if button.clicked() {
+                actions.push(Action::NewGame);
+            }
+        });
+
+        ScrollArea::vertical().show(ui, |ui| {
+            let mut hlc = vm.highlight_config.clone();
+            let mut hlc_changed = false;
+            CollapsingHeader::new("Highlight settings")
+                .default_open(true)
+                .show(ui, |ui| {
+                    hlc_changed |= ui
+                        .checkbox(&mut hlc.same_digit, "Same digit highlight")
+                        .changed();
+                    ui.label(RichText::new("Row/Col/Box Highlight"));
+                    ui.indent("rcb_highlight", |ui| {
+                        hlc_changed |= ui
+                            .radio_value(&mut hlc.rcb, RcbHighlight::None, "None")
+                            .changed();
+                        hlc_changed |= ui
+                            .radio_value(&mut hlc.rcb, RcbHighlight::SelectedCell, "Selected cell")
+                            .changed();
+                        hlc_changed |= ui
+                            .radio_value(&mut hlc.rcb, RcbHighlight::SameDigit, "Same digit cells")
+                            .changed();
+                    });
+                    if hlc_changed {
+                        actions.push(Action::UpdateHighlightConfig(hlc));
+                    }
+                });
+        });
     });
     actions
 }

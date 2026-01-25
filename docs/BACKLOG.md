@@ -8,13 +8,13 @@ Casual backlog for ideas, experiments, and future work. Order is not strict.
 
 - Selection row/column/box highlight ✅
 - Same digit highlight ✅
-- Highlight peers of same-digit cells (row/column/box)
+- Highlight peers of same-digit cells (row/column/box) ✅
 - Digit count/tally display (per digit) ✅
 - Digit count integrated number pad/buttons (mouse-only input) ✅
 - Light/Dark mode toggle
 - Mouse-only input (number pad/buttons) ✅
 - New Game confirmation dialog
-- Feature toggles UI (assist on/off)
+- Feature toggles UI (assist on/off) ✅
 - UI ViewModel-based split/refactor ✅
 
 ### Gameplay
