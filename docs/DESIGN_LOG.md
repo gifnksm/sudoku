@@ -17,3 +17,4 @@ Short, timestamped notes capturing decisions and rationale.
 - 2026-01-24: Highlight spec — row/column/box use a neutral tint (not necessarily warm); same digit uses a distinct cool tint; cool wins on overlap; apply same-digit highlight only when the selected cell contains a digit, tuned for dark theme readability.
 - 2026-01-24: Number pad UI — 2x5 layout; digits centered; per-digit filled count in the top-right; counts show filled totals; Del clears selected cell — improves mouse-only input while surfacing progress.
 - 2026-01-25: UI uses ViewModels and `Action` returns for input/interaction — keeps rendering decoupled from game logic and centralizes action application.
+- 2026-01-25: Game exposes can_* helpers for action gating — reduces UI-side rule checks.

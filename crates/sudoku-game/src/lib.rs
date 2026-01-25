@@ -247,6 +247,14 @@ impl Game {
         Ok(())
     }
 
+    /// Returns whether a digit can be placed at the given position.
+    ///
+    /// This returns `false` for given cells, which cannot be modified.
+    #[must_use]
+    pub fn can_set_digit(&self, pos: Position) -> bool {
+        !self.cell(pos).is_given()
+    }
+
     /// Clears the digit at the given position.
     ///
     /// If the cell is filled, it becomes empty. If the cell is already empty,
@@ -286,6 +294,22 @@ impl Game {
             CellState::Empty => {}
         }
         Ok(())
+    }
+
+    /// Returns whether a digit can be removed at the given position.
+    ///
+    /// This returns `false` for given cells, which cannot be modified.
+    #[must_use]
+    pub fn can_remove_digit(&self, pos: Position) -> bool {
+        !self.cell(pos).is_given()
+    }
+
+    /// Returns whether the cell currently contains a removable digit.
+    ///
+    /// This is `true` only for filled (player-entered) cells.
+    #[must_use]
+    pub fn has_removable_digit(&self, pos: Position) -> bool {
+        self.cell(pos).is_filled()
     }
 
     /// Returns the count of each decided digit (given or filled) on the board.
@@ -487,6 +511,34 @@ mod tests {
         // Clear empty cell is no-op
         assert!(game.remove_digit(empty_pos).is_ok());
         assert!(game.cell(empty_pos).is_empty());
+    }
+
+    #[test]
+    fn test_digit_capability_helpers() {
+        use sudoku_solver::TechniqueSolver;
+        let solver = TechniqueSolver::with_all_techniques();
+        let generator = PuzzleGenerator::new(&solver);
+        let puzzle = generator.generate();
+        let mut game = Game::new(puzzle);
+
+        let given_pos = Position::ALL
+            .into_iter()
+            .find(|&pos| game.cell(pos).is_given())
+            .expect("puzzle has given cells");
+        let empty_pos = Position::ALL
+            .into_iter()
+            .find(|&pos| game.cell(pos).is_empty())
+            .expect("puzzle has empty cells");
+
+        assert!(!game.can_set_digit(given_pos));
+        assert!(game.can_set_digit(empty_pos));
+
+        assert!(!game.can_remove_digit(given_pos));
+        assert!(game.can_remove_digit(empty_pos));
+
+        assert!(!game.has_removable_digit(empty_pos));
+        game.set_digit(empty_pos, Digit::D5).unwrap();
+        assert!(game.has_removable_digit(empty_pos));
     }
 
     #[test]

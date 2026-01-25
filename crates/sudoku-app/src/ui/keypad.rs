@@ -8,13 +8,19 @@ use crate::ui::Action;
 #[derive(Debug, Clone)]
 pub struct KeypadViewModel {
     can_set_digit: bool,
+    has_removable_digit: bool,
     decided_digit_count: Array9<usize, DigitSemantics>,
 }
 
 impl KeypadViewModel {
-    pub fn new(can_set_digit: bool, decided_digit_count: Array9<usize, DigitSemantics>) -> Self {
+    pub fn new(
+        can_set_digit: bool,
+        has_removable_digit: bool,
+        decided_digit_count: Array9<usize, DigitSemantics>,
+    ) -> Self {
         Self {
             can_set_digit,
+            has_removable_digit,
             decided_digit_count,
         }
     }
@@ -53,8 +59,6 @@ pub fn show(ui: &mut Ui, vm: &KeypadViewModel) -> Vec<Action> {
         (avail.y - y_padding) / 2.0,
     );
     let counts = &vm.decided_digit_count;
-    let button_enabled = vm.can_set_digit;
-
     Grid::new(ui.id().with("keypad_grid"))
         .spacing((x_padding, y_padding))
         .show(ui, |ui| {
@@ -65,7 +69,7 @@ pub fn show(ui: &mut Ui, vm: &KeypadViewModel) -> Vec<Action> {
                             let text = RichText::new(digit.as_str()).size(button_size * 0.8);
                             let button = Button::new(text).min_size(Vec2::splat(button_size));
                             let button = ui
-                                .add_enabled(button_enabled, button)
+                                .add_enabled(vm.can_set_digit, button)
                                 .on_hover_text("Set digit");
                             if button.clicked() {
                                 actions.push(Action::SetDigit(*digit));
@@ -82,7 +86,7 @@ pub fn show(ui: &mut Ui, vm: &KeypadViewModel) -> Vec<Action> {
                             let text = RichText::new("X").size(button_size * 0.8);
                             let button = Button::new(text).min_size(Vec2::splat(button_size));
                             let button = ui
-                                .add_enabled(button_enabled, button)
+                                .add_enabled(vm.has_removable_digit, button)
                                 .on_hover_text("Remove digit");
                             if button.clicked() {
                                 actions.push(Action::RemoveDigit);

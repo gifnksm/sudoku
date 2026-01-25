@@ -118,12 +118,19 @@ impl App for SudokuApp {
 
         let can_set_digit = self
             .selected_cell
-            .is_some_and(|pos| !self.game.cell(pos).is_given());
+            .is_some_and(|pos| self.game.can_set_digit(pos));
+        let has_removable_digit = self
+            .selected_cell
+            .is_some_and(|pos| self.game.has_removable_digit(pos));
         let selected_digit = self
             .selected_cell
             .and_then(|pos| self.game.cell(pos).as_digit());
         let grid_vm = GridViewModel::new(&self.game, self.selected_cell, selected_digit);
-        let keypad_vm = KeypadViewModel::new(can_set_digit, self.game.decided_digit_count());
+        let keypad_vm = KeypadViewModel::new(
+            can_set_digit,
+            has_removable_digit,
+            self.game.decided_digit_count(),
+        );
         let game_screen_vm = GameScreenViewModel::new(grid_vm, keypad_vm, self.status());
 
         let mut actions = vec![];
