@@ -1,7 +1,7 @@
 use eframe::egui::{Button, CollapsingHeader, RichText, ScrollArea, Ui};
 
 use crate::{
-    app::{GameStatus, HighlightConfig, RcbHighlight, ThemeConfig, Theme},
+    app::{GameStatus, HighlightConfig, Theme, ThemeConfig},
     ui::Action,
 };
 
@@ -56,18 +56,15 @@ pub fn show(ui: &mut Ui, vm: &SidebarViewModel) -> Vec<Action> {
                 .default_open(true)
                 .show(ui, |ui| {
                     hlc_changed |= ui
-                        .checkbox(&mut hlc.same_digit, "Same digit highlight")
+                        .checkbox(&mut hlc.same_digit, "Same digit cells")
                         .changed();
                     ui.label(RichText::new("Row/Col/Box Highlight"));
                     ui.indent("rcb_highlight", |ui| {
                         hlc_changed |= ui
-                            .radio_value(&mut hlc.rcb, RcbHighlight::None, "None")
+                            .checkbox(&mut hlc.rcb_selected, "Selected cell")
                             .changed();
                         hlc_changed |= ui
-                            .radio_value(&mut hlc.rcb, RcbHighlight::SelectedCell, "Selected cell")
-                            .changed();
-                        hlc_changed |= ui
-                            .radio_value(&mut hlc.rcb, RcbHighlight::SameDigit, "Same digit cells")
+                            .checkbox(&mut hlc.rcb_same_digit, "Same digit cells")
                             .changed();
                     });
                     if hlc_changed {

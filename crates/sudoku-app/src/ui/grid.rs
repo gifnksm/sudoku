@@ -4,10 +4,7 @@ use eframe::egui::{Button, Color32, Grid, RichText, Stroke, StrokeKind, Ui, Vec2
 use sudoku_core::{Digit, Position};
 use sudoku_game::{CellState, Game};
 
-use crate::{
-    app::{HighlightConfig, RcbHighlight},
-    ui::Action,
-};
+use crate::{app::HighlightConfig, ui::Action};
 
 #[derive(Debug, Clone)]
 pub struct GridViewModel<'a> {
@@ -38,33 +35,29 @@ impl<'a> GridViewModel<'a> {
             return CellHighlight::Selected;
         }
 
-        if self.highlight_config.same_digit
-            && self.selected_digit.is_some_and(|d| Some(d) == cell_digit)
-        {
+        let hlc = &self.highlight_config;
+        if hlc.same_digit && self.selected_digit.is_some_and(|d| Some(d) == cell_digit) {
             return CellHighlight::SameDigit;
         }
 
-        match self.highlight_config.rcb {
-            RcbHighlight::None => {}
-            RcbHighlight::SelectedCell => {
-                if self
-                    .selected_cell
-                    .is_some_and(|p| is_same_home(p, cell_pos))
-                {
-                    return CellHighlight::SameRcb;
-                }
-            }
-            RcbHighlight::SameDigit => {
-                if self.selected_digit.is_some_and(|d| {
-                    Position::ROWS[cell_pos.y()]
-                        .into_iter()
-                        .chain(Position::COLUMNS[cell_pos.x()])
-                        .chain(Position::BOXES[cell_pos.box_index()])
-                        .any(|p| self.game.cell(p).as_digit() == Some(d))
-                }) {
-                    return CellHighlight::SameDigitRcb;
-                }
-            }
+        if hlc.rcb_selected
+            && self
+                .selected_cell
+                .is_some_and(|p| is_same_home(p, cell_pos))
+        {
+            return CellHighlight::RcbSelected;
+        }
+
+        if hlc.rcb_same_digit
+            && self.selected_digit.is_some_and(|d| {
+                Position::ROWS[cell_pos.y()]
+                    .into_iter()
+                    .chain(Position::COLUMNS[cell_pos.x()])
+                    .chain(Position::BOXES[cell_pos.box_index()])
+                    .any(|p| self.game.cell(p).as_digit() == Some(d))
+            })
+        {
+            return CellHighlight::RcbSameDigit;
         }
 
         CellHighlight::None
@@ -108,8 +101,8 @@ const RCB_BORDER_RATIO: f32 = 1.0;
 enum CellHighlight {
     Selected,
     SameDigit,
-    SameRcb,
-    SameDigitRcb,
+    RcbSelected,
+    RcbSameDigit,
     None,
 }
 
@@ -117,7 +110,7 @@ impl CellHighlight {
     fn fill_color(self, visuals: &Visuals) -> Color32 {
         match self {
             Self::Selected | Self::SameDigit => visuals.selection.bg_fill,
-            Self::SameRcb | Self::SameDigitRcb => visuals.widgets.hovered.bg_fill,
+            Self::RcbSelected | Self::RcbSameDigit => visuals.widgets.hovered.bg_fill,
             Self::None => visuals.text_edit_bg_color(),
         }
     }
@@ -126,7 +119,7 @@ impl CellHighlight {
         let (ratio, color) = match self {
             Self::Selected => (SELECTED_BORDER_RATIO, visuals.selection.stroke.color),
             Self::SameDigit => (SAME_DIGIT_BORDER_RATIO, visuals.selection.stroke.color),
-            Self::SameRcb | Self::SameDigitRcb => (
+            Self::RcbSelected | Self::RcbSameDigit => (
                 RCB_BORDER_RATIO,
                 GridViewModel::inactive_border_color(visuals),
             ),

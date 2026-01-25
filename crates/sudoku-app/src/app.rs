@@ -41,21 +41,16 @@ pub enum GameStatus {
 #[derive(Debug, Clone)]
 pub struct HighlightConfig {
     pub same_digit: bool,
-    pub rcb: RcbHighlight,
-}
-
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
-pub enum RcbHighlight {
-    None,
-    SelectedCell,
-    SameDigit,
+    pub rcb_selected: bool,
+    pub rcb_same_digit: bool,
 }
 
 impl Default for HighlightConfig {
     fn default() -> Self {
         Self {
             same_digit: true,
-            rcb: RcbHighlight::SameDigit,
+            rcb_selected: true,
+            rcb_same_digit: true,
         }
     }
 }
