@@ -6,7 +6,7 @@ use crate::ui::Action;
 pub fn handle_input(i: &InputState) -> Vec<Action> {
     let mut actions = vec![];
     if i.modifiers.command && i.key_pressed(Key::N) {
-        actions.push(Action::NewGame);
+        actions.push(Action::RequestNewGameConfirm);
     }
     if i.key_pressed(Key::ArrowUp) {
         actions.push(Action::MoveSelection(crate::ui::MoveDirection::Up));

@@ -6,6 +6,7 @@ pub mod game_screen;
 pub mod grid;
 pub mod input;
 pub mod keypad;
+pub mod dialogs;
 pub mod sidebar;
 
 #[derive(Debug, Clone)]
@@ -15,6 +16,7 @@ pub enum Action {
     MoveSelection(MoveDirection),
     SetDigit(Digit),
     RemoveDigit,
+    RequestNewGameConfirm,
     NewGame,
     UpdateHighlightConfig(HighlightConfig),
 }

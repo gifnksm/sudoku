@@ -28,6 +28,7 @@ pub struct SudokuApp {
     game: Game,
     selected_cell: Option<Position>,
     highlight_config: HighlightConfig,
+    show_new_game_confirm_dialogue: bool,
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -64,6 +65,7 @@ impl SudokuApp {
             game: new_game(),
             selected_cell: None,
             highlight_config: HighlightConfig::default(),
+            show_new_game_confirm_dialogue: false,
         }
     }
 
@@ -119,6 +121,9 @@ impl SudokuApp {
             Action::RemoveDigit => {
                 self.remove_digit();
             }
+            Action::RequestNewGameConfirm => {
+                self.show_new_game_confirm_dialogue = true;
+            }
             Action::NewGame => {
                 self.new_game();
             }
@@ -137,11 +142,13 @@ fn new_game() -> Game {
 
 impl App for SudokuApp {
     fn update(&mut self, ctx: &Context, _frame: &mut Frame) {
-        ctx.input(|i| {
-            for action in ui::input::handle_input(i) {
-                self.apply_action(action);
-            }
-        });
+        if !self.show_new_game_confirm_dialogue {
+            ctx.input(|i| {
+                for action in ui::input::handle_input(i) {
+                    self.apply_action(action);
+                }
+            });
+        }
 
         let can_set_digit = self
             .selected_cell
@@ -169,6 +176,12 @@ impl App for SudokuApp {
         let mut actions = vec![];
         CentralPanel::default().show(ctx, |ui| {
             actions = ui::game_screen::show(ui, &game_screen_vm);
+            if self.show_new_game_confirm_dialogue {
+                actions.extend(ui::dialogs::show_new_game_confirm(
+                    ui,
+                    &mut self.show_new_game_confirm_dialogue,
+                ));
+            }
         });
 
         for action in actions {

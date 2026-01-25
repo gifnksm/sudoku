@@ -13,7 +13,7 @@ Casual backlog for ideas, experiments, and future work. Order is not strict.
 - Digit count integrated number pad/buttons (mouse-only input) ✅
 - Light/Dark mode toggle
 - Mouse-only input (number pad/buttons) ✅
-- New Game confirmation dialog
+- New Game confirmation dialog ✅
 - Feature toggles UI (assist on/off) ✅
 - UI ViewModel-based split/refactor ✅
 

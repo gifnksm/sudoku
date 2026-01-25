@@ -39,7 +39,7 @@ pub fn show(ui: &mut Ui, vm: &SidebarViewModel) -> Vec<Action> {
                 Button::new(RichText::new("New Game").size(20.0)),
             );
             if button.clicked() {
-                actions.push(Action::NewGame);
+                actions.push(Action::RequestNewGameConfirm);
             }
         });
 
