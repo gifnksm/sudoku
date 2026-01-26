@@ -9,8 +9,10 @@
 //! - Candidate marks, undo/redo, hints, mistake detection.
 //! - Save/load, timer/statistics, and web/WASM support.
 
+use std::time::Duration;
+
 use eframe::{
-    App, CreationContext, Frame,
+    App, CreationContext, Frame, Storage,
     egui::{CentralPanel, Context, Visuals},
 };
 use numelace_core::{Digit, Position};
@@ -18,18 +20,19 @@ use numelace_game::Game;
 use numelace_generator::PuzzleGenerator;
 use numelace_solver::TechniqueSolver;
 
-use crate::ui::{
-    self, Action, MoveDirection, game_screen::GameScreenViewModel, grid::GridViewModel,
-    keypad::KeypadViewModel, sidebar::SidebarViewModel,
+use crate::{
+    persistence::storage,
+    state::{AppState, Theme, UiState},
+    ui::{
+        self, Action, MoveDirection, game_screen::GameScreenViewModel, grid::GridViewModel,
+        keypad::KeypadViewModel, sidebar::SidebarViewModel,
+    },
 };
 
 #[derive(Debug)]
 pub struct NumelaceApp {
-    game: Game,
-    selected_cell: Option<Position>,
-    highlight_config: HighlightConfig,
-    theme_config: ThemeConfig,
-    show_new_game_confirm_dialogue: bool,
+    app_state: AppState,
+    ui_state: UiState,
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -38,52 +41,26 @@ pub enum GameStatus {
     Solved,
 }
 
-#[derive(Debug, Clone)]
-pub struct HighlightConfig {
-    pub same_digit: bool,
-    pub rcb_selected: bool,
-    pub rcb_same_digit: bool,
-}
-
-impl Default for HighlightConfig {
-    fn default() -> Self {
-        Self {
-            same_digit: true,
-            rcb_selected: true,
-            rcb_same_digit: true,
-        }
-    }
-}
-
-#[derive(Debug, Clone)]
-pub struct ThemeConfig {
-    pub theme: Theme,
-}
-
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
-pub enum Theme {
-    Light,
-    Dark,
-}
-
 impl NumelaceApp {
     pub fn new(cc: &CreationContext<'_>) -> Self {
-        let theme = if cc.egui_ctx.style().visuals.dark_mode {
-            Theme::Dark
-        } else {
-            Theme::Light
+        let app_state = cc.storage.and_then(storage::load_state).unwrap_or_else(|| {
+            let theme = if cc.egui_ctx.style().visuals.dark_mode {
+                Theme::Dark
+            } else {
+                Theme::Light
+            };
+            AppState::new(new_game(), theme)
+        });
+        let this = Self {
+            app_state,
+            ui_state: UiState::default(),
         };
-        Self {
-            game: new_game(),
-            selected_cell: None,
-            highlight_config: HighlightConfig::default(),
-            theme_config: ThemeConfig { theme },
-            show_new_game_confirm_dialogue: false,
-        }
+        this.update_theme(&cc.egui_ctx);
+        this
     }
 
     fn status(&self) -> GameStatus {
-        if self.game.is_solved() {
+        if self.app_state.game.is_solved() {
             GameStatus::Solved
         } else {
             GameStatus::InProgress
@@ -91,19 +68,19 @@ impl NumelaceApp {
     }
 
     fn new_game(&mut self) {
-        self.game = new_game();
-        self.selected_cell = None;
+        self.app_state.game = new_game();
+        self.app_state.selected_cell = None;
     }
 
     fn set_digit(&mut self, digit: Digit) {
-        if let Some(pos) = self.selected_cell {
-            let _ = self.game.set_digit(pos, digit);
+        if let Some(pos) = self.app_state.selected_cell {
+            let _ = self.app_state.game.set_digit(pos, digit);
         }
     }
 
     fn remove_digit(&mut self) {
-        if let Some(pos) = self.selected_cell {
-            let _ = self.game.remove_digit(pos);
+        if let Some(pos) = self.app_state.selected_cell {
+            let _ = self.app_state.game.remove_digit(pos);
         }
     }
 
@@ -111,13 +88,13 @@ impl NumelaceApp {
         const DEFAULT_POSITION: Position = Position::new(0, 0);
         match action {
             Action::SelectCell(pos) => {
-                self.selected_cell = Some(pos);
+                self.app_state.selected_cell = Some(pos);
             }
             Action::ClearSelection => {
-                self.selected_cell = None;
+                self.app_state.selected_cell = None;
             }
             Action::MoveSelection(move_direction) => {
-                let pos = self.selected_cell.get_or_insert(DEFAULT_POSITION);
+                let pos = self.app_state.selected_cell.get_or_insert(DEFAULT_POSITION);
                 let new_pos = match move_direction {
                     MoveDirection::Up => pos.up(),
                     MoveDirection::Down => pos.down(),
@@ -135,24 +112,28 @@ impl NumelaceApp {
                 self.remove_digit();
             }
             Action::RequestNewGameConfirm => {
-                self.show_new_game_confirm_dialogue = true;
+                self.ui_state.show_new_game_confirm_dialogue = true;
             }
             Action::NewGame => {
                 self.new_game();
             }
-            Action::UpdateHighlightConfig(config) => {
-                self.highlight_config = config;
+            Action::UpdateHighlightSettings(settings) => {
+                self.app_state.settings.highlight = settings;
             }
-            Action::UpdateThemeConfig(config) => {
-                self.theme_config = config;
-                match self.theme_config.theme {
-                    Theme::Light => {
-                        ctx.set_visuals(Visuals::light());
-                    }
-                    Theme::Dark => {
-                        ctx.set_visuals(Visuals::dark());
-                    }
-                }
+            Action::UpdateThemeSettings(settings) => {
+                self.app_state.settings.theme = settings;
+                self.update_theme(ctx);
+            }
+        }
+    }
+
+    fn update_theme(&self, ctx: &Context) {
+        match self.app_state.settings.theme.theme {
+            Theme::Light => {
+                ctx.set_visuals(Visuals::light());
+            }
+            Theme::Dark => {
+                ctx.set_visuals(Visuals::dark());
             }
         }
     }
@@ -165,52 +146,58 @@ fn new_game() -> Game {
 }
 
 impl App for NumelaceApp {
-    fn update(&mut self, ctx: &Context, _frame: &mut Frame) {
-        if !self.show_new_game_confirm_dialogue {
+    fn save(&mut self, storage: &mut dyn Storage) {
+        storage::save_state(storage, &self.app_state);
+    }
+
+    fn auto_save_interval(&self) -> Duration {
+        Duration::from_secs(30)
+    }
+
+    fn update(&mut self, ctx: &Context, frame: &mut Frame) {
+        let mut save_requested = false;
+        if !self.ui_state.show_new_game_confirm_dialogue {
             ctx.input(|i| {
                 for action in ui::input::handle_input(i) {
+                    save_requested = true;
                     self.apply_action(action, ctx);
                 }
             });
         }
 
-        let can_set_digit = self
-            .selected_cell
-            .is_some_and(|pos| self.game.can_set_digit(pos));
-        let has_removable_digit = self
-            .selected_cell
-            .is_some_and(|pos| self.game.has_removable_digit(pos));
-        let selected_digit = self
-            .selected_cell
-            .and_then(|pos| self.game.cell(pos).as_digit());
-        let grid_vm = GridViewModel::new(
-            &self.game,
-            self.selected_cell,
-            selected_digit,
-            &self.highlight_config,
-        );
+        let game = &self.app_state.game;
+        let selected_cell = self.app_state.selected_cell;
+        let settings = &self.app_state.settings;
+        let can_set_digit = selected_cell.is_some_and(|pos| game.can_set_digit(pos));
+        let has_removable_digit = selected_cell.is_some_and(|pos| game.has_removable_digit(pos));
+        let selected_digit = selected_cell.and_then(|pos| game.cell(pos).as_digit());
+        let grid_vm = GridViewModel::new(game, selected_cell, selected_digit, &settings.highlight);
         let keypad_vm = KeypadViewModel::new(
             can_set_digit,
             has_removable_digit,
-            self.game.decided_digit_count(),
+            game.decided_digit_count(),
         );
-        let sidebar_vm =
-            SidebarViewModel::new(self.status(), &self.highlight_config, &self.theme_config);
+        let sidebar_vm = SidebarViewModel::new(self.status(), &settings.highlight, &settings.theme);
         let game_screen_vm = GameScreenViewModel::new(grid_vm, keypad_vm, sidebar_vm);
 
         let mut actions = vec![];
         CentralPanel::default().show(ctx, |ui| {
             actions = ui::game_screen::show(ui, &game_screen_vm);
-            if self.show_new_game_confirm_dialogue {
+            if self.ui_state.show_new_game_confirm_dialogue {
                 actions.extend(ui::dialogs::show_new_game_confirm(
                     ui,
-                    &mut self.show_new_game_confirm_dialogue,
+                    &mut self.ui_state.show_new_game_confirm_dialogue,
                 ));
             }
         });
 
         for action in actions {
+            save_requested = true;
             self.apply_action(action, ctx);
+        }
+
+        if save_requested && let Some(storage) = frame.storage_mut() {
+            self.save(storage);
         }
     }
 }

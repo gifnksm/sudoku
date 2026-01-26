@@ -1,27 +1,28 @@
 use eframe::egui::{Button, CollapsingHeader, RichText, ScrollArea, Ui};
 
 use crate::{
-    app::{GameStatus, HighlightConfig, Theme, ThemeConfig},
+    app::GameStatus,
+    state::{HighlightSettings, Theme, ThemeSettings},
     ui::Action,
 };
 
 #[derive(Debug, Clone)]
 pub struct SidebarViewModel<'a> {
     status: GameStatus,
-    highlight_config: &'a HighlightConfig,
-    theme_config: &'a ThemeConfig,
+    highlight_settings: &'a HighlightSettings,
+    theme_settings: &'a ThemeSettings,
 }
 
 impl<'a> SidebarViewModel<'a> {
     pub fn new(
         status: GameStatus,
-        highlight_config: &'a HighlightConfig,
-        theme_config: &'a ThemeConfig,
+        highlight_settings: &'a HighlightSettings,
+        theme_settings: &'a ThemeSettings,
     ) -> Self {
         Self {
             status,
-            highlight_config,
-            theme_config,
+            highlight_settings,
+            theme_settings,
         }
     }
 }
@@ -50,45 +51,43 @@ pub fn show(ui: &mut Ui, vm: &SidebarViewModel) -> Vec<Action> {
         });
 
         ScrollArea::vertical().show(ui, |ui| {
-            let mut hlc = vm.highlight_config.clone();
-            let mut hlc_changed = false;
+            let mut hls = vm.highlight_settings.clone();
+            let mut hls_changed = false;
             CollapsingHeader::new("Highlight settings")
                 .default_open(true)
                 .show(ui, |ui| {
-                    hlc_changed |= ui
-                        .checkbox(&mut hlc.same_digit, "Same digit cells")
+                    hls_changed |= ui
+                        .checkbox(&mut hls.same_digit, "Same digit cells")
                         .changed();
                     ui.label(RichText::new("Row/Col/Box Highlight"));
                     ui.indent("rcb_highlight", |ui| {
-                        hlc_changed |= ui
-                            .checkbox(&mut hlc.rcb_selected, "Selected cell")
+                        hls_changed |= ui
+                            .checkbox(&mut hls.rcb_selected, "Selected cell")
                             .changed();
-                        hlc_changed |= ui
-                            .checkbox(&mut hlc.rcb_same_digit, "Same digit cells")
+                        hls_changed |= ui
+                            .checkbox(&mut hls.rcb_same_digit, "Same digit cells")
                             .changed();
                     });
-                    if hlc_changed {
-                        actions.push(Action::UpdateHighlightConfig(hlc));
+                    if hls_changed {
+                        actions.push(Action::UpdateHighlightSettings(hls));
                     }
                 });
 
-            let mut theme_config = vm.theme_config.clone();
-            let mut theme_changed = false;
+            let mut ts = vm.theme_settings.clone();
+            let mut ts_changed = false;
             CollapsingHeader::new("Appearance settings")
                 .default_open(true)
                 .show(ui, |ui| {
                     ui.label(RichText::new("Theme"));
                     ui.indent("theme", |ui| {
-                        theme_changed |= ui
-                            .radio_value(&mut theme_config.theme, Theme::Light, "Light")
+                        ts_changed |= ui
+                            .radio_value(&mut ts.theme, Theme::Light, "Light")
                             .changed();
-                        theme_changed |= ui
-                            .radio_value(&mut theme_config.theme, Theme::Dark, "Dark")
-                            .changed();
+                        ts_changed |= ui.radio_value(&mut ts.theme, Theme::Dark, "Dark").changed();
                     });
                 });
-            if theme_changed {
-                actions.push(Action::UpdateThemeConfig(theme_config));
+            if ts_changed {
+                actions.push(Action::UpdateThemeSettings(ts));
             }
         });
     });

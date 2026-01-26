@@ -26,6 +26,17 @@ impl Ord for Position {
     }
 }
 
+/// Errors that can occur when constructing a [`Position`] with validation.
+#[derive(Debug, derive_more::Display, derive_more::Error)]
+pub enum PositionNewError {
+    /// The x coordinate is outside the valid range (0-8).
+    #[display("invalid x value: {_0}")]
+    InvalidXValue(#[error(not(source))] u8),
+    /// The y coordinate is outside the valid range (0-8).
+    #[display("invalid y value: {_0}")]
+    InvalidYValue(#[error(not(source))] u8),
+}
+
 impl Position {
     /// All 81 positions on the Sudoku board, in index order.
     ///
@@ -149,6 +160,23 @@ impl Position {
     pub const fn new(x: u8, y: u8) -> Self {
         assert!(x < 9 && y < 9);
         Self { x, y }
+    }
+
+    /// Attempts to create a new position from column and row coordinates.
+    ///
+    /// # Errors
+    ///
+    /// Returns [`PositionNewError::InvalidXValue`] if `x` is greater than or equal to 9,
+    /// and [`PositionNewError::InvalidYValue`] if `y` is greater than or equal to 9.
+    #[inline]
+    pub const fn try_new(x: u8, y: u8) -> Result<Self, PositionNewError> {
+        if x >= 9 {
+            return Err(PositionNewError::InvalidXValue(x));
+        }
+        if y >= 9 {
+            return Err(PositionNewError::InvalidYValue(y));
+        }
+        Ok(Self { x, y })
     }
 
     /// Returns a new position with the given column (x), preserving the row (y).
@@ -354,6 +382,20 @@ mod tests {
     #[should_panic(expected = "assertion failed")]
     fn test_new_position_y_too_large() {
         let _ = Position::new(0, 9);
+    }
+
+    #[test]
+    fn test_try_new() {
+        assert_eq!(Position::try_new(0, 0).unwrap(), Position::new(0, 0));
+        assert_eq!(Position::try_new(8, 8).unwrap(), Position::new(8, 8));
+        assert!(matches!(
+            Position::try_new(9, 0).unwrap_err(),
+            PositionNewError::InvalidXValue(9)
+        ));
+        assert!(matches!(
+            Position::try_new(0, 9).unwrap_err(),
+            PositionNewError::InvalidYValue(9)
+        ));
     }
 
     #[test]

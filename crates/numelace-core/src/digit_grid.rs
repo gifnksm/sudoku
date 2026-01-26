@@ -161,8 +161,22 @@ impl Display for DigitGrid {
     }
 }
 
+/// Errors that can occur when parsing a [`DigitGrid`] from a string.
+///
+/// This error type distinguishes between invalid characters and incorrect
+/// input lengths so callers can provide precise feedback.
+#[derive(Debug, derive_more::Display, derive_more::Error)]
+pub enum DigitGridParseError {
+    /// The input contains a character that is not a digit, '.', '0', or '_'.
+    #[display("invalid character '{_0}'")]
+    InvalidCharacter(#[error(not(source))] char),
+    /// The input does not contain exactly 81 non-whitespace characters.
+    #[display("invalid grid length: expected 81, got {_0}")]
+    InvalidLength(#[error(not(source))] usize),
+}
+
 impl FromStr for DigitGrid {
-    type Err = String;
+    type Err = DigitGridParseError;
 
     fn from_str(s: &str) -> Result<Self, Self::Err> {
         let mut cells = [None; 81];
@@ -170,7 +184,9 @@ impl FromStr for DigitGrid {
         let mut chars = s.chars().filter(|c| !c.is_whitespace());
 
         // Parse characters and assign to cells
+        let mut filled = 0;
         for (cell, ch) in cells_iter.by_ref().zip(chars.by_ref()) {
+            filled += 1;
             *cell = match ch {
                 '.' | '0' | '_' => None,
                 '1' => Some(Digit::D1),
@@ -182,20 +198,19 @@ impl FromStr for DigitGrid {
                 '7' => Some(Digit::D7),
                 '8' => Some(Digit::D8),
                 '9' => Some(Digit::D9),
-                _ => return Err(format!("Invalid character '{ch}'")),
+                _ => return Err(DigitGridParseError::InvalidCharacter(ch)),
             };
         }
 
         // Check if there are too many characters
-        if chars.next().is_some() {
-            return Err("Invalid grid length: expected 81 characters, got more than 81".to_owned());
+        let rest_chars = chars.count();
+        if rest_chars > 0 {
+            return Err(DigitGridParseError::InvalidLength(filled + rest_chars));
         }
 
         // Check if there are too few characters
-        if cells_iter.next().is_some() {
-            return Err(
-                "Invalid grid length: expected 81 characters, got fewer than 81".to_owned(),
-            );
+        if filled < 81 {
+            return Err(DigitGridParseError::InvalidLength(filled));
         }
 
         Ok(Self::from_array(cells))
@@ -246,8 +261,18 @@ mod tests {
         let s = "123456789";
         let result: Result<DigitGrid, _> = s.parse();
 
-        assert!(result.is_err());
-        assert!(result.unwrap_err().contains("expected 81"));
+        assert!(matches!(
+            result.unwrap_err(),
+            DigitGridParseError::InvalidLength(len) if len == s.len(),
+        ));
+
+        let s = "12345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901";
+        let result: Result<DigitGrid, _> = s.parse();
+
+        assert!(matches!(
+            result.as_ref().unwrap_err(),
+            DigitGridParseError::InvalidLength(len) if *len == s.len(),
+        ));
     }
 
     #[test]
@@ -255,8 +280,10 @@ mod tests {
         let s = format!("X{}", ".".repeat(80));
         let result: Result<DigitGrid, _> = s.parse();
 
-        assert!(result.is_err());
-        assert!(result.unwrap_err().contains("Invalid character"));
+        assert!(matches!(
+            result.unwrap_err(),
+            DigitGridParseError::InvalidCharacter('X')
+        ));
     }
 
     #[test]

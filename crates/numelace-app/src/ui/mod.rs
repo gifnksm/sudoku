@@ -1,6 +1,6 @@
 use numelace_core::{Digit, Position};
 
-use crate::app::{HighlightConfig, ThemeConfig};
+use crate::state::{HighlightSettings, ThemeSettings};
 
 pub mod dialogs;
 pub mod game_screen;
@@ -18,8 +18,8 @@ pub enum Action {
     RemoveDigit,
     RequestNewGameConfirm,
     NewGame,
-    UpdateHighlightConfig(HighlightConfig),
-    UpdateThemeConfig(ThemeConfig),
+    UpdateHighlightSettings(HighlightSettings),
+    UpdateThemeSettings(ThemeSettings),
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]

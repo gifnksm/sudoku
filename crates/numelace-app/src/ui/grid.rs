@@ -4,14 +4,14 @@ use eframe::egui::{Button, Color32, Grid, RichText, Stroke, StrokeKind, Ui, Vec2
 use numelace_core::{Digit, Position};
 use numelace_game::{CellState, Game};
 
-use crate::{app::HighlightConfig, ui::Action};
+use crate::{state::HighlightSettings, ui::Action};
 
 #[derive(Debug, Clone)]
 pub struct GridViewModel<'a> {
     game: &'a Game,
     selected_cell: Option<Position>,
     selected_digit: Option<Digit>,
-    highlight_config: &'a HighlightConfig,
+    highlight_settings: &'a HighlightSettings,
 }
 
 impl<'a> GridViewModel<'a> {
@@ -19,13 +19,13 @@ impl<'a> GridViewModel<'a> {
         game: &'a Game,
         selected_cell: Option<Position>,
         selected_digit: Option<Digit>,
-        highlight_config: &'a HighlightConfig,
+        highlight_settings: &'a HighlightSettings,
     ) -> Self {
         Self {
             game,
             selected_cell,
             selected_digit,
-            highlight_config,
+            highlight_settings,
         }
     }
 
@@ -35,7 +35,7 @@ impl<'a> GridViewModel<'a> {
             return CellHighlight::Selected;
         }
 
-        let hlc = &self.highlight_config;
+        let hlc = &self.highlight_settings;
         if hlc.same_digit && self.selected_digit.is_some_and(|d| Some(d) == cell_digit) {
             return CellHighlight::SameDigit;
         }

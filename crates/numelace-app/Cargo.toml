@@ -12,12 +12,14 @@ name = "numelace"
 path = "src/main.rs"
 
 [dependencies]
-eframe.workspace = true
+derive_more = { workspace = true, features = ["error", "display", "from"] }
+eframe = { workspace = true, features = ["persistence"] }
 egui_extras.workspace = true
 numelace-core.workspace = true
 numelace-game.workspace = true
 numelace-generator.workspace = true
 numelace-solver.workspace = true
+serde = { workspace = true, features = ["derive"] }
 
 [lints]
 workspace = true

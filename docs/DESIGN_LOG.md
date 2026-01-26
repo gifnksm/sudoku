@@ -6,6 +6,7 @@ Short, timestamped notes capturing decisions and rationale.
 
 - YYYY-MM-DD: Decision — Rationale
   - Note: confirm the current date before adding an entry
+  - Note: append new entries to the end (chronological order)
   - Optional: alternatives considered
   - Optional: links to relevant files/PRs
 
@@ -19,3 +20,4 @@ Short, timestamped notes capturing decisions and rationale.
 - 2026-01-25: UI uses ViewModels and `Action` returns for input/interaction — keeps rendering decoupled from game logic and centralizes action application.
 - 2026-01-25: Game exposes can_* helpers for action gating — reduces UI-side rule checks.
 - 2026-01-25: Always show the New Game confirmation dialog, even when the puzzle is solved — consistent UX and prevents accidental reset.
+- 2026-01-26: Persist app state via eframe storage with RON serialization and DTO/try-from conversions — safe restoration with failure fallback to defaults and periodic + action-triggered saves.

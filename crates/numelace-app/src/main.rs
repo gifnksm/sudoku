@@ -10,11 +10,16 @@ use eframe::{
 use crate::app::NumelaceApp;
 
 mod app;
+mod persistence;
+mod state;
 mod ui;
+
+const APP_ID: &str = "io.github.gifnksm.numelace";
 
 fn main() -> eframe::Result<()> {
     let options = NativeOptions {
         viewport: egui::ViewportBuilder::default()
+            .with_app_id(APP_ID)
             .with_resizable(true)
             .with_inner_size(Vec2::new(800.0, 600.0))
             .with_min_inner_size(Vec2::new(400.0, 300.0)),

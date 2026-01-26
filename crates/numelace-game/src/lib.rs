@@ -56,7 +56,7 @@
 //!
 
 use numelace_core::{
-    CandidateGrid, Digit, Position,
+    CandidateGrid, Digit, DigitGrid, Position,
     containers::{Array9, Array81},
     index::{DigitSemantics, PositionSemantics},
 };
@@ -126,6 +126,33 @@ impl Game {
             }
         }
         Self { grid }
+    }
+
+    /// Creates a game from a problem grid and a filled (player input) grid.
+    ///
+    /// Cells with digits in `problem` are treated as givens. Digits in `filled`
+    /// are applied as player-entered values.
+    ///
+    /// # Errors
+    ///
+    /// Returns [`GameError::CannotModifyGivenCell`] if `filled` contains a digit
+    /// in a position that is a given in `problem`.
+    pub fn from_problem_filled(problem: &DigitGrid, filled: &DigitGrid) -> Result<Self, GameError> {
+        let mut grid = Array81::from_array([const { CellState::Empty }; 81]);
+        for pos in Position::ALL {
+            if let Some(digit) = problem[pos] {
+                grid[pos] = CellState::Given(digit);
+            }
+        }
+
+        let mut this = Self { grid };
+        for pos in Position::ALL {
+            if let Some(digit) = filled[pos] {
+                this.set_digit(pos, digit)?;
+            }
+        }
+
+        Ok(this)
     }
 
     /// Returns the state of the cell at the given position.
@@ -416,7 +443,7 @@ impl CellState {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use numelace_core::{Digit, Position};
+    use numelace_core::{Digit, DigitGrid, Position};
     use numelace_generator::PuzzleGenerator;
 
     #[test]
@@ -438,6 +465,32 @@ mod tests {
                 }
             }
         }
+    }
+
+    #[test]
+    fn test_from_problem_filled() {
+        let problem: DigitGrid = format!("1{}", ".".repeat(80))
+            .parse()
+            .expect("valid problem grid");
+        let filled: DigitGrid = format!(".2{}", ".".repeat(79))
+            .parse()
+            .expect("valid filled grid");
+
+        let game = Game::from_problem_filled(&problem, &filled).expect("compatible grids");
+
+        assert_eq!(game.cell(Position::new(0, 0)), &CellState::Given(Digit::D1));
+        assert_eq!(
+            game.cell(Position::new(1, 0)),
+            &CellState::Filled(Digit::D2)
+        );
+
+        let conflict: DigitGrid = format!("3{}", ".".repeat(80))
+            .parse()
+            .expect("valid filled grid");
+        assert!(matches!(
+            Game::from_problem_filled(&problem, &conflict),
+            Err(GameError::CannotModifyGivenCell)
+        ));
     }
 
     #[test]

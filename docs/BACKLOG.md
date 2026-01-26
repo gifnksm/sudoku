@@ -24,7 +24,7 @@ This backlog is the single source of truth for tasks and ideas.
 - Auto candidate updates (optional)
 - Mistake highlighting (row/col/box conflicts)
 - Hint system (show applicable technique or next step)
-- Save/resume automatically on startup
+- Save/resume automatically on startup ✅
 - Timer and statistics
 - Puzzle paste/import
 
@@ -38,7 +38,7 @@ This backlog is the single source of truth for tasks and ideas.
 ### Platform / Settings
 
 - WASM build
-- Settings auto-save (theme, assists, etc.)
+- Settings auto-save (theme, assists, etc.) ✅
 
 ## Bugs / Fixes
 

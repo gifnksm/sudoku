@@ -13,6 +13,7 @@ Numelace is a number-place (Sudoku) puzzle application written in Rust, with a d
 Planned features are tracked in docs/BACKLOG.md.
 
 - ✅ Desktop GUI (core play): 9x9 board, keypad with digit counts, highlights, theme toggle, new game confirmation
+- ✅ Auto-save and resume on startup
 - ✅ Puzzle generation with unique solution guarantee and reproducible seeds
 - ✅ Solver with basic techniques (Naked/Hidden Single) plus backtracking
 - ✅ Core gameplay rules: given vs filled cells and solved-state validation

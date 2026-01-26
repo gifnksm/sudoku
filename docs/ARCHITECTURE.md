@@ -112,6 +112,7 @@ See [numelace-game documentation](../crates/numelace-game/src/lib.rs) for detail
 - Keyboard-driven input (digits, arrows, delete/backspace) with mouse selection.
 - Status display derived from `Game::is_solved()`.
 - Highlight toggles, keypad digit counts, theme switch, and new-game confirmation.
+- App state persisted via eframe storage with RON-serialized DTOs for auto-save and resume.
 
 ---
 
@@ -175,5 +176,5 @@ numelace-app (desktop, web planned)
 
 ---
 
-**Last Updated**: 2026-01-22
+**Last Updated**: 2026-01-26
 **Version**: 0.1.0
