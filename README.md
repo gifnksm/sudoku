@@ -1,49 +1,40 @@
 # Numelace
 
-Numelace is a number-place (Sudoku) puzzle application written in Rust, supporting both desktop and web platforms.
+Numelace is a number-place (Sudoku) puzzle application written in Rust, with a desktop-first focus and planned Web/WASM support.
 
 ## Project Goals
 
 - **Automatic Puzzle Generation**: Generate Sudoku puzzles with configurable difficulty levels
 - **Multiple Solving Strategies**: Implement both algorithmic (backtracking) and human-like solving techniques
-- **Cross-Platform**: Desktop GUI and Web/WASM support using egui/eframe
+- **Cross-Platform**: Desktop GUI today, Web/WASM planned, using egui/eframe
 
 ## Current Status
 
-- ✅ **numelace-core**: Core data structures **implemented**
-  - Type-safe grid containers and indexing (CandidateGrid, DigitGrid)
-  - Basic types (Digit, Position) with semantic indexing
+Planned features are tracked in docs/BACKLOG.md.
 
-- ⚙️ **numelace-solver**: Solver framework **implemented** (techniques: minimal)
-  - Technique-based solver and backtracking solver
-  - Current: basic techniques (Naked/Hidden Single)
-  - TODO: Naked/Hidden Pairs, Pointing Pairs, Box/Line Reduction, X-Wing, etc.
-
-- ✅ **numelace-generator**: Puzzle generation **implemented**
-  - Removal method with unique solution guarantee
-  - Reproducible generation via seeds
-
-- ⚙️ **numelace-game**: Game logic **minimally implemented**
-  - Game session management with basic operations
-  - TODO: candidate marks, undo/redo, hints, save/load
-
-- ⚙️ **numelace-app**: GUI **minimally implemented**
-  - 9x9 board rendering with 3x3 boundaries
-  - Mouse selection and keyboard input
-  - New game and solved status display
+- ✅ Desktop GUI (core play): 9x9 board, keypad with digit counts, highlights, theme toggle, new game confirmation
+- ✅ Puzzle generation with unique solution guarantee and reproducible seeds
+- ✅ Solver with basic techniques (Naked/Hidden Single) plus backtracking
+- ✅ Core gameplay rules: given vs filled cells and solved-state validation
+- ⚙️ Web/WASM support is planned
 
 ## Project Structure
 
 ```text
-crates/
-├── numelace-core/       # Core data structures (CandidateGrid, DigitGrid, Digit, Position)
-├── numelace-solver/     # Solving algorithms (technique-based + backtracking)
-├── numelace-generator/  # Puzzle generation
-├── numelace-game/       # Game logic
-└── numelace-app/        # GUI application (desktop)
+crates/  # workspace crates
+docs/    # project documentation
 ```
 
-See [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) for architecture and implementation plans, [docs/TESTING.md](docs/TESTING.md) for testing guidelines, and [docs/TODO.md](docs/TODO.md) for current tasks.
+## Documentation
+
+- [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) - architecture and design decisions
+- [docs/WORKFLOW.md](docs/WORKFLOW.md) - development workflow
+- [docs/BACKLOG.md](docs/BACKLOG.md) - ideas and future work
+- [docs/DESIGN_LOG.md](docs/DESIGN_LOG.md) - decision history
+- [docs/TESTING.md](docs/TESTING.md) - testing guidelines
+- [docs/DOCUMENTATION_GUIDE.md](docs/DOCUMENTATION_GUIDE.md) - documentation conventions
+
+For contributions, see [CONTRIBUTING.md](CONTRIBUTING.md).
 
 ## Build and Run
 

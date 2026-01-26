@@ -1,6 +1,7 @@
 # Backlog
 
 Casual backlog for ideas, experiments, and future work. Order is not strict.
+This backlog is the single source of truth for tasks and ideas.
 
 ## Ideas / Wishlist
 

@@ -7,7 +7,7 @@ This document describes the standards and guidelines for this project.
 - [Architecture](docs/ARCHITECTURE.md) - Project architecture and design decisions
 - [Documentation Guide](docs/DOCUMENTATION_GUIDE.md) - How to write documentation
 - [Testing Guidelines](docs/TESTING.md) - Testing philosophy and best practices
-- [Tasks and Roadmap](docs/TODO.md) - Current tasks and future plans
+- [Backlog](docs/BACKLOG.md) - Ideas, experiments, and future work
 - Naming: use `Numelace` for the app/brand name, and `Sudoku` when referring to the puzzle rules
 
 ## Development Workflow

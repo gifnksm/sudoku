@@ -8,7 +8,7 @@ This document describes the architecture of the Numelace application, including 
 
 - **Problem Generation**: Automatically generate Sudoku puzzles with configurable difficulty levels
 - **Multiple Solving Strategies**: Implement both algorithmic (backtracking) and human-like solving techniques
-- **Multi-Platform Support**: Desktop GUI (egui/eframe) and Web (WASM)
+- **Multi-Platform Support**: Desktop GUI (egui/eframe); Web/WASM support is planned
 - **Interactive Features**: Hints, mistake detection, undo/redo functionality
 
 ## Crate Structure
@@ -27,6 +27,8 @@ numelace/
 ```
 
 ## Crate Descriptions
+
+Planned features are tracked in `docs/BACKLOG.md`.
 
 ### numelace-core
 
@@ -54,8 +56,6 @@ See [numelace-core documentation](../crates/numelace-core/src/lib.rs) for detail
 
 **Current Techniques**: Naked/Hidden Single (minimal set)
 
-**TODO**: Naked/Hidden Pairs, Pointing Pairs, Box/Line Reduction, X-Wing, etc.
-
 **Dependencies**: `numelace-core`
 
 **Design**: Two-layer architecture (TechniqueSolver for technique-only solving, BacktrackSolver with backtracking fallback)
@@ -82,7 +82,7 @@ See [numelace-generator documentation](../crates/numelace-generator/src/lib.rs) 
 
 ### numelace-game
 
-**Status**: Game logic minimally implemented ⚙️
+**Status**: Game logic implemented ⚙️ (core gameplay)
 
 **Purpose**: Manages game state, user interactions, and game logic.
 
@@ -92,15 +92,13 @@ See [numelace-generator documentation](../crates/numelace-generator/src/lib.rs) 
 
 **Design**: Permissive validation (allows rule violations), type-safe cell states, accepts any valid solution
 
-**Future Enhancements**: Candidate marks, undo/redo, hints, mistake detection, save/load, timer, statistics
-
 See [numelace-game documentation](../crates/numelace-game/src/lib.rs) for detailed documentation.
 
 ---
 
 ### numelace-app
 
-**Status**: GUI minimally implemented ⚙️
+**Status**: GUI implemented ⚙️ (core gameplay + UX features)
 
 **Purpose**: Desktop GUI application using egui/eframe (web planned).
 
@@ -110,11 +108,10 @@ See [numelace-game documentation](../crates/numelace-game/src/lib.rs) for detail
 
 **Design Notes**:
 
-- Desktop-focused MVP with a 9x9 grid and clear 3x3 boundaries
-- Keyboard-driven input (digits, arrows, delete/backspace) with mouse selection
-- Status display derived from `Game::is_solved()`
-
-**Future Enhancements**: Candidate marks, undo/redo, hints, mistake detection, save/load, timer/statistics, web/WASM support
+- Desktop-focused UI with a 9x9 grid and clear 3x3 boundaries
+- Keyboard-driven input (digits, arrows, delete/backspace) with mouse selection.
+- Status display derived from `Game::is_solved()`.
+- Highlight toggles, keypad digit counts, theme switch, and new-game confirmation.
 
 ---
 
@@ -126,7 +123,7 @@ See [numelace-game documentation](../crates/numelace-game/src/lib.rs) for detail
 
 **Separation**:
 
-- **Core provides**: Type definitions (`Digit`, `Position`), data structures (`CandidateGrid`, `DigitGrid`), low-level operations (`place()`, `remove_candidate()`), state validation (`is_consistent()`)
+- **Core provides**: Type definitions (`Digit`, `Position`), data structures (`CandidateGrid`, `DigitGrid`), low-level operations (`place()`, `remove_candidate()`), state validation (`check_consistency()`)
 - **Core does NOT provide**: Solving techniques (naked singles, hidden singles), search algorithms (backtracking), puzzle generation
 
 **Design Principle**: "Core provides mechanisms, Solver provides policies"

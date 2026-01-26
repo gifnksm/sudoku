@@ -27,3 +27,5 @@ This project uses a lightweight, memory-friendly workflow for hobby development.
 - `docs/BACKLOG.md`: ideas and tasks
 - `docs/DESIGN_LOG.md`: decision history
 - `docs/ARCHITECTURE.md`: long-term structure and design
+- `docs/TESTING.md`: testing guidelines
+- `docs/DOCUMENTATION_GUIDE.md`: documentation conventions
