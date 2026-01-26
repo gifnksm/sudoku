@@ -56,7 +56,7 @@
 //!
 
 use numelace_core::{
-    CandidateGrid, Digit, DigitGrid, Position,
+    CandidateGrid, Digit, DigitGrid, DigitSet, Position,
     containers::{Array9, Array81},
     index::{DigitSemantics, PositionSemantics},
 };
@@ -70,6 +70,16 @@ pub enum GameError {
     /// Given cells are part of the initial puzzle and cannot be edited by the player.
     #[display("cannot modify a given cell")]
     CannotModifyGivenCell,
+    /// Attempted to add notes to a filled cell.
+    ///
+    /// Notes can only be added to notes or empty cells.
+    #[display("cannot add notes to a filled cell")]
+    CannotAddNoteToFilledCell,
+    /// Invalid notes data provided.
+    ///
+    /// The notes data must be a valid bitmask representing digits 1-9.
+    #[display("invalid notes data: {_0:#x}")]
+    InvalidNotes(#[error(not(source))] u16),
 }
 
 /// A Sudoku game session.
@@ -137,7 +147,11 @@ impl Game {
     ///
     /// Returns [`GameError::CannotModifyGivenCell`] if `filled` contains a digit
     /// in a position that is a given in `problem`.
-    pub fn from_problem_filled(problem: &DigitGrid, filled: &DigitGrid) -> Result<Self, GameError> {
+    pub fn from_problem_filled_notes(
+        problem: &DigitGrid,
+        filled: &DigitGrid,
+        notes: &[[u16; 9]; 9],
+    ) -> Result<Self, GameError> {
         let mut grid = Array81::from_array([const { CellState::Empty }; 81]);
         for pos in Position::ALL {
             if let Some(digit) = problem[pos] {
@@ -149,6 +163,17 @@ impl Game {
         for pos in Position::ALL {
             if let Some(digit) = filled[pos] {
                 this.set_digit(pos, digit)?;
+            }
+        }
+
+        for (y, row) in (0..9).zip(notes) {
+            for (x, bits) in (0..9).zip(row) {
+                let pos = Position::new(x, y);
+                let digits =
+                    DigitSet::try_from_bits(*bits).ok_or(GameError::InvalidNotes(*bits))?;
+                for d in digits {
+                    this.toggle_note(pos, d)?;
+                }
             }
         }
 
@@ -174,6 +199,7 @@ impl Game {
     /// match game.cell(pos) {
     ///     CellState::Given(digit) => println!("Given cell: {}", digit),
     ///     CellState::Filled(digit) => println!("Player filled: {}", digit),
+    ///     CellState::Notes(digits) => println!("Notes: {:?}", digits),
     ///     CellState::Empty => println!("Empty cell"),
     /// }
     /// ```
@@ -228,7 +254,7 @@ impl Game {
                 CellState::Given(digit) | CellState::Filled(digit) => {
                     candidate_grid.place(pos, *digit);
                 }
-                CellState::Empty => {}
+                CellState::Notes(_) | CellState::Empty => {}
             }
         }
         candidate_grid
@@ -269,17 +295,100 @@ impl Game {
         match &mut self.grid[pos] {
             CellState::Given(_) => return Err(GameError::CannotModifyGivenCell),
             CellState::Filled(d) => *d = digit,
-            cell @ CellState::Empty => *cell = CellState::Filled(digit),
+            cell @ (CellState::Notes(_) | CellState::Empty) => *cell = CellState::Filled(digit),
         }
         Ok(())
+    }
+
+    /// Toggles a digit at the given position.
+    ///
+    /// If the cell is empty, it becomes filled with the digit. If the cell is
+    /// already filled with the same digit, it becomes empty. If the cell is
+    /// filled with a different digit, the digit is replaced.
+    ///
+    /// # Errors
+    ///
+    /// Returns [`GameError::CannotModifyGivenCell`] if the position contains a given cell.
+    ///
+    /// # Example
+    ///
+    /// ```
+    /// use numelace_game::Game;
+    /// use numelace_generator::PuzzleGenerator;
+    /// use numelace_solver::TechniqueSolver;
+    /// use numelace_core::{Digit, Position};
+    ///
+    /// let solver = TechniqueSolver::with_all_techniques();
+    /// let generator = PuzzleGenerator::new(&solver);
+    /// let puzzle = generator.generate();
+    /// let mut game = Game::new(puzzle);
+    ///
+    /// // Find an empty cell
+    /// let empty_pos = *Position::ALL.iter()
+    ///     .find(|&&pos| game.cell(pos).is_empty())
+    ///     .expect("puzzle has empty cells");
+    ///
+    /// // Toggle on
+    /// game.toggle_digit(empty_pos, Digit::D5).unwrap();
+    /// assert_eq!(game.cell(empty_pos).as_digit(), Some(Digit::D5));
+    ///
+    /// // Toggle off
+    /// game.toggle_digit(empty_pos, Digit::D5).unwrap();
+    /// assert!(game.cell(empty_pos).is_empty());
+    /// ```
+    pub fn toggle_digit(&mut self, pos: Position, digit: Digit) -> Result<(), GameError> {
+        if self.grid[pos].as_digit() == Some(digit) {
+            self.clear_cell(pos)
+        } else {
+            self.set_digit(pos, digit)
+        }
     }
 
     /// Returns whether a digit can be placed at the given position.
     ///
     /// This returns `false` for given cells, which cannot be modified.
     #[must_use]
-    pub fn can_set_digit(&self, pos: Position) -> bool {
+    pub fn can_toggle_digit(&self, pos: Position) -> bool {
         !self.cell(pos).is_given()
+    }
+
+    /// Toggles a candidate note at the given position.
+    ///
+    /// If the cell is empty, it becomes a notes cell with the digit. If the cell already
+    /// has notes, the digit is toggled; when the last note is removed, the cell becomes empty.
+    ///
+    /// # Errors
+    ///
+    /// Returns [`GameError::CannotModifyGivenCell`] if the position contains a given cell.
+    /// Returns [`GameError::CannotAddNoteToFilledCell`] if the position contains a filled cell.
+    pub fn toggle_note(&mut self, pos: Position, digit: Digit) -> Result<(), GameError> {
+        match &mut self.grid[pos] {
+            CellState::Given(_) => return Err(GameError::CannotModifyGivenCell),
+            CellState::Filled(_) => return Err(GameError::CannotAddNoteToFilledCell),
+            CellState::Notes(digits) => {
+                digits.toggle(digit);
+                if digits.is_empty() {
+                    self.grid[pos] = CellState::Empty;
+                }
+            }
+            cell @ CellState::Empty => {
+                let mut digits = DigitSet::new();
+                digits.insert(digit);
+                *cell = CellState::Notes(digits);
+            }
+        }
+        Ok(())
+    }
+
+    /// Returns whether a note can be toggled at the given position.
+    ///
+    /// This returns `false` for given and filled cells.
+    #[must_use]
+    pub fn can_toggle_note(&self, pos: Position) -> bool {
+        match self.cell(pos) {
+            CellState::Given(_) | CellState::Filled(_) => false,
+            CellState::Notes(_) | CellState::Empty => true,
+        }
     }
 
     /// Clears the digit at the given position.
@@ -311,24 +420,16 @@ impl Game {
     /// game.set_digit(empty_pos, Digit::D5).unwrap();
     ///
     /// // Clear it
-    /// game.remove_digit(empty_pos).unwrap();
+    /// game.clear_cell(empty_pos).unwrap();
     /// assert!(game.cell(empty_pos).is_empty());
     /// ```
-    pub fn remove_digit(&mut self, pos: Position) -> Result<(), GameError> {
+    pub fn clear_cell(&mut self, pos: Position) -> Result<(), GameError> {
         match &mut self.grid[pos] {
             CellState::Given(_) => return Err(GameError::CannotModifyGivenCell),
-            cell @ CellState::Filled(_) => *cell = CellState::Empty,
+            cell @ (CellState::Filled(_) | CellState::Notes(_)) => *cell = CellState::Empty,
             CellState::Empty => {}
         }
         Ok(())
-    }
-
-    /// Returns whether a digit can be removed at the given position.
-    ///
-    /// This returns `false` for given cells, which cannot be modified.
-    #[must_use]
-    pub fn can_remove_digit(&self, pos: Position) -> bool {
-        !self.cell(pos).is_given()
     }
 
     /// Returns whether the cell currently contains a removable digit.
@@ -357,13 +458,15 @@ impl Game {
 
 /// The state of a cell in the game.
 ///
-/// This enum distinguishes between three types of cells:
+/// This enum distinguishes between four types of cells:
 /// - [`Given`]: Initial puzzle cells (cannot be modified)
 /// - [`Filled`]: Player-filled cells (can be modified or cleared)
+/// - [`Notes`]: Candidate notes (player memo)
 /// - [`Empty`]: Cells that have not been filled yet
 ///
 /// [`Given`]: CellState::Given
 /// [`Filled`]: CellState::Filled
+/// [`Notes`]: CellState::Notes
 /// [`Empty`]: CellState::Empty
 #[derive(Debug, Clone, PartialEq, Eq, derive_more::IsVariant)]
 pub enum CellState {
@@ -371,6 +474,8 @@ pub enum CellState {
     Given(Digit),
     /// A cell filled by the player (can be modified or cleared).
     Filled(Digit),
+    /// Candidate notes for this cell.
+    Notes(DigitSet),
     /// An empty cell (not yet filled).
     Empty,
 }
@@ -416,6 +521,15 @@ impl CellState {
         }
     }
 
+    /// Returns the notes if this is a notes cell, otherwise `None`.
+    #[must_use]
+    pub fn as_notes(&self) -> Option<DigitSet> {
+        match self {
+            CellState::Notes(digits) => Some(*digits),
+            _ => None,
+        }
+    }
+
     /// Returns the digit if this cell contains one (given or filled), otherwise `None`.
     ///
     /// This is a convenience method that returns the digit regardless of whether
@@ -435,7 +549,7 @@ impl CellState {
     pub fn as_digit(&self) -> Option<Digit> {
         match self {
             CellState::Given(digit) | CellState::Filled(digit) => Some(*digit),
-            CellState::Empty => None,
+            CellState::Notes(_) | CellState::Empty => None,
         }
     }
 }
@@ -443,7 +557,7 @@ impl CellState {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use numelace_core::{Digit, DigitGrid, Position};
+    use numelace_core::{Digit, DigitGrid, DigitSet, Position};
     use numelace_generator::PuzzleGenerator;
 
     #[test]
@@ -476,7 +590,8 @@ mod tests {
             .parse()
             .expect("valid filled grid");
 
-        let game = Game::from_problem_filled(&problem, &filled).expect("compatible grids");
+        let game = Game::from_problem_filled_notes(&problem, &filled, &[[0; 9]; 9])
+            .expect("compatible grids");
 
         assert_eq!(game.cell(Position::new(0, 0)), &CellState::Given(Digit::D1));
         assert_eq!(
@@ -488,7 +603,7 @@ mod tests {
             .parse()
             .expect("valid filled grid");
         assert!(matches!(
-            Game::from_problem_filled(&problem, &conflict),
+            Game::from_problem_filled_notes(&problem, &conflict, &[[0; 9]; 9]),
             Err(GameError::CannotModifyGivenCell)
         ));
     }
@@ -516,6 +631,71 @@ mod tests {
     }
 
     #[test]
+    fn test_toggle_digit_basic_operations() {
+        use numelace_solver::TechniqueSolver;
+        let solver = TechniqueSolver::with_all_techniques();
+        let generator = PuzzleGenerator::new(&solver);
+        let puzzle = generator.generate();
+        let mut game = Game::new(puzzle);
+
+        let empty_pos = *Position::ALL
+            .iter()
+            .find(|&&pos| game.cell(pos).is_empty())
+            .expect("puzzle has empty cells");
+
+        // Toggle on
+        assert!(game.toggle_digit(empty_pos, Digit::D5).is_ok());
+        assert_eq!(game.cell(empty_pos), &CellState::Filled(Digit::D5));
+
+        // Toggle off
+        assert!(game.toggle_digit(empty_pos, Digit::D5).is_ok());
+        assert!(game.cell(empty_pos).is_empty());
+
+        // Replace with a different digit
+        assert!(game.toggle_digit(empty_pos, Digit::D3).is_ok());
+        assert!(game.toggle_digit(empty_pos, Digit::D7).is_ok());
+        assert_eq!(game.cell(empty_pos), &CellState::Filled(Digit::D7));
+    }
+
+    #[test]
+    fn test_toggle_note_basic_operations() {
+        use numelace_solver::TechniqueSolver;
+        let solver = TechniqueSolver::with_all_techniques();
+        let generator = PuzzleGenerator::new(&solver);
+        let puzzle = generator.generate();
+        let mut game = Game::new(puzzle);
+
+        let given_pos = *Position::ALL
+            .iter()
+            .find(|&&pos| game.cell(pos).is_given())
+            .expect("puzzle has given cells");
+        let empty_pos = *Position::ALL
+            .iter()
+            .find(|&&pos| game.cell(pos).is_empty())
+            .expect("puzzle has empty cells");
+
+        assert!(game.toggle_note(empty_pos, Digit::D4).is_ok());
+        assert!(matches!(
+            game.cell(empty_pos),
+            CellState::Notes(digits) if digits.contains(Digit::D4)
+        ));
+
+        assert!(game.toggle_note(empty_pos, Digit::D4).is_ok());
+        assert!(game.cell(empty_pos).is_empty());
+
+        game.set_digit(empty_pos, Digit::D7).unwrap();
+        assert!(matches!(
+            game.toggle_note(empty_pos, Digit::D3),
+            Err(GameError::CannotAddNoteToFilledCell)
+        ));
+
+        assert!(matches!(
+            game.toggle_note(given_pos, Digit::D3),
+            Err(GameError::CannotModifyGivenCell)
+        ));
+    }
+
+    #[test]
     fn test_cannot_modify_given_cells() {
         use numelace_solver::TechniqueSolver;
         let solver = TechniqueSolver::with_all_techniques();
@@ -536,7 +716,7 @@ mod tests {
 
         // Cannot clear given cell
         assert!(matches!(
-            game.remove_digit(given_pos),
+            game.clear_cell(given_pos),
             Err(GameError::CannotModifyGivenCell)
         ));
     }
@@ -558,11 +738,11 @@ mod tests {
         game.set_digit(empty_pos, Digit::D5).unwrap();
         assert!(game.cell(empty_pos).is_filled());
 
-        game.remove_digit(empty_pos).unwrap();
+        game.clear_cell(empty_pos).unwrap();
         assert!(game.cell(empty_pos).is_empty());
 
         // Clear empty cell is no-op
-        assert!(game.remove_digit(empty_pos).is_ok());
+        assert!(game.clear_cell(empty_pos).is_ok());
         assert!(game.cell(empty_pos).is_empty());
     }
 
@@ -583,15 +763,15 @@ mod tests {
             .find(|&pos| game.cell(pos).is_empty())
             .expect("puzzle has empty cells");
 
-        assert!(!game.can_set_digit(given_pos));
-        assert!(game.can_set_digit(empty_pos));
-
-        assert!(!game.can_remove_digit(given_pos));
-        assert!(game.can_remove_digit(empty_pos));
+        assert!(!game.can_toggle_digit(given_pos));
+        assert!(game.can_toggle_digit(empty_pos));
+        assert!(!game.can_toggle_note(given_pos));
+        assert!(game.can_toggle_note(empty_pos));
 
         assert!(!game.has_removable_digit(empty_pos));
         game.set_digit(empty_pos, Digit::D5).unwrap();
         assert!(game.has_removable_digit(empty_pos));
+        assert!(!game.can_toggle_note(empty_pos));
     }
 
     #[test]
@@ -679,9 +859,16 @@ mod tests {
         assert_eq!(CellState::Given(Digit::D5).as_filled(), None);
         assert_eq!(CellState::Empty.as_filled(), None);
 
+        // as_notes
+        let mut notes = DigitSet::new();
+        notes.insert(Digit::D3);
+        assert_eq!(CellState::Notes(notes).as_notes(), Some(notes));
+        assert_eq!(CellState::Empty.as_notes(), None);
+
         // as_digit (unified access)
         assert_eq!(CellState::Given(Digit::D5).as_digit(), Some(Digit::D5));
         assert_eq!(CellState::Filled(Digit::D7).as_digit(), Some(Digit::D7));
+        assert_eq!(CellState::Notes(notes).as_digit(), None);
         assert_eq!(CellState::Empty.as_digit(), None);
     }
 

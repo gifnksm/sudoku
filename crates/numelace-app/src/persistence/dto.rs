@@ -5,12 +5,14 @@ use std::fmt::Write;
 use numelace_core::{DigitGrid, DigitGridParseError, Position, PositionNewError};
 use numelace_game::{CellState, Game, GameError};
 
-use crate::state::{AppState, HighlightSettings, Settings, Theme, ThemeSettings};
+use crate::state::{AppState, HighlightSettings, InputMode, Settings, Theme, ThemeSettings};
 
 #[derive(Debug, Clone, Deserialize, Serialize)]
 pub struct PersistedState {
     game: GameDto,
     selected_cell: Option<PositionDto>,
+    #[serde(default)]
+    input_mode: InputModeDto,
     settings: SettingsDto,
 }
 
@@ -19,6 +21,7 @@ impl From<&AppState> for PersistedState {
         Self {
             game: GameDto::from(&value.game),
             selected_cell: value.selected_cell.map(PositionDto::from),
+            input_mode: value.input_mode.into(),
             settings: SettingsDto::from(&value.settings),
         }
     }
@@ -28,7 +31,7 @@ impl From<&AppState> for PersistedState {
 pub enum AppStateConversionError {
     #[display("failed to parse game data: {_0}")]
     GameParse(DigitGridParseError),
-    #[display("failed to apply saved digit: {_0}")]
+    #[display("failed to apply saved game data: {_0}")]
     GameRestore(GameError),
     #[display("failed to construct selected position: {_0}")]
     PositionNew(PositionNewError),
@@ -41,6 +44,7 @@ impl TryFrom<PersistedState> for AppState {
         Ok(Self {
             game: value.game.try_into()?,
             selected_cell: value.selected_cell.map(Position::try_from).transpose()?,
+            input_mode: value.input_mode.into(),
             settings: value.settings.into(),
         })
     }
@@ -50,12 +54,15 @@ impl TryFrom<PersistedState> for AppState {
 pub struct GameDto {
     problem: String,
     filled: String,
+    #[serde(default)]
+    notes: [[u16; 9]; 9],
 }
 
 impl From<&Game> for GameDto {
     fn from(value: &Game) -> Self {
         let mut problem = String::with_capacity(81);
         let mut filled = String::with_capacity(81);
+        let mut notes = [[0; 9]; 9];
 
         for pos in Position::ALL {
             match value.cell(pos) {
@@ -67,6 +74,11 @@ impl From<&Game> for GameDto {
                     problem.push('.');
                     let _ = write!(filled, "{digit}");
                 }
+                CellState::Notes(digits) => {
+                    notes[usize::from(pos.y())][usize::from(pos.x())] = digits.bits();
+                    problem.push('.');
+                    filled.push('.');
+                }
                 CellState::Empty => {
                     problem.push('.');
                     filled.push('.');
@@ -74,7 +86,11 @@ impl From<&Game> for GameDto {
             }
         }
 
-        Self { problem, filled }
+        Self {
+            problem,
+            filled,
+            notes,
+        }
     }
 }
 
@@ -90,7 +106,11 @@ impl TryFrom<GameDto> for Game {
     fn try_from(value: GameDto) -> Result<Self, Self::Error> {
         let problem: DigitGrid = value.problem.parse()?;
         let filled: DigitGrid = value.filled.parse()?;
-        Ok(Game::from_problem_filled(&problem, &filled)?)
+        Ok(Game::from_problem_filled_notes(
+            &problem,
+            &filled,
+            &value.notes,
+        )?)
     }
 }
 
@@ -114,6 +134,31 @@ impl TryFrom<PositionDto> for Position {
 
     fn try_from(value: PositionDto) -> Result<Self, Self::Error> {
         Position::try_new(value.x, value.y)
+    }
+}
+
+#[derive(Default, Debug, Clone, Copy, PartialEq, Eq, Deserialize, Serialize)]
+pub enum InputModeDto {
+    #[default]
+    Fill,
+    Notes,
+}
+
+impl From<InputMode> for InputModeDto {
+    fn from(value: InputMode) -> Self {
+        match value {
+            InputMode::Fill => Self::Fill,
+            InputMode::Notes => Self::Notes,
+        }
+    }
+}
+
+impl From<InputModeDto> for InputMode {
+    fn from(value: InputModeDto) -> Self {
+        match value {
+            InputModeDto::Fill => Self::Fill,
+            InputModeDto::Notes => Self::Notes,
+        }
     }
 }
 
@@ -189,7 +234,7 @@ impl From<ThemeSettingsDto> for ThemeSettings {
     }
 }
 
-#[derive(Debug, Clone, Deserialize, Serialize)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Deserialize, Serialize)]
 pub enum ThemeDto {
     Light,
     Dark,

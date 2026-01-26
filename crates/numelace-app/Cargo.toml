@@ -12,6 +12,7 @@ name = "numelace"
 path = "src/main.rs"
 
 [dependencies]
+bitflags.workspace = true
 derive_more = { workspace = true, features = ["error", "display", "from"] }
 eframe = { workspace = true, features = ["persistence"] }
 egui_extras.workspace = true

@@ -100,12 +100,35 @@ where
     /// A full set containing all 9 possible elements.
     pub const FULL: Self = Self::from_bits(0x1ff);
 
-    const fn from_bits(bits: u16) -> Self {
+    /// Creates a set from the given raw bits.
+    ///
+    /// # Panics
+    ///
+    /// Panics if `bits` contains any bits outside the lower 9 bits.
+    #[must_use]
+    pub const fn from_bits(bits: u16) -> Self {
         assert!(bits <= 0x1ff);
         Self {
             bits,
             _marker: PhantomData,
         }
+    }
+
+    /// Attempts to create a set from the given raw bits.
+    ///
+    /// Returns `None` if `bits` contains any bits outside the lower 9 bits.
+    #[must_use]
+    pub const fn try_from_bits(bits: u16) -> Option<Self> {
+        if bits > 0x1ff {
+            return None;
+        }
+        Some(Self::from_bits(bits))
+    }
+
+    /// Returns the raw bits representing the set.
+    #[must_use]
+    pub fn bits(self) -> u16 {
+        self.bits
     }
 
     /// Creates a new empty set.
@@ -328,6 +351,19 @@ where
             self.insert(value)
         } else {
             self.remove(value)
+        }
+    }
+
+    /// Toggles the presence of a value in the set.
+    ///
+    /// If the value is present, it is removed; otherwise, it is added.
+    #[inline]
+    pub fn toggle(&mut self, value: S::Value) {
+        let i = S::to_index(value);
+        if (self.bits & i.bit()) != 0 {
+            self.bits &= !i.bit();
+        } else {
+            self.bits |= i.bit();
         }
     }
 
@@ -586,6 +622,17 @@ mod tests {
     }
 
     #[test]
+    fn test_try_from_bits() {
+        let set = TestSet::try_from_bits(0x1ff).expect("valid bits");
+        assert_eq!(set.bits(), 0x1ff);
+
+        let set = TestSet::try_from_bits(0).expect("valid bits");
+        assert!(set.is_empty());
+
+        assert!(TestSet::try_from_bits(0x200).is_none());
+    }
+
+    #[test]
     fn test_insert_remove_contains() {
         // Insert is idempotent - duplicate insertions are no-ops
         let mut set = TestSet::new();
@@ -603,6 +650,20 @@ mod tests {
 
         set.clear();
         assert!(set.is_empty());
+    }
+
+    #[test]
+    fn test_toggle() {
+        let mut set = TestSet::new();
+        set.toggle(3);
+        assert!(set.contains(3));
+        set.toggle(3);
+        assert!(!set.contains(3));
+
+        let mut set = set![0, 2];
+        set.toggle(2);
+        set.toggle(4);
+        assert_eq!(set, set![0, 4]);
     }
 
     // Values outside 0-8 range are invalid

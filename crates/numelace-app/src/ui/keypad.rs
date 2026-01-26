@@ -5,24 +5,48 @@ use numelace_core::{Digit, containers::Array9, index::DigitSemantics};
 
 use crate::ui::Action;
 
+bitflags::bitflags! {
+    #[derive(Debug, Clone, Copy, PartialEq, Eq)]
+    pub struct KeypadCapabilities: u8 {
+        const CAN_TOGGLE_DIGIT = 0b0000_0001;
+        const CAN_TOGGLE_NOTE = 0b0000_0010;
+        const HAS_REMOVABLE_DIGIT = 0b0000_0100;
+    }
+}
+
 #[derive(Debug, Clone)]
 pub struct KeypadViewModel {
-    can_set_digit: bool,
-    has_removable_digit: bool,
+    capabilities: KeypadCapabilities,
     decided_digit_count: Array9<usize, DigitSemantics>,
+    notes_mode: bool,
 }
 
 impl KeypadViewModel {
     pub fn new(
-        can_set_digit: bool,
-        has_removable_digit: bool,
+        capabilities: KeypadCapabilities,
         decided_digit_count: Array9<usize, DigitSemantics>,
+        notes_mode: bool,
     ) -> Self {
         Self {
-            can_set_digit,
-            has_removable_digit,
+            capabilities,
             decided_digit_count,
+            notes_mode,
         }
+    }
+
+    fn can_toggle_digit(&self) -> bool {
+        self.capabilities
+            .contains(KeypadCapabilities::CAN_TOGGLE_DIGIT)
+    }
+
+    fn can_toggle_note(&self) -> bool {
+        self.capabilities
+            .contains(KeypadCapabilities::CAN_TOGGLE_NOTE)
+    }
+
+    fn has_removable_digit(&self) -> bool {
+        self.capabilities
+            .contains(KeypadCapabilities::HAS_REMOVABLE_DIGIT)
     }
 }
 
@@ -63,6 +87,9 @@ pub fn show(ui: &mut Ui, vm: &KeypadViewModel) -> Vec<Action> {
     );
     let buttons_width = button_size * 5.0 + x_padding * 4.0;
     let left_pad = (avail.x - buttons_width) / 2.0;
+    let swap_input_mode = ui.input(|i| i.modifiers.command);
+    let effective_notes_mode = vm.notes_mode ^ swap_input_mode;
+
     ui.horizontal(|ui| {
         ui.add_space(left_pad);
         ui.with_layout(Layout::top_down(egui::Align::Center), |ui| {
@@ -74,15 +101,22 @@ pub fn show(ui: &mut Ui, vm: &KeypadViewModel) -> Vec<Action> {
                         for button_type in row {
                             match button_type {
                                 ButtonType::Digit(digit) => {
+                                    let (enabled, tooltip) = if effective_notes_mode {
+                                        (vm.can_toggle_note(), "Toggle note")
+                                    } else {
+                                        (vm.can_toggle_digit(), "Toggle digit")
+                                    };
                                     let text =
                                         RichText::new(digit.as_str()).size(button_size * 0.8);
                                     let button =
                                         Button::new(text).min_size(Vec2::splat(button_size));
-                                    let button = ui
-                                        .add_enabled(vm.can_set_digit, button)
-                                        .on_hover_text("Set digit");
+                                    let button =
+                                        ui.add_enabled(enabled, button).on_hover_text(tooltip);
                                     if button.clicked() {
-                                        actions.push(Action::SetDigit(digit));
+                                        actions.push(Action::RequestDigit {
+                                            digit,
+                                            swap: swap_input_mode,
+                                        });
                                     }
                                     ui.painter().text(
                                         button.rect.right_top() + egui::vec2(-4.0, 2.0),
@@ -97,10 +131,10 @@ pub fn show(ui: &mut Ui, vm: &KeypadViewModel) -> Vec<Action> {
                                     let button =
                                         Button::new(text).min_size(Vec2::splat(button_size));
                                     let button = ui
-                                        .add_enabled(vm.has_removable_digit, button)
-                                        .on_hover_text("Remove digit");
+                                        .add_enabled(vm.has_removable_digit(), button)
+                                        .on_hover_text("Remove digit/notes");
                                     if button.clicked() {
-                                        actions.push(Action::RemoveDigit);
+                                        actions.push(Action::ClearCell);
                                     }
                                 }
                             }
@@ -108,6 +142,32 @@ pub fn show(ui: &mut Ui, vm: &KeypadViewModel) -> Vec<Action> {
                         ui.end_row();
                     }
                 });
+        });
+
+        ui.vertical(|ui| {
+            ui.horizontal(|ui| {
+                let swap_marker = if swap_input_mode { "^" } else { "" };
+                ui.label(RichText::new("Effective Mode:").size(button_size * 0.2));
+                if effective_notes_mode {
+                    ui.label(
+                        RichText::new(format!("{swap_marker}Notes"))
+                            .size(button_size * 0.2)
+                            .background_color(visuals.selection.bg_fill),
+                    );
+                } else {
+                    ui.label(RichText::new(format!("{swap_marker}Fill")).size(button_size * 0.2));
+                }
+            });
+            let mut notes_mode = vm.notes_mode;
+            if ui
+                .checkbox(
+                    &mut notes_mode,
+                    RichText::new("Fill/Notes").size(button_size * 0.2),
+                )
+                .changed()
+            {
+                actions.push(Action::ToggleInputMode);
+            }
         });
     });
     actions

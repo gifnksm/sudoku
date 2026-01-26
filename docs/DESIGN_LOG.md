@@ -21,3 +21,4 @@ Short, timestamped notes capturing decisions and rationale.
 - 2026-01-25: Game exposes can_* helpers for action gating — reduces UI-side rule checks.
 - 2026-01-25: Always show the New Game confirmation dialog, even when the puzzle is solved — consistent UX and prevents accidental reset.
 - 2026-01-26: Persist app state via eframe storage with RON serialization and DTO/try-from conversions — safe restoration with failure fallback to defaults and periodic + action-triggered saves.
+- 2026-01-26: Candidate notes are exclusive with filled digits; memo input is toggle-based; normal input clears memos; memo input on filled cells is ignored; input mode toggles with S and command provides temporary swap with ^ indicator — keeps UX consistent and clear.

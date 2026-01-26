@@ -5,6 +5,7 @@ use numelace_game::Game;
 pub struct AppState {
     pub game: Game,
     pub selected_cell: Option<Position>,
+    pub input_mode: InputMode,
     pub settings: Settings,
 }
 
@@ -13,9 +14,16 @@ impl AppState {
         Self {
             game,
             selected_cell: None,
+            input_mode: InputMode::Fill,
             settings: Settings::new(theme),
         }
     }
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, derive_more::IsVariant)]
+pub enum InputMode {
+    Fill,
+    Notes,
 }
 
 #[derive(Debug, Clone)]

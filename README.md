@@ -17,6 +17,7 @@ Planned features are tracked in docs/BACKLOG.md.
 - ✅ Puzzle generation with unique solution guarantee and reproducible seeds
 - ✅ Solver with basic techniques (Naked/Hidden Single) plus backtracking
 - ✅ Core gameplay rules: given vs filled cells and solved-state validation
+- ✅ Candidate notes (player notes)
 - ⚙️ Web/WASM support is planned
 
 ## Project Structure

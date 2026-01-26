@@ -117,11 +117,28 @@ where
         }
     }
 
+    /// Attempts to create a set from a raw bit pattern.
+    ///
+    /// Returns `None` if `bits` contains any bits beyond the first 81 bits.
+    #[must_use]
+    pub const fn try_from_bits(bits: u128) -> Option<Self> {
+        if bits >= (1u128 << 81) {
+            return None;
+        }
+        Some(Self::from_bits(bits))
+    }
+
     /// Creates a new empty set.
     #[must_use]
     #[inline]
     pub const fn new() -> Self {
         Self::EMPTY
+    }
+
+    /// Returns the raw bits representing the set.
+    #[must_use]
+    pub fn bits(self) -> u128 {
+        self.bits
     }
 
     /// Returns a new set containing only the elements in this set that fall within the given range.
@@ -285,6 +302,20 @@ where
             self.insert(value)
         } else {
             self.remove(value)
+        }
+    }
+
+    /// Toggles the presence of a value in the set.
+    ///
+    /// If the value is present, it is removed; otherwise, it is added.
+    #[inline]
+    pub fn toggle(&mut self, value: S::Value) {
+        let index = S::to_index(value);
+        let bit = index.bit();
+        if (self.bits & bit) != 0 {
+            self.bits &= !bit;
+        } else {
+            self.bits |= bit;
         }
     }
 
@@ -561,6 +592,20 @@ mod tests {
 
         set.clear();
         assert!(set.is_empty());
+    }
+
+    #[test]
+    fn test_toggle() {
+        let mut set = TestSet::new();
+        set.toggle((3, 4));
+        assert!(set.contains((3, 4)));
+        set.toggle((3, 4));
+        assert!(!set.contains((3, 4)));
+
+        let mut set = set![(0, 0), (1, 1)];
+        set.toggle((1, 1));
+        set.toggle((2, 2));
+        assert_eq!(set, set![(0, 0), (2, 2)]);
     }
 
     #[test]

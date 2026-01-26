@@ -1,7 +1,10 @@
 use std::sync::Arc;
 
-use eframe::egui::{Button, Color32, Grid, RichText, Stroke, StrokeKind, Ui, Vec2, Visuals};
-use numelace_core::{Digit, Position};
+use eframe::egui::{
+    Align2, Button, Color32, FontId, Grid, Painter, Rect, RichText, Stroke, StrokeKind, Ui, Vec2,
+    Visuals,
+};
+use numelace_core::{Digit, DigitSet, Position};
 use numelace_game::{CellState, Game};
 
 use crate::{state::HighlightSettings, ui::Action};
@@ -69,8 +72,12 @@ impl<'a> GridViewModel<'a> {
                 RichText::new(digit.as_str()).color(visuals.strong_text_color())
             }
             CellState::Filled(digit) => RichText::new(digit.as_str()).color(visuals.text_color()),
-            CellState::Empty => RichText::new(""),
+            CellState::Notes(_) | CellState::Empty => RichText::new(""),
         }
+    }
+
+    fn note_text_color(visuals: &Visuals) -> Color32 {
+        visuals.text_color()
     }
 
     fn inactive_border_color(visuals: &Visuals) -> Color32 {
@@ -169,6 +176,15 @@ pub fn show(ui: &mut Ui, vm: &GridViewModel<'_>) -> Vec<Action> {
                                         .min_size(Vec2::splat(cell_size))
                                         .fill(highlight.fill_color(visuals));
                                     let button = ui.add(button);
+                                    if let CellState::Notes(digits) = vm.game.cell(pos) {
+                                        draw_notes(
+                                            ui.painter(),
+                                            vm,
+                                            button.rect.shrink(thick_border.width),
+                                            *digits,
+                                            visuals,
+                                        );
+                                    }
                                     ui.painter().rect_stroke(
                                         button.rect,
                                         0.0,
@@ -194,4 +210,43 @@ pub fn show(ui: &mut Ui, vm: &GridViewModel<'_>) -> Vec<Action> {
         });
 
     actions
+}
+
+fn draw_notes(
+    painter: &Painter,
+    vm: &GridViewModel,
+    rect: Rect,
+    digits: DigitSet,
+    visuals: &Visuals,
+) {
+    let note_font = FontId::proportional(rect.height() / 3.0);
+    let color = GridViewModel::note_text_color(visuals);
+
+    let cell_w = rect.width() / 3.0;
+    let cell_h = rect.height() / 3.0;
+
+    for digit in Digit::ALL {
+        if !digits.contains(digit) {
+            continue;
+        }
+        let idx = digit.value() - 1;
+        let y = f32::from(idx / 3);
+        let x = f32::from(idx % 3);
+
+        let center = rect.min + Vec2::new((x + 0.5) * cell_w, (y + 0.5) * cell_h);
+
+        if vm.highlight_settings.same_digit && Some(digit) == vm.selected_digit {
+            let highlight_rect =
+                Rect::from_center_size(center, Vec2::splat(f32::min(cell_w, cell_h)) * 0.9);
+            painter.rect_filled(highlight_rect, 0.0, visuals.selection.bg_fill);
+        }
+
+        painter.text(
+            center,
+            Align2::CENTER_CENTER,
+            digit.as_str(),
+            note_font.clone(),
+            color,
+        );
+    }
 }

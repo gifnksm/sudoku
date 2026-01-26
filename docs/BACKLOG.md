@@ -20,7 +20,7 @@ This backlog is the single source of truth for tasks and ideas.
 
 ### Gameplay
 
-- Candidate marks (player notes)
+- Candidate notes (player notes) ✅
 - Auto candidate updates (optional)
 - Mistake highlighting (row/col/box conflicts)
 - Hint system (show applicable technique or next step)

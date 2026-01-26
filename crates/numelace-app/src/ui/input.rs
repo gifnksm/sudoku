@@ -23,6 +23,9 @@ pub fn handle_input(i: &InputState) -> Vec<Action> {
     if i.key_pressed(Key::Escape) {
         actions.push(Action::ClearSelection);
     }
+    if i.key_pressed(Key::S) {
+        actions.push(Action::ToggleInputMode);
+    }
     let pairs = [
         (Key::Delete, None),
         (Key::Backspace, None),
@@ -39,9 +42,12 @@ pub fn handle_input(i: &InputState) -> Vec<Action> {
     for (key, digit) in pairs {
         if i.key_pressed(key) {
             if let Some(digit) = digit {
-                actions.push(Action::SetDigit(digit));
+                actions.push(Action::RequestDigit {
+                    digit,
+                    swap: i.modifiers.command,
+                });
             } else {
-                actions.push(Action::RemoveDigit);
+                actions.push(Action::ClearCell);
             }
         }
     }

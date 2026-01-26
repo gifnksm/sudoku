@@ -2079,6 +2079,7 @@ dependencies = [
 name = "numelace-app"
 version = "0.1.0"
 dependencies = [
+ "bitflags 2.10.0",
  "derive_more",
  "eframe",
  "egui_extras",

@@ -22,10 +22,13 @@ use numelace_solver::TechniqueSolver;
 
 use crate::{
     persistence::storage,
-    state::{AppState, Theme, UiState},
+    state::{AppState, InputMode, Theme, UiState},
     ui::{
-        self, Action, MoveDirection, game_screen::GameScreenViewModel, grid::GridViewModel,
-        keypad::KeypadViewModel, sidebar::SidebarViewModel,
+        self, Action, MoveDirection,
+        game_screen::GameScreenViewModel,
+        grid::GridViewModel,
+        keypad::{KeypadCapabilities, KeypadViewModel},
+        sidebar::SidebarViewModel,
     },
 };
 
@@ -72,15 +75,22 @@ impl NumelaceApp {
         self.app_state.selected_cell = None;
     }
 
-    fn set_digit(&mut self, digit: Digit) {
+    fn request_digit(&mut self, digit: Digit, swap: bool) {
         if let Some(pos) = self.app_state.selected_cell {
-            let _ = self.app_state.game.set_digit(pos, digit);
+            match (self.app_state.input_mode, swap) {
+                (InputMode::Fill, false) | (InputMode::Notes, true) => {
+                    let _ = self.app_state.game.toggle_digit(pos, digit);
+                }
+                (InputMode::Fill, true) | (InputMode::Notes, false) => {
+                    let _ = self.app_state.game.toggle_note(pos, digit);
+                }
+            }
         }
     }
 
-    fn remove_digit(&mut self) {
+    fn clear_cell(&mut self) {
         if let Some(pos) = self.app_state.selected_cell {
-            let _ = self.app_state.game.remove_digit(pos);
+            let _ = self.app_state.game.clear_cell(pos);
         }
     }
 
@@ -105,11 +115,17 @@ impl NumelaceApp {
                     *pos = new_pos;
                 }
             }
-            Action::SetDigit(digit) => {
-                self.set_digit(digit);
+            Action::ToggleInputMode => {
+                self.app_state.input_mode = match self.app_state.input_mode {
+                    InputMode::Fill => InputMode::Notes,
+                    InputMode::Notes => InputMode::Fill,
+                };
             }
-            Action::RemoveDigit => {
-                self.remove_digit();
+            Action::RequestDigit { digit, swap } => {
+                self.request_digit(digit, swap);
+            }
+            Action::ClearCell => {
+                self.clear_cell();
             }
             Action::RequestNewGameConfirm => {
                 self.ui_state.show_new_game_confirm_dialogue = true;
@@ -168,15 +184,24 @@ impl App for NumelaceApp {
         let game = &self.app_state.game;
         let selected_cell = self.app_state.selected_cell;
         let settings = &self.app_state.settings;
-        let can_set_digit = selected_cell.is_some_and(|pos| game.can_set_digit(pos));
-        let has_removable_digit = selected_cell.is_some_and(|pos| game.has_removable_digit(pos));
+        let notes_mode = self.app_state.input_mode.is_notes();
         let selected_digit = selected_cell.and_then(|pos| game.cell(pos).as_digit());
         let grid_vm = GridViewModel::new(game, selected_cell, selected_digit, &settings.highlight);
-        let keypad_vm = KeypadViewModel::new(
-            can_set_digit,
-            has_removable_digit,
-            game.decided_digit_count(),
+        let mut keypad_capabilities = KeypadCapabilities::empty();
+        keypad_capabilities.set(
+            KeypadCapabilities::CAN_TOGGLE_DIGIT,
+            selected_cell.is_some_and(|pos| game.can_toggle_digit(pos)),
         );
+        keypad_capabilities.set(
+            KeypadCapabilities::CAN_TOGGLE_NOTE,
+            selected_cell.is_some_and(|pos| game.can_toggle_note(pos)),
+        );
+        keypad_capabilities.set(
+            KeypadCapabilities::HAS_REMOVABLE_DIGIT,
+            selected_cell.is_some_and(|pos| game.has_removable_digit(pos)),
+        );
+        let keypad_vm =
+            KeypadViewModel::new(keypad_capabilities, game.decided_digit_count(), notes_mode);
         let sidebar_vm = SidebarViewModel::new(self.status(), &settings.highlight, &settings.theme);
         let game_screen_vm = GameScreenViewModel::new(grid_vm, keypad_vm, sidebar_vm);
 

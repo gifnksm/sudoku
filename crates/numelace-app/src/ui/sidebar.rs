@@ -57,7 +57,7 @@ pub fn show(ui: &mut Ui, vm: &SidebarViewModel) -> Vec<Action> {
                 .default_open(true)
                 .show(ui, |ui| {
                     hls_changed |= ui
-                        .checkbox(&mut hls.same_digit, "Same digit cells")
+                        .checkbox(&mut hls.same_digit, "Same digit cells/notes")
                         .changed();
                     ui.label(RichText::new("Row/Col/Box Highlight"));
                     ui.indent("rcb_highlight", |ui| {
