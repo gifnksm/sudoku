@@ -7,12 +7,19 @@ use numelace_game::{CellState, Game, GameError};
 
 use crate::state::{AppState, AppearanceSettings, HighlightSettings, InputMode, Settings, Theme};
 
+// DTO defaulting guidance:
+// - When a DTO has a sensible default, use container-level #[serde(default)].
+// - Implement Default by delegating to the corresponding state Default,
+//   so missing fields preserve non-false defaults on deserialization.
+
 #[derive(Debug, Clone, Deserialize, Serialize)]
 pub struct PersistedState {
     game: GameDto,
+    #[serde(default)]
     selected_cell: Option<PositionDto>,
     #[serde(default)]
     input_mode: InputModeDto,
+    #[serde(default)]
     settings: SettingsDto,
 }
 
@@ -163,9 +170,16 @@ impl From<InputModeDto> for InputMode {
 }
 
 #[derive(Debug, Clone, Deserialize, Serialize)]
+#[serde(default)]
 pub struct SettingsDto {
     highlight: HighlightSettingsDto,
     appearance: AppearanceSettingsDto,
+}
+
+impl Default for SettingsDto {
+    fn default() -> Self {
+        Settings::default().into()
+    }
 }
 
 impl From<&Settings> for SettingsDto {
@@ -174,6 +188,12 @@ impl From<&Settings> for SettingsDto {
             highlight: HighlightSettingsDto::from(&value.highlight),
             appearance: AppearanceSettingsDto::from(&value.appearance),
         }
+    }
+}
+
+impl From<Settings> for SettingsDto {
+    fn from(value: Settings) -> Self {
+        Self::from(&value)
     }
 }
 
@@ -187,10 +207,17 @@ impl From<SettingsDto> for Settings {
 }
 
 #[derive(Debug, Clone, Deserialize, Serialize)]
+#[serde(default)]
 pub struct HighlightSettingsDto {
     pub same_digit: bool,
     pub house_selected: bool,
     pub house_same_digit: bool,
+}
+
+impl Default for HighlightSettingsDto {
+    fn default() -> Self {
+        HighlightSettings::default().into()
+    }
 }
 
 impl From<&HighlightSettings> for HighlightSettingsDto {
@@ -200,6 +227,12 @@ impl From<&HighlightSettings> for HighlightSettingsDto {
             house_selected: value.house_selected,
             house_same_digit: value.house_same_digit,
         }
+    }
+}
+
+impl From<HighlightSettings> for HighlightSettingsDto {
+    fn from(value: HighlightSettings) -> Self {
+        Self::from(&value)
     }
 }
 
@@ -214,8 +247,15 @@ impl From<HighlightSettingsDto> for HighlightSettings {
 }
 
 #[derive(Debug, Clone, Deserialize, Serialize)]
+#[serde(default)]
 pub struct AppearanceSettingsDto {
     pub theme: ThemeDto,
+}
+
+impl Default for AppearanceSettingsDto {
+    fn default() -> Self {
+        AppearanceSettings::default().into()
+    }
 }
 
 impl From<&AppearanceSettings> for AppearanceSettingsDto {
@@ -223,6 +263,12 @@ impl From<&AppearanceSettings> for AppearanceSettingsDto {
         Self {
             theme: value.theme.into(),
         }
+    }
+}
+
+impl From<AppearanceSettings> for AppearanceSettingsDto {
+    fn from(value: AppearanceSettings) -> Self {
+        Self::from(&value)
     }
 }
 
@@ -238,6 +284,12 @@ impl From<AppearanceSettingsDto> for AppearanceSettings {
 pub enum ThemeDto {
     Light,
     Dark,
+}
+
+impl Default for ThemeDto {
+    fn default() -> Self {
+        Theme::default().into()
+    }
 }
 
 impl From<ThemeDto> for Theme {
