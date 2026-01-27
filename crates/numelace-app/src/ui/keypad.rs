@@ -1,52 +1,50 @@
 use std::sync::Arc;
 
-use eframe::egui::{self, Align2, Button, FontId, Grid, Layout, RichText, Ui, Vec2};
+use eframe::egui::{self, Align2, Button, FontId, Grid, Layout, RichText, Ui, Vec2, Visuals};
 use numelace_core::{Digit, containers::Array9, index::DigitSemantics};
+use numelace_game::ToggleCapability;
 
 use crate::ui::Action;
 
-bitflags::bitflags! {
-    #[derive(Debug, Clone, Copy, PartialEq, Eq)]
-    pub struct KeypadCapabilities: u8 {
-        const CAN_TOGGLE_DIGIT = 0b0000_0001;
-        const CAN_TOGGLE_NOTE = 0b0000_0010;
-        const HAS_REMOVABLE_DIGIT = 0b0000_0100;
-    }
+#[derive(Debug, Clone)]
+pub struct KeypadViewModel {
+    digit_states: Array9<DigitKeyState, DigitSemantics>,
+    has_removable_digit: bool,
+    notes_mode: bool,
 }
 
 #[derive(Debug, Clone)]
-pub struct KeypadViewModel {
-    capabilities: KeypadCapabilities,
-    decided_digit_count: Array9<usize, DigitSemantics>,
-    notes_mode: bool,
+pub struct DigitKeyState {
+    toggle_digit: Option<ToggleCapability>,
+    toggle_note: Option<ToggleCapability>,
+    decided_count: usize,
+}
+
+impl DigitKeyState {
+    pub fn new(
+        digit: Option<ToggleCapability>,
+        note: Option<ToggleCapability>,
+        decided_count: usize,
+    ) -> Self {
+        Self {
+            toggle_digit: digit,
+            toggle_note: note,
+            decided_count,
+        }
+    }
 }
 
 impl KeypadViewModel {
     pub fn new(
-        capabilities: KeypadCapabilities,
-        decided_digit_count: Array9<usize, DigitSemantics>,
+        digit_states: Array9<DigitKeyState, DigitSemantics>,
+        has_removable_digit: bool,
         notes_mode: bool,
     ) -> Self {
         Self {
-            capabilities,
-            decided_digit_count,
+            digit_states,
+            has_removable_digit,
             notes_mode,
         }
-    }
-
-    fn can_toggle_digit(&self) -> bool {
-        self.capabilities
-            .contains(KeypadCapabilities::CAN_TOGGLE_DIGIT)
-    }
-
-    fn can_toggle_note(&self) -> bool {
-        self.capabilities
-            .contains(KeypadCapabilities::CAN_TOGGLE_NOTE)
-    }
-
-    fn has_removable_digit(&self) -> bool {
-        self.capabilities
-            .contains(KeypadCapabilities::HAS_REMOVABLE_DIGIT)
     }
 }
 
@@ -76,7 +74,6 @@ pub fn show(ui: &mut Ui, vm: &KeypadViewModel) -> Vec<Action> {
 
     let style = Arc::clone(ui.style());
     let visuals = &style.visuals;
-    let digit_count_color = visuals.text_color();
 
     let x_padding = 5.0;
     let y_padding = 5.0;
@@ -101,39 +98,22 @@ pub fn show(ui: &mut Ui, vm: &KeypadViewModel) -> Vec<Action> {
                         for button_type in row {
                             match button_type {
                                 ButtonType::Digit(digit) => {
-                                    let (enabled, tooltip) = if effective_notes_mode {
-                                        (vm.can_toggle_note(), "Toggle note")
-                                    } else {
-                                        (vm.can_toggle_digit(), "Toggle digit")
-                                    };
-                                    let text =
-                                        RichText::new(digit.as_str()).size(button_size * 0.8);
-                                    let button =
-                                        Button::new(text).min_size(Vec2::splat(button_size));
-                                    let button =
-                                        ui.add_enabled(enabled, button).on_hover_text(tooltip);
-                                    if button.clicked() {
+                                    if show_digit_button(
+                                        ui,
+                                        digit,
+                                        button_size,
+                                        effective_notes_mode,
+                                        &vm.digit_states[digit],
+                                        visuals,
+                                    ) {
                                         actions.push(Action::RequestDigit {
                                             digit,
                                             swap: swap_input_mode,
                                         });
                                     }
-                                    ui.painter().text(
-                                        button.rect.right_top() + egui::vec2(-4.0, 2.0),
-                                        Align2::RIGHT_TOP,
-                                        vm.decided_digit_count[digit].to_string(),
-                                        FontId::proportional(button_size * 0.25),
-                                        digit_count_color,
-                                    );
                                 }
                                 ButtonType::RemoveDigit => {
-                                    let text = RichText::new("X").size(button_size * 0.8);
-                                    let button =
-                                        Button::new(text).min_size(Vec2::splat(button_size));
-                                    let button = ui
-                                        .add_enabled(vm.has_removable_digit(), button)
-                                        .on_hover_text("Remove digit/notes");
-                                    if button.clicked() {
+                                    if show_remove_button(ui, button_size, vm.has_removable_digit) {
                                         actions.push(Action::ClearCell);
                                     }
                                 }
@@ -171,4 +151,52 @@ pub fn show(ui: &mut Ui, vm: &KeypadViewModel) -> Vec<Action> {
         });
     });
     actions
+}
+
+fn show_digit_button(
+    ui: &mut Ui,
+    digit: Digit,
+    button_size: f32,
+    effective_notes_mode: bool,
+    state: &DigitKeyState,
+    visuals: &Visuals,
+) -> bool {
+    let digit_count_color = visuals.text_color();
+
+    let (toggle_capability, tooltip) = if effective_notes_mode {
+        (state.toggle_note, "Toggle note")
+    } else {
+        (state.toggle_digit, "Toggle digit")
+    };
+
+    let (enabled, text_color) = match toggle_capability {
+        Some(ToggleCapability::BlockedByConflict) => (true, visuals.warn_fg_color),
+        Some(ToggleCapability::Allowed) => (true, visuals.text_color()),
+        Some(ToggleCapability::BlockedByGivenCell | ToggleCapability::BlockedByFilledCell)
+        | None => (false, visuals.text_color()),
+    };
+
+    let text = RichText::new(digit.as_str())
+        .color(text_color)
+        .size(button_size * 0.8);
+    let button = Button::new(text).min_size(Vec2::splat(button_size));
+    let button = ui.add_enabled(enabled, button).on_hover_text(tooltip);
+    let clicked = button.clicked();
+    ui.painter().text(
+        button.rect.right_top() + egui::vec2(-4.0, 2.0),
+        Align2::RIGHT_TOP,
+        state.decided_count.to_string(),
+        FontId::proportional(button_size * 0.25),
+        digit_count_color,
+    );
+    clicked
+}
+
+fn show_remove_button(ui: &mut Ui, button_size: f32, has_removable_digit: bool) -> bool {
+    let text = RichText::new("X").size(button_size * 0.8);
+    let button = Button::new(text).min_size(Vec2::splat(button_size));
+    let button = ui
+        .add_enabled(has_removable_digit, button)
+        .on_hover_text("Remove digit/notes");
+    button.clicked()
 }

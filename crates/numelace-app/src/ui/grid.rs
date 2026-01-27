@@ -17,6 +17,7 @@ bitflags::bitflags! {
         const HOUSE_SELECTED = 0b0000_0100;
         const HOUSE_SAME_DIGIT = 0b0000_1000;
         const CONFLICT = 0b0001_0000;
+        const GHOST = 0b0010_0000;
     }
 }
 
@@ -31,6 +32,7 @@ pub struct GridCell {
 pub struct NoteVisualState {
     pub same_digit: DigitSet,
     pub conflict: DigitSet,
+    pub ghost: DigitSet,
 }
 
 impl NoteVisualState {
@@ -38,6 +40,7 @@ impl NoteVisualState {
         let Self {
             same_digit,
             conflict,
+            ghost,
         } = self;
         let mut vs = GridVisualState::empty();
         if same_digit.contains(digit) {
@@ -45,6 +48,9 @@ impl NoteVisualState {
         }
         if conflict.contains(digit) {
             vs |= GridVisualState::CONFLICT;
+        }
+        if ghost.contains(digit) {
+            vs |= GridVisualState::GHOST;
         }
         vs
     }

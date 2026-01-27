@@ -5,7 +5,9 @@ use std::fmt::Write;
 use numelace_core::{DigitGrid, DigitGridParseError, Position, PositionNewError};
 use numelace_game::{CellState, Game, GameError};
 
-use crate::state::{AppState, AppearanceSettings, HighlightSettings, InputMode, Settings, Theme};
+use crate::state::{
+    AppState, AppearanceSettings, AssistSettings, HighlightSettings, InputMode, Settings, Theme,
+};
 
 // DTO defaulting guidance:
 // - When a DTO has a sensible default, use container-level #[serde(default)].
@@ -172,7 +174,7 @@ impl From<InputModeDto> for InputMode {
 #[derive(Debug, Clone, Deserialize, Serialize)]
 #[serde(default)]
 pub struct SettingsDto {
-    highlight: HighlightSettingsDto,
+    assist: AssistSettingsDto,
     appearance: AppearanceSettingsDto,
 }
 
@@ -185,7 +187,7 @@ impl Default for SettingsDto {
 impl From<&Settings> for SettingsDto {
     fn from(value: &Settings) -> Self {
         Self {
-            highlight: HighlightSettingsDto::from(&value.highlight),
+            assist: AssistSettingsDto::from(&value.assist),
             appearance: AppearanceSettingsDto::from(&value.appearance),
         }
     }
@@ -200,8 +202,45 @@ impl From<Settings> for SettingsDto {
 impl From<SettingsDto> for Settings {
     fn from(value: SettingsDto) -> Self {
         Self {
-            highlight: value.highlight.into(),
+            assist: value.assist.into(),
             appearance: value.appearance.into(),
+        }
+    }
+}
+
+#[derive(Debug, Clone, Deserialize, Serialize)]
+#[serde(default)]
+pub struct AssistSettingsDto {
+    pub block_rule_violations: bool,
+    pub highlight: HighlightSettingsDto,
+}
+
+impl Default for AssistSettingsDto {
+    fn default() -> Self {
+        AssistSettings::default().into()
+    }
+}
+
+impl From<&AssistSettings> for AssistSettingsDto {
+    fn from(value: &AssistSettings) -> Self {
+        Self {
+            block_rule_violations: value.block_rule_violations,
+            highlight: HighlightSettingsDto::from(&value.highlight),
+        }
+    }
+}
+
+impl From<AssistSettings> for AssistSettingsDto {
+    fn from(value: AssistSettings) -> Self {
+        Self::from(&value)
+    }
+}
+
+impl From<AssistSettingsDto> for AssistSettings {
+    fn from(value: AssistSettingsDto) -> Self {
+        Self {
+            block_rule_violations: value.block_rule_violations,
+            highlight: value.highlight.into(),
         }
     }
 }

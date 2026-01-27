@@ -25,3 +25,5 @@ Short, timestamped notes capturing decisions and rationale.
 - 2026-01-27: UI uses per-cell `content` and `visual state` (selection/house/same-digit/conflict) derived in app; rule-based conflict checks live in `numelace-game`; UI terminology sticks to `house` for consistency — keeps rule logic centralized while keeping UI state explicit and aligned with existing terms.
 - 2026-01-27: Use container-level `#[serde(default)]` for DTOs with sensible defaults (and map `Default` from state defaults) so missing fields preserve non-false defaults — keeps deserialization backward compatible.
 - 2026-01-27: Skip extra commit confirmation when the user explicitly asks to commit — reduces redundant prompts while keeping confirmation for other cases.
+- 2026-01-27: Strict rule checks still allow clearing existing digits/notes — preserves safe undo of inputs while preventing new conflicts.
+- 2026-01-27: Strict-conflicting inputs are rejected but shown as ghost UI state — surfaces rule violations without mutating game state.

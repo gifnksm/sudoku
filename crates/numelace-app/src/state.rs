@@ -1,4 +1,4 @@
-use numelace_core::Position;
+use numelace_core::{Digit, Position};
 use numelace_game::Game;
 
 #[derive(Debug)]
@@ -28,8 +28,23 @@ pub enum InputMode {
 
 #[derive(Debug, Default, Clone)]
 pub struct Settings {
-    pub highlight: HighlightSettings,
+    pub assist: AssistSettings,
     pub appearance: AppearanceSettings,
+}
+
+#[derive(Debug, Clone)]
+pub struct AssistSettings {
+    pub block_rule_violations: bool,
+    pub highlight: HighlightSettings,
+}
+
+impl Default for AssistSettings {
+    fn default() -> Self {
+        Self {
+            block_rule_violations: true,
+            highlight: HighlightSettings::default(),
+        }
+    }
 }
 
 #[derive(Debug, Clone)]
@@ -64,7 +79,14 @@ pub enum Theme {
     Dark,
 }
 
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum GhostType {
+    Digit(Digit),
+    Note(Digit),
+}
+
 #[derive(Debug, Default)]
 pub struct UiState {
     pub show_new_game_confirm_dialogue: bool,
+    pub conflict_ghost: Option<(Position, GhostType)>,
 }

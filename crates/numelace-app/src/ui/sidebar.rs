@@ -2,28 +2,19 @@ use eframe::egui::{Button, CollapsingHeader, RichText, ScrollArea, Ui};
 
 use crate::{
     app::GameStatus,
-    state::{AppearanceSettings, HighlightSettings, Theme},
+    state::{AppearanceSettings, AssistSettings, HighlightSettings, Settings, Theme},
     ui::Action,
 };
 
 #[derive(Debug, Clone)]
 pub struct SidebarViewModel<'a> {
     status: GameStatus,
-    highlight_settings: &'a HighlightSettings,
-    appearance_settings: &'a AppearanceSettings,
+    settings: &'a Settings,
 }
 
 impl<'a> SidebarViewModel<'a> {
-    pub fn new(
-        status: GameStatus,
-        highlight_settings: &'a HighlightSettings,
-        appearance_settings: &'a AppearanceSettings,
-    ) -> Self {
-        Self {
-            status,
-            highlight_settings,
-            appearance_settings,
-        }
+    pub fn new(status: GameStatus, settings: &'a Settings) -> Self {
+        Self { status, settings }
     }
 }
 
@@ -50,35 +41,43 @@ pub fn show(ui: &mut Ui, vm: &SidebarViewModel) -> Vec<Action> {
             }
         });
 
+        let mut changed = false;
+        let mut settings = vm.settings.clone();
+        let Settings { assist, appearance } = &mut settings;
         ScrollArea::vertical().show(ui, |ui| {
             ui.heading("Settings");
             ui.indent("sidebar_settings", |ui| {
-                let mut settings = vm.highlight_settings.clone();
-                let HighlightSettings {
-                    same_digit,
-                    house_selected,
-                    house_same_digit,
-                    conflict,
-                } = &mut settings;
-                let mut changed = false;
-                CollapsingHeader::new("Highlight")
+                let AssistSettings {
+                    block_rule_violations,
+                    highlight,
+                } = assist;
+                CollapsingHeader::new("Assist")
                     .default_open(true)
                     .show(ui, |ui| {
-                        changed |= ui.checkbox(same_digit, "Same digit cells/notes").changed();
-                        changed |= ui.checkbox(conflict, "Conflicting cells/notes").changed();
-                        ui.label(RichText::new("Row/Col/Box Highlight"));
-                        ui.indent("house_highlight", |ui| {
-                            changed |= ui.checkbox(house_selected, "Selected cell").changed();
-                            changed |= ui.checkbox(house_same_digit, "Same digit cells").changed();
+                        changed |= ui
+                            .checkbox(block_rule_violations, "Block rule violations")
+                            .changed();
+
+                        ui.label("Highlight");
+                        ui.indent("highlight", |ui| {
+                            let HighlightSettings {
+                                same_digit,
+                                house_selected,
+                                house_same_digit,
+                                conflict,
+                            } = highlight;
+                            changed |= ui.checkbox(same_digit, "Same digit cells/notes").changed();
+                            changed |= ui.checkbox(conflict, "Conflicting cells/notes").changed();
+                            ui.label(RichText::new("Row/Col/Box Highlight"));
+                            ui.indent("house_highlight", |ui| {
+                                changed |= ui.checkbox(house_selected, "Selected cell").changed();
+                                changed |=
+                                    ui.checkbox(house_same_digit, "Same digit cells").changed();
+                            });
                         });
                     });
-                if changed {
-                    actions.push(Action::UpdateHighlightSettings(settings));
-                }
 
-                let mut settings = vm.appearance_settings.clone();
-                let AppearanceSettings { theme } = &mut settings;
-                let mut changed = false;
+                let AppearanceSettings { theme } = appearance;
                 CollapsingHeader::new("Appearance")
                     .default_open(true)
                     .show(ui, |ui| {
@@ -88,11 +87,11 @@ pub fn show(ui: &mut Ui, vm: &SidebarViewModel) -> Vec<Action> {
                             changed |= ui.radio_value(theme, Theme::Dark, "Dark").changed();
                         });
                     });
-                if changed {
-                    actions.push(Action::UpdateAppearanceSettings(settings));
-                }
             });
         });
+        if changed {
+            actions.push(Action::UpdateSettings(settings));
+        }
     });
     actions
 }
