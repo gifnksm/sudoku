@@ -10,12 +10,12 @@ pub struct AppState {
 }
 
 impl AppState {
-    pub fn new(game: Game, theme: Theme) -> Self {
+    pub fn new(game: Game) -> Self {
         Self {
             game,
             selected_cell: None,
             input_mode: InputMode::Fill,
-            settings: Settings::new(theme),
+            settings: Settings::default(),
         }
     }
 }
@@ -26,19 +26,10 @@ pub enum InputMode {
     Notes,
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Default, Clone)]
 pub struct Settings {
     pub highlight: HighlightSettings,
-    pub theme: ThemeSettings,
-}
-
-impl Settings {
-    pub fn new(theme: Theme) -> Self {
-        Self {
-            highlight: HighlightSettings::default(),
-            theme: ThemeSettings::new(theme),
-        }
-    }
+    pub appearance: AppearanceSettings,
 }
 
 #[derive(Debug, Clone)]
@@ -58,19 +49,14 @@ impl Default for HighlightSettings {
     }
 }
 
-#[derive(Debug, Clone)]
-pub struct ThemeSettings {
+#[derive(Debug, Default, Clone)]
+pub struct AppearanceSettings {
     pub theme: Theme,
 }
 
-impl ThemeSettings {
-    pub fn new(theme: Theme) -> Self {
-        Self { theme }
-    }
-}
-
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[derive(Debug, Default, Clone, Copy, PartialEq, Eq)]
 pub enum Theme {
+    #[default]
     Light,
     Dark,
 }

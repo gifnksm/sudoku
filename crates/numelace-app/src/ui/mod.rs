@@ -1,6 +1,6 @@
 use numelace_core::{Digit, Position};
 
-use crate::state::{HighlightSettings, ThemeSettings};
+use crate::state::{AppearanceSettings, HighlightSettings};
 
 pub mod dialogs;
 pub mod game_screen;
@@ -20,7 +20,7 @@ pub enum Action {
     RequestNewGameConfirm,
     NewGame,
     UpdateHighlightSettings(HighlightSettings),
-    UpdateThemeSettings(ThemeSettings),
+    UpdateAppearanceSettings(AppearanceSettings),
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]

@@ -46,14 +46,10 @@ pub enum GameStatus {
 
 impl NumelaceApp {
     pub fn new(cc: &CreationContext<'_>) -> Self {
-        let app_state = cc.storage.and_then(storage::load_state).unwrap_or_else(|| {
-            let theme = if cc.egui_ctx.style().visuals.dark_mode {
-                Theme::Dark
-            } else {
-                Theme::Light
-            };
-            AppState::new(new_game(), theme)
-        });
+        let app_state = cc
+            .storage
+            .and_then(storage::load_state)
+            .unwrap_or_else(|| AppState::new(new_game()));
         let this = Self {
             app_state,
             ui_state: UiState::default(),
@@ -136,15 +132,15 @@ impl NumelaceApp {
             Action::UpdateHighlightSettings(settings) => {
                 self.app_state.settings.highlight = settings;
             }
-            Action::UpdateThemeSettings(settings) => {
-                self.app_state.settings.theme = settings;
+            Action::UpdateAppearanceSettings(settings) => {
+                self.app_state.settings.appearance = settings;
                 self.update_theme(ctx);
             }
         }
     }
 
     fn update_theme(&self, ctx: &Context) {
-        match self.app_state.settings.theme.theme {
+        match self.app_state.settings.appearance.theme {
             Theme::Light => {
                 ctx.set_visuals(Visuals::light());
             }
@@ -202,7 +198,8 @@ impl App for NumelaceApp {
         );
         let keypad_vm =
             KeypadViewModel::new(keypad_capabilities, game.decided_digit_count(), notes_mode);
-        let sidebar_vm = SidebarViewModel::new(self.status(), &settings.highlight, &settings.theme);
+        let sidebar_vm =
+            SidebarViewModel::new(self.status(), &settings.highlight, &settings.appearance);
         let game_screen_vm = GameScreenViewModel::new(grid_vm, keypad_vm, sidebar_vm);
 
         let mut actions = vec![];

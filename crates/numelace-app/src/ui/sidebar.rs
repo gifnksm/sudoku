@@ -2,7 +2,7 @@ use eframe::egui::{Button, CollapsingHeader, RichText, ScrollArea, Ui};
 
 use crate::{
     app::GameStatus,
-    state::{HighlightSettings, Theme, ThemeSettings},
+    state::{AppearanceSettings, HighlightSettings, Theme},
     ui::Action,
 };
 
@@ -10,19 +10,19 @@ use crate::{
 pub struct SidebarViewModel<'a> {
     status: GameStatus,
     highlight_settings: &'a HighlightSettings,
-    theme_settings: &'a ThemeSettings,
+    appearance_settings: &'a AppearanceSettings,
 }
 
 impl<'a> SidebarViewModel<'a> {
     pub fn new(
         status: GameStatus,
         highlight_settings: &'a HighlightSettings,
-        theme_settings: &'a ThemeSettings,
+        appearance_settings: &'a AppearanceSettings,
     ) -> Self {
         Self {
             status,
             highlight_settings,
-            theme_settings,
+            appearance_settings,
         }
     }
 }
@@ -51,44 +51,49 @@ pub fn show(ui: &mut Ui, vm: &SidebarViewModel) -> Vec<Action> {
         });
 
         ScrollArea::vertical().show(ui, |ui| {
-            let mut hls = vm.highlight_settings.clone();
-            let mut hls_changed = false;
-            CollapsingHeader::new("Highlight settings")
-                .default_open(true)
-                .show(ui, |ui| {
-                    hls_changed |= ui
-                        .checkbox(&mut hls.same_digit, "Same digit cells/notes")
-                        .changed();
-                    ui.label(RichText::new("Row/Col/Box Highlight"));
-                    ui.indent("rcb_highlight", |ui| {
-                        hls_changed |= ui
-                            .checkbox(&mut hls.rcb_selected, "Selected cell")
+            ui.heading("Settings");
+            ui.indent("sidebar_settings", |ui| {
+                let mut settings = vm.highlight_settings.clone();
+                let mut changed = false;
+                CollapsingHeader::new("Highlight")
+                    .default_open(true)
+                    .show(ui, |ui| {
+                        changed |= ui
+                            .checkbox(&mut settings.same_digit, "Same digit cells/notes")
                             .changed();
-                        hls_changed |= ui
-                            .checkbox(&mut hls.rcb_same_digit, "Same digit cells")
-                            .changed();
+                        ui.label(RichText::new("Row/Col/Box Highlight"));
+                        ui.indent("rcb_highlight", |ui| {
+                            changed |= ui
+                                .checkbox(&mut settings.rcb_selected, "Selected cell")
+                                .changed();
+                            changed |= ui
+                                .checkbox(&mut settings.rcb_same_digit, "Same digit cells")
+                                .changed();
+                        });
+                        if changed {
+                            actions.push(Action::UpdateHighlightSettings(settings));
+                        }
                     });
-                    if hls_changed {
-                        actions.push(Action::UpdateHighlightSettings(hls));
-                    }
-                });
 
-            let mut ts = vm.theme_settings.clone();
-            let mut ts_changed = false;
-            CollapsingHeader::new("Appearance settings")
-                .default_open(true)
-                .show(ui, |ui| {
-                    ui.label(RichText::new("Theme"));
-                    ui.indent("theme", |ui| {
-                        ts_changed |= ui
-                            .radio_value(&mut ts.theme, Theme::Light, "Light")
-                            .changed();
-                        ts_changed |= ui.radio_value(&mut ts.theme, Theme::Dark, "Dark").changed();
+                let mut settings = vm.appearance_settings.clone();
+                let mut changed = false;
+                CollapsingHeader::new("Appearance")
+                    .default_open(true)
+                    .show(ui, |ui| {
+                        ui.label(RichText::new("Theme"));
+                        ui.indent("theme", |ui| {
+                            changed |= ui
+                                .radio_value(&mut settings.theme, Theme::Light, "Light")
+                                .changed();
+                            changed |= ui
+                                .radio_value(&mut settings.theme, Theme::Dark, "Dark")
+                                .changed();
+                        });
                     });
-                });
-            if ts_changed {
-                actions.push(Action::UpdateThemeSettings(ts));
-            }
+                if changed {
+                    actions.push(Action::UpdateAppearanceSettings(settings));
+                }
+            });
         });
     });
     actions

@@ -5,7 +5,7 @@ use std::fmt::Write;
 use numelace_core::{DigitGrid, DigitGridParseError, Position, PositionNewError};
 use numelace_game::{CellState, Game, GameError};
 
-use crate::state::{AppState, HighlightSettings, InputMode, Settings, Theme, ThemeSettings};
+use crate::state::{AppState, AppearanceSettings, HighlightSettings, InputMode, Settings, Theme};
 
 #[derive(Debug, Clone, Deserialize, Serialize)]
 pub struct PersistedState {
@@ -165,14 +165,14 @@ impl From<InputModeDto> for InputMode {
 #[derive(Debug, Clone, Deserialize, Serialize)]
 pub struct SettingsDto {
     highlight: HighlightSettingsDto,
-    theme: ThemeSettingsDto,
+    appearance: AppearanceSettingsDto,
 }
 
 impl From<&Settings> for SettingsDto {
     fn from(value: &Settings) -> Self {
         Self {
             highlight: HighlightSettingsDto::from(&value.highlight),
-            theme: ThemeSettingsDto::from(&value.theme),
+            appearance: AppearanceSettingsDto::from(&value.appearance),
         }
     }
 }
@@ -181,7 +181,7 @@ impl From<SettingsDto> for Settings {
     fn from(value: SettingsDto) -> Self {
         Self {
             highlight: value.highlight.into(),
-            theme: value.theme.into(),
+            appearance: value.appearance.into(),
         }
     }
 }
@@ -214,20 +214,20 @@ impl From<HighlightSettingsDto> for HighlightSettings {
 }
 
 #[derive(Debug, Clone, Deserialize, Serialize)]
-pub struct ThemeSettingsDto {
+pub struct AppearanceSettingsDto {
     pub theme: ThemeDto,
 }
 
-impl From<&ThemeSettings> for ThemeSettingsDto {
-    fn from(value: &ThemeSettings) -> Self {
+impl From<&AppearanceSettings> for AppearanceSettingsDto {
+    fn from(value: &AppearanceSettings) -> Self {
         Self {
             theme: value.theme.into(),
         }
     }
 }
 
-impl From<ThemeSettingsDto> for ThemeSettings {
-    fn from(value: ThemeSettingsDto) -> Self {
+impl From<AppearanceSettingsDto> for AppearanceSettings {
+    fn from(value: AppearanceSettingsDto) -> Self {
         Self {
             theme: value.theme.into(),
         }
