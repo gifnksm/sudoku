@@ -11,7 +11,7 @@ use crate::{state::HighlightSettings, ui::Action};
 
 bitflags::bitflags! {
     #[derive(Debug, Clone, Copy, PartialEq, Eq)]
-    pub struct CellVisualState: u8 {
+    pub struct GridVisualState: u8 {
         const SELECTED = 0b0000_0001;
         const SAME_DIGIT = 0b0000_0010;
         const HOUSE_SELECTED = 0b0000_0100;
@@ -22,7 +22,7 @@ bitflags::bitflags! {
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct GridCell {
     pub content: CellState,
-    pub visual_state: CellVisualState,
+    pub visual_state: GridVisualState,
     pub note_visual_state: NoteVisualState,
 }
 
@@ -31,10 +31,21 @@ pub struct NoteVisualState {
     pub same_digit: DigitSet,
 }
 
+impl NoteVisualState {
+    pub fn digit_highlight(&self, digit: Digit) -> GridVisualState {
+        let Self { same_digit } = self;
+        let mut vs = GridVisualState::empty();
+        if same_digit.contains(digit) {
+            vs |= GridVisualState::SAME_DIGIT;
+        }
+        vs
+    }
+}
+
 #[derive(Debug, Clone)]
 pub struct GridViewModel<'a> {
     grid: &'a Array81<GridCell, PositionSemantics>,
-    highlight_settings: &'a HighlightSettings,
+    enabled_highlights: GridVisualState,
 }
 
 impl<'a> GridViewModel<'a> {
@@ -42,43 +53,25 @@ impl<'a> GridViewModel<'a> {
         grid: &'a Array81<GridCell, PositionSemantics>,
         highlight_settings: &'a HighlightSettings,
     ) -> Self {
+        let mut enabled_highlights = GridVisualState::SELECTED;
+        let HighlightSettings {
+            same_digit,
+            house_selected,
+            house_same_digit,
+        } = highlight_settings;
+        if *house_same_digit {
+            enabled_highlights |= GridVisualState::HOUSE_SAME_DIGIT;
+        }
+        if *house_selected {
+            enabled_highlights |= GridVisualState::HOUSE_SELECTED;
+        }
+        if *same_digit {
+            enabled_highlights |= GridVisualState::SAME_DIGIT;
+        }
         Self {
             grid,
-            highlight_settings,
+            enabled_highlights,
         }
-    }
-
-    fn cell_highlight(&self, cell_pos: Position) -> CellHighlight {
-        let hlc = &self.highlight_settings;
-        let vs = self.grid[cell_pos].visual_state;
-
-        if vs.contains(CellVisualState::SELECTED) {
-            return CellHighlight::Selected;
-        }
-        if hlc.same_digit && vs.contains(CellVisualState::SAME_DIGIT) {
-            return CellHighlight::SameDigit;
-        }
-        if hlc.house_selected && vs.contains(CellVisualState::HOUSE_SELECTED) {
-            return CellHighlight::HouseSelected;
-        }
-        if hlc.house_same_digit && vs.contains(CellVisualState::HOUSE_SAME_DIGIT) {
-            return CellHighlight::HouseSameDigit;
-        }
-        CellHighlight::None
-    }
-
-    fn cell_text(&self, pos: Position, visuals: &Visuals) -> RichText {
-        match self.grid[pos].content {
-            CellState::Given(digit) => {
-                RichText::new(digit.as_str()).color(visuals.strong_text_color())
-            }
-            CellState::Filled(digit) => RichText::new(digit.as_str()).color(visuals.text_color()),
-            CellState::Notes(_) | CellState::Empty => RichText::new(""),
-        }
-    }
-
-    fn note_text_color(visuals: &Visuals) -> Color32 {
-        visuals.text_color()
     }
 
     fn inactive_border_color(visuals: &Visuals) -> Color32 {
@@ -86,53 +79,92 @@ impl<'a> GridViewModel<'a> {
     }
 
     fn grid_thick_border(visuals: &Visuals, cell_size: f32) -> Stroke {
-        let base_width = f32::max(cell_size * CELL_BORDER_BASE_RATIO, 1.0);
+        let base_width = f32::max(cell_size * CELL_BORDER_WIDTH_BASE_RATIO, 1.0);
         Stroke::new(
             base_width * THICK_BORDER_RATIO,
             Self::inactive_border_color(visuals),
         )
     }
+
+    fn effective_visual_state(&self, state: GridVisualState) -> EffectiveGridVisualState {
+        EffectiveGridVisualState(self.enabled_highlights & state)
+    }
 }
 
-const CELL_BORDER_BASE_RATIO: f32 = 0.03;
+const CELL_BORDER_WIDTH_BASE_RATIO: f32 = 0.03;
 const THICK_BORDER_RATIO: f32 = 2.0;
-const THIN_BORDER_RATIO: f32 = 1.0;
-const SELECTED_BORDER_RATIO: f32 = 3.0;
-const SAME_DIGIT_BORDER_RATIO: f32 = 1.0;
-const HOUSE_BORDER_RATIO: f32 = 1.0;
+const THIN_BORDER_WIDTH_RATIO: f32 = 1.0;
+const SELECTED_BORDER_WIDTH_RATIO: f32 = 3.0;
+const SAME_DIGIT_BORDER_WIDTH_RATIO: f32 = 1.0;
+const HOUSE_BORDER_WIDTH_RATIO: f32 = 1.0;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
-enum CellHighlight {
-    Selected,
-    SameDigit,
-    HouseSelected,
-    HouseSameDigit,
-    None,
-}
+struct EffectiveGridVisualState(GridVisualState);
 
-impl CellHighlight {
-    fn fill_color(self, visuals: &Visuals) -> Color32 {
-        match self {
-            Self::Selected | Self::SameDigit => visuals.selection.bg_fill,
-            Self::HouseSelected | Self::HouseSameDigit => visuals.widgets.hovered.bg_fill,
-            Self::None => visuals.text_edit_bg_color(),
+impl EffectiveGridVisualState {
+    fn text_color(self, is_given: bool, visuals: &Visuals) -> Color32 {
+        if is_given {
+            visuals.strong_text_color()
+        } else {
+            visuals.text_color()
         }
     }
 
-    fn border(self, visuals: &Visuals, cell_size: f32) -> Stroke {
-        let (ratio, color) = match self {
-            Self::Selected => (SELECTED_BORDER_RATIO, visuals.selection.stroke.color),
-            Self::SameDigit => (SAME_DIGIT_BORDER_RATIO, visuals.selection.stroke.color),
-            Self::HouseSelected | Self::HouseSameDigit => (
-                HOUSE_BORDER_RATIO,
-                GridViewModel::inactive_border_color(visuals),
-            ),
-            Self::None => (
-                THIN_BORDER_RATIO,
-                GridViewModel::inactive_border_color(visuals),
-            ),
-        };
-        let base_width = f32::max(cell_size * CELL_BORDER_BASE_RATIO, 1.0);
+    fn cell_fill_color(self, visuals: &Visuals) -> Color32 {
+        if self
+            .0
+            .intersects(GridVisualState::SELECTED | GridVisualState::SAME_DIGIT)
+        {
+            return visuals.selection.bg_fill;
+        }
+        if self
+            .0
+            .intersects(GridVisualState::HOUSE_SELECTED | GridVisualState::HOUSE_SAME_DIGIT)
+        {
+            return visuals.widgets.hovered.bg_fill;
+        }
+        visuals.text_edit_bg_color()
+    }
+
+    fn note_fill_color(self, visuals: &Visuals) -> Option<Color32> {
+        if self
+            .0
+            .intersects(GridVisualState::SAME_DIGIT | GridVisualState::HOUSE_SAME_DIGIT)
+        {
+            return Some(self.cell_fill_color(visuals));
+        }
+        None
+    }
+
+    fn cell_border_color(self, visuals: &Visuals) -> Color32 {
+        if self
+            .0
+            .intersects(GridVisualState::SELECTED | GridVisualState::SAME_DIGIT)
+        {
+            return visuals.selection.stroke.color;
+        }
+        GridViewModel::inactive_border_color(visuals)
+    }
+
+    fn cell_border_width_ratio(self) -> f32 {
+        if self.0.intersects(GridVisualState::SELECTED) {
+            SELECTED_BORDER_WIDTH_RATIO
+        } else if self.0.intersects(GridVisualState::SAME_DIGIT) {
+            SAME_DIGIT_BORDER_WIDTH_RATIO
+        } else if self
+            .0
+            .intersects(GridVisualState::HOUSE_SELECTED | GridVisualState::HOUSE_SAME_DIGIT)
+        {
+            HOUSE_BORDER_WIDTH_RATIO
+        } else {
+            THIN_BORDER_WIDTH_RATIO
+        }
+    }
+
+    fn cell_border(self, visuals: &Visuals, cell_size: f32) -> Stroke {
+        let color = self.cell_border_color(visuals);
+        let ratio = self.cell_border_width_ratio();
+        let base_width = f32::max(cell_size * CELL_BORDER_WIDTH_BASE_RATIO, 1.0);
         Stroke::new(base_width * ratio, color)
     }
 }
@@ -147,7 +179,7 @@ pub fn show(ui: &mut Ui, vm: &GridViewModel<'_>) -> Vec<Action> {
     // - 9 cells across
     // - 2 outer borders + 2 inner 3x3 borders (total 4 border widths)
     // This keeps the 3x3 separator thickness consistent with the outer border.
-    let cell_size = grid_size / (9.0 + 4.0 * CELL_BORDER_BASE_RATIO * THICK_BORDER_RATIO);
+    let cell_size = grid_size / (9.0 + 4.0 * CELL_BORDER_WIDTH_BASE_RATIO * THICK_BORDER_RATIO);
     let thick_border = GridViewModel::grid_thick_border(visuals, cell_size);
 
     Grid::new(ui.id().with("outer_board"))
@@ -168,11 +200,19 @@ pub fn show(ui: &mut Ui, vm: &GridViewModel<'_>) -> Vec<Action> {
                                     let cell_index = cell_row * 3 + cell_col;
                                     let pos = Position::from_box(box_index, cell_index);
                                     let cell = &vm.grid[pos];
-                                    let text = vm.cell_text(pos, visuals).size(cell_size * 0.8);
-                                    let highlight = vm.cell_highlight(pos);
+                                    let vs = vm.effective_visual_state(cell.visual_state);
+                                    let text_color =
+                                        vs.text_color(cell.content.is_given(), visuals);
+                                    let text = if let Some(digit) = cell.content.as_digit() {
+                                        RichText::new(digit.as_str())
+                                    } else {
+                                        RichText::new("")
+                                    }
+                                    .color(text_color)
+                                    .size(cell_size * 0.8);
                                     let button = Button::new(text)
                                         .min_size(Vec2::splat(cell_size))
-                                        .fill(highlight.fill_color(visuals));
+                                        .fill(vs.cell_fill_color(visuals));
                                     let button = ui.add(button);
                                     if let Some(digits) = cell.content.as_notes() {
                                         let rect = button.rect.shrink(thick_border.width);
@@ -188,7 +228,7 @@ pub fn show(ui: &mut Ui, vm: &GridViewModel<'_>) -> Vec<Action> {
                                     ui.painter().rect_stroke(
                                         button.rect,
                                         0.0,
-                                        highlight.border(visuals, cell_size),
+                                        vs.cell_border(visuals, cell_size),
                                         StrokeKind::Inside,
                                     );
                                     if button.clicked() {
@@ -221,7 +261,6 @@ fn draw_notes(
     visuals: &Visuals,
 ) {
     let note_font = FontId::proportional(rect.height() / 3.0);
-    let color = GridViewModel::note_text_color(visuals);
 
     let cell_w = rect.width() / 3.0;
     let cell_h = rect.height() / 3.0;
@@ -235,19 +274,19 @@ fn draw_notes(
         let x = f32::from(idx % 3);
 
         let center = rect.min + Vec2::new((x + 0.5) * cell_w, (y + 0.5) * cell_h);
-
-        if vm.highlight_settings.same_digit && note_visual_state.same_digit.contains(digit) {
-            let highlight_rect =
+        let vs = vm.effective_visual_state(note_visual_state.digit_highlight(digit));
+        let text_color = vs.text_color(false, visuals);
+        if let Some(fill_color) = vs.note_fill_color(visuals) {
+            let fill_rect =
                 Rect::from_center_size(center, Vec2::splat(f32::min(cell_w, cell_h)) * 0.9);
-            painter.rect_filled(highlight_rect, 0.0, visuals.selection.bg_fill);
+            painter.rect_filled(fill_rect, 0.0, fill_color);
         }
-
         painter.text(
             center,
             Align2::CENTER_CENTER,
             digit.as_str(),
             note_font.clone(),
-            color,
+            text_color,
         );
     }
 }

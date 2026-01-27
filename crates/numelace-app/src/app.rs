@@ -26,7 +26,7 @@ use crate::{
     ui::{
         self, Action, MoveDirection,
         game_screen::GameScreenViewModel,
-        grid::{CellVisualState, GridCell, GridViewModel, NoteVisualState},
+        grid::{GridCell, GridViewModel, GridVisualState, NoteVisualState},
         keypad::{KeypadCapabilities, KeypadViewModel},
         sidebar::SidebarViewModel,
     },
@@ -154,26 +154,26 @@ impl NumelaceApp {
         let game = &self.app_state.game;
         let mut grid = Array81::from_fn(|pos| GridCell {
             content: *game.cell(pos),
-            visual_state: CellVisualState::empty(),
+            visual_state: GridVisualState::empty(),
             note_visual_state: NoteVisualState::default(),
         });
 
         if let Some(pos) = self.app_state.selected_cell {
-            grid[pos].visual_state.insert(CellVisualState::SELECTED);
+            grid[pos].visual_state.insert(GridVisualState::SELECTED);
             for pos in pos.house_positions() {
                 grid[pos]
                     .visual_state
-                    .insert(CellVisualState::HOUSE_SELECTED);
+                    .insert(GridVisualState::HOUSE_SELECTED);
             }
 
             if let Some(digit) = game.cell(pos).as_digit() {
                 for pos in Position::ALL {
                     if game.cell(pos).as_digit() == Some(digit) {
-                        grid[pos].visual_state.insert(CellVisualState::SAME_DIGIT);
+                        grid[pos].visual_state.insert(GridVisualState::SAME_DIGIT);
                         for pos in pos.house_positions() {
                             grid[pos]
                                 .visual_state
-                                .insert(CellVisualState::HOUSE_SAME_DIGIT);
+                                .insert(GridVisualState::HOUSE_SAME_DIGIT);
                         }
                     }
                     if game
