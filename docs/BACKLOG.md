@@ -17,6 +17,8 @@ This backlog is the single source of truth for tasks and ideas.
 - New Game confirmation dialog ✅
 - Input discoverability (shortcut guide, keybind list, etc.)
 - UI clarity & visual polish (mode indicators, labels, spacing, contrast, etc.)
+- Keypad buttons show which action will occur (set/clear digit or set/clear note)
+- Setting to toggle keypad styling for rule-violating inputs that would be blocked
 - Feature toggles UI (assist on/off) ✅
 - UI ViewModel-based split/refactor ✅
 
