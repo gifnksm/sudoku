@@ -9,10 +9,13 @@ use eframe::{
 
 use crate::app::NumelaceApp;
 
+const DEFAULT_MAX_HISTORY_LENGTH: usize = 200;
+
 mod action;
 mod action_handler;
 mod app;
 mod game_factory;
+mod history;
 mod persistence;
 mod state;
 mod ui;

@@ -1,6 +1,8 @@
 use numelace_core::{Digit, Position};
 use numelace_game::{Game, RuleCheckPolicy};
 
+use crate::history::UndoRedoStack;
+
 #[derive(Debug)]
 pub struct AppState {
     pub game: Game,
@@ -113,8 +115,160 @@ pub enum GhostType {
     Note(Digit),
 }
 
-#[derive(Debug, Default)]
+#[derive(Debug, Clone)]
+struct GameSnapshot {
+    game: Game,
+    selected_at_change: Option<Position>,
+}
+
+impl GameSnapshot {
+    fn new(app_state: &AppState) -> Self {
+        Self {
+            game: app_state.game.clone(),
+            selected_at_change: app_state.selected_cell,
+        }
+    }
+}
+
+#[derive(Debug)]
 pub struct UiState {
     pub show_new_game_confirm_dialogue: bool,
     pub conflict_ghost: Option<(Position, GhostType)>,
+    history: UndoRedoStack<GameSnapshot>,
+}
+
+impl UiState {
+    pub fn new(max_history_len: usize, init_state: &AppState) -> Self {
+        let mut this = Self {
+            show_new_game_confirm_dialogue: false,
+            conflict_ghost: None,
+            history: UndoRedoStack::new(max_history_len),
+        };
+        this.reset_history(init_state);
+        this
+    }
+
+    pub fn reset_history(&mut self, init_state: &AppState) {
+        self.history.clear();
+        self.history.push(GameSnapshot::new(init_state));
+    }
+
+    pub fn can_undo(&self) -> bool {
+        self.history.can_undo()
+    }
+
+    pub fn undo(&mut self, app_state: &mut AppState) -> bool {
+        let Some(current) = self.history.current() else {
+            return false;
+        };
+        let change_location = current.selected_at_change;
+        if self.history.undo()
+            && let Some(snapshot) = self.history.current()
+        {
+            app_state.game = snapshot.game.clone();
+            app_state.selected_cell = change_location;
+            true
+        } else {
+            false
+        }
+    }
+
+    pub fn can_redo(&self) -> bool {
+        self.history.can_redo()
+    }
+
+    pub fn redo(&mut self, app_state: &mut AppState) -> bool {
+        if self.history.redo()
+            && let Some(snapshot) = self.history.current()
+        {
+            app_state.game = snapshot.game.clone();
+            app_state.selected_cell = snapshot.selected_at_change;
+            true
+        } else {
+            false
+        }
+    }
+
+    pub fn push_history(&mut self, app_state: &AppState) {
+        self.history.push(GameSnapshot::new(app_state));
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use numelace_core::{Digit, DigitGrid, Position};
+    use numelace_game::{CellState, Game, RuleCheckPolicy};
+
+    use super::{AppState, UiState};
+
+    fn fixed_game() -> Game {
+        let problem: DigitGrid = "\
+.1.......\
+.........\
+.........\
+.........\
+.........\
+.........\
+.........\
+.........\
+.........\
+"
+        .parse()
+        .unwrap();
+        let filled: DigitGrid = "\
+.........\
+.........\
+.........\
+.........\
+.........\
+.........\
+.........\
+.........\
+.........\
+"
+        .parse()
+        .unwrap();
+        let notes = [[0u16; 9]; 9];
+        Game::from_problem_filled_notes(&problem, &filled, &notes).unwrap()
+    }
+
+    #[test]
+    fn undo_redo_restores_game_and_selection() {
+        let mut app_state = AppState::new(fixed_game());
+        let mut ui_state = UiState::new(10, &app_state);
+
+        app_state.selected_cell = Some(Position::new(0, 0));
+        app_state
+            .game
+            .toggle_digit(Position::new(0, 0), Digit::D2, RuleCheckPolicy::Permissive)
+            .unwrap();
+        ui_state.push_history(&app_state);
+
+        app_state.selected_cell = Some(Position::new(2, 0));
+        app_state
+            .game
+            .toggle_digit(Position::new(2, 0), Digit::D3, RuleCheckPolicy::Permissive)
+            .unwrap();
+        ui_state.push_history(&app_state);
+
+        assert!(ui_state.undo(&mut app_state));
+
+        assert!(matches!(
+            app_state.game.cell(Position::new(0, 0)),
+            CellState::Filled(Digit::D2)
+        ));
+        assert!(matches!(
+            app_state.game.cell(Position::new(2, 0)),
+            CellState::Empty
+        ));
+        assert_eq!(app_state.selected_cell, Some(Position::new(2, 0)));
+
+        assert!(ui_state.redo(&mut app_state));
+
+        assert!(matches!(
+            app_state.game.cell(Position::new(2, 0)),
+            CellState::Filled(Digit::D3)
+        ));
+        assert_eq!(app_state.selected_cell, Some(Position::new(2, 0)));
+    }
 }

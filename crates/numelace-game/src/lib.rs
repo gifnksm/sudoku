@@ -132,7 +132,7 @@ pub enum ToggleCapability {
 /// // Game tracks given cells and player input separately
 /// assert!(!game.is_solved()); // Newly created game is not solved
 /// ```
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub struct Game {
     grid: Array81<CellState, PositionSemantics>,
 }

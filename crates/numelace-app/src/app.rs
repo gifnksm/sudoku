@@ -13,10 +13,11 @@ use std::time::Duration;
 
 use eframe::{
     App, CreationContext, Frame, Storage,
-    egui::{CentralPanel, Context, Visuals},
+    egui::{CentralPanel, Context, TopBottomPanel, Visuals},
 };
 
 use crate::{
+    DEFAULT_MAX_HISTORY_LENGTH,
     action::ActionRequestQueue,
     action_handler::{self, ActionEffect},
     game_factory,
@@ -37,9 +38,10 @@ impl NumelaceApp {
             .storage
             .and_then(storage::load_state)
             .unwrap_or_else(|| AppState::new(game_factory::generate_random_game()));
+        let ui_state = UiState::new(DEFAULT_MAX_HISTORY_LENGTH, &app_state);
         let this = Self {
             app_state,
-            ui_state: UiState::default(),
+            ui_state,
         };
         this.update_theme(&cc.egui_ctx);
         this
@@ -93,8 +95,13 @@ impl App for NumelaceApp {
             });
         }
 
+        let toolbar_vm = view_model_builder::build_toolbar_vm(&self.ui_state);
         let game_screen_vm =
             view_model_builder::build_game_screen_view_model(&self.app_state, &self.ui_state);
+
+        TopBottomPanel::top("toolbar").show(ctx, |ui| {
+            ui::toolbar::show(ui, &toolbar_vm, &mut action_queue);
+        });
 
         CentralPanel::default().show(ctx, |ui| {
             ui::game_screen::show(ui, &game_screen_vm, &mut action_queue);

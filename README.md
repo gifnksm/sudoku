@@ -23,6 +23,7 @@ Planned features are tracked in docs/BACKLOG.md.
   - ✅ Highlight toggles (same digit, house, conflicts)
   - ✅ Mistake highlighting (row/col/box conflicts)
   - ✅ Rule-violation blocking with ghost preview (shows attempted inputs without applying them)
+  - ✅ Undo/redo
 - Application features:
   - ✅ Desktop GUI (keypad with digit counts, theme toggle, new game confirmation)
   - ✅ Auto-save and resume on startup

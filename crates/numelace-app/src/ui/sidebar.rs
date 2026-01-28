@@ -1,4 +1,4 @@
-use eframe::egui::{Button, CollapsingHeader, RichText, ScrollArea, Ui};
+use eframe::egui::{CollapsingHeader, RichText, ScrollArea, Ui};
 
 use crate::{
     action::{Action, ActionRequestQueue},
@@ -35,14 +35,6 @@ pub fn show(ui: &mut Ui, vm: &SidebarViewModel, action_queue: &mut ActionRequest
                 GameStatus::Solved => RichText::new(status_text).color(ui.visuals().warn_fg_color),
             };
             ui.label(status_label.size(20.0));
-            ui.add_space(8.0);
-            let button = ui.add_sized(
-                [ui.available_width(), 36.0],
-                Button::new(RichText::new("New Game").size(20.0)),
-            );
-            if button.clicked() {
-                action_queue.request(Action::RequestNewGameConfirm);
-            }
         });
 
         let mut changed = false;

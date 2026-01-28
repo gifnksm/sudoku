@@ -4,9 +4,17 @@ use numelace_core::Digit;
 use crate::action::{Action, ActionRequestQueue, MoveDirection};
 
 pub fn handle_input(i: &InputState, action_queue: &mut ActionRequestQueue) {
+    // `i.modifiers.command` is true when Ctrl (Windows/Linux) or Cmd (Mac) is pressed
     if i.modifiers.command && i.key_pressed(Key::N) {
         action_queue.request(Action::RequestNewGameConfirm);
     }
+    if i.modifiers.command && i.key_pressed(Key::Z) {
+        action_queue.request(Action::Undo);
+    }
+    if i.modifiers.command && i.key_pressed(Key::Y) {
+        action_queue.request(Action::Redo);
+    }
+
     if i.key_pressed(Key::ArrowUp) {
         action_queue.request(Action::MoveSelection(MoveDirection::Up));
     }

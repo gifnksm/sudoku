@@ -12,6 +12,8 @@ pub enum Action {
     ToggleInputMode,
     RequestDigit { digit: Digit, swap: bool },
     ClearCell,
+    Undo,
+    Redo,
     RequestNewGameConfirm,
     CloseNewGameConfirm,
     StartNewGame,

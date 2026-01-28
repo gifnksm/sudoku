@@ -5,7 +5,7 @@ Short, timestamped notes capturing decisions and rationale.
 ## Format
 
 - YYYY-MM-DD: Decision — Rationale
-  - Note: confirm the current date before adding an entry
+  - Note: confirm the current date before adding an entry (use the system datetime tool)
   - Note: append new entries to the end (chronological order)
   - Optional: alternatives considered
   - Optional: links to relevant files/PRs
@@ -28,3 +28,4 @@ Short, timestamped notes capturing decisions and rationale.
 - 2026-01-27: Strict rule checks still allow clearing existing digits/notes — preserves safe undo of inputs while preventing new conflicts.
 - 2026-01-27: Strict-conflicting inputs are rejected but shown as ghost UI state — surfaces rule violations without mutating game state.
 - 2026-01-28: App logic refactor splits Action handling, view model building, and action request queuing — improves responsibility separation and testability.
+- 2026-01-28: Undo/redo uses snapshot history with selection-aware restore and a top toolbar entry point — keeps undoable state consistent and exposes mouse-friendly controls without overloading the keypad area.

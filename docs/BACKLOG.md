@@ -26,7 +26,7 @@ This backlog is the single source of truth for tasks and ideas.
 ### Gameplay
 
 - Candidate notes (player notes) ✅
-- Undo/redo
+- Undo/redo ✅
 - Reset current puzzle
 - Auto candidate updates on input (optional)
 - Auto candidate updates on erase (optional)
