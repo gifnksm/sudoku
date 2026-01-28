@@ -14,7 +14,7 @@ use crate::{SolverError, technique::Technique};
 ///
 /// ```
 /// use numelace_core::CandidateGrid;
-/// use numelace_solver::technique::{Technique, HiddenSingle};
+/// use numelace_solver::technique::{HiddenSingle, Technique};
 ///
 /// let mut grid = CandidateGrid::new();
 /// let technique = HiddenSingle::new();

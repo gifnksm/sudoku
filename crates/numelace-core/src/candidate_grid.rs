@@ -235,10 +235,14 @@ impl CandidateGrid {
     /// # Example
     ///
     /// ```
-    /// use numelace_core::{CandidateGrid, DigitGrid, Digit, Position};
     /// use std::str::FromStr;
     ///
-    /// let digit_grid = DigitGrid::from_str("5________ _________ _________ _________ _________ _________ _________ _________ _________").unwrap();
+    /// use numelace_core::{CandidateGrid, Digit, DigitGrid, Position};
+    ///
+    /// let digit_grid = DigitGrid::from_str(
+    ///     "5________ _________ _________ _________ _________ _________ _________ _________ _________",
+    /// )
+    /// .unwrap();
     /// let grid = CandidateGrid::from_digit_grid(&digit_grid);
     ///
     /// // D5 is placed at (0, 0)

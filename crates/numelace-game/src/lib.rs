@@ -29,10 +29,10 @@
 //! ## Basic Usage
 //!
 //! ```
-//! use numelace_game::{Game, CellState, InputDigitOptions};
+//! use numelace_core::{Digit, Position};
+//! use numelace_game::{CellState, Game, InputDigitOptions};
 //! use numelace_generator::PuzzleGenerator;
 //! use numelace_solver::TechniqueSolver;
-//! use numelace_core::{Digit, Position};
 //!
 //! // Generate a puzzle
 //! let solver = TechniqueSolver::with_all_techniques();
@@ -43,19 +43,20 @@
 //! let mut game = Game::new(puzzle);
 //!
 //! // Find an empty cell
-//! let empty_pos = *Position::ALL.iter()
+//! let empty_pos = *Position::ALL
+//!     .iter()
 //!     .find(|&&pos| game.cell(pos).is_empty())
 //!     .expect("puzzle has empty cells");
 //!
 //! // Fill it with a digit
-//! game.set_digit(empty_pos, Digit::D5, &InputDigitOptions::default()).unwrap();
+//! game.set_digit(empty_pos, Digit::D5, &InputDigitOptions::default())
+//!     .unwrap();
 //!
 //! // Check if solved
 //! if game.is_solved() {
 //!     println!("Puzzle completed!");
 //! }
 //! ```
-//!
 
 use numelace_core::{
     CandidateGrid, Digit, DigitGrid, DigitSet, Position,
@@ -261,10 +262,10 @@ impl Game {
     /// # Example
     ///
     /// ```
-    /// use numelace_game::{Game, CellState};
+    /// use numelace_core::Position;
+    /// use numelace_game::{CellState, Game};
     /// use numelace_generator::PuzzleGenerator;
     /// use numelace_solver::TechniqueSolver;
-    /// use numelace_core::Position;
     ///
     /// let solver = TechniqueSolver::with_all_techniques();
     /// let generator = PuzzleGenerator::new(&solver);
@@ -296,10 +297,10 @@ impl Game {
     /// # Example
     ///
     /// ```
+    /// use numelace_core::{Digit, Position};
     /// use numelace_game::{Game, InputDigitOptions};
     /// use numelace_generator::PuzzleGenerator;
     /// use numelace_solver::TechniqueSolver;
-    /// use numelace_core::{Digit, Position};
     ///
     /// let solver = TechniqueSolver::with_all_techniques();
     /// let generator = PuzzleGenerator::new(&solver);
@@ -310,7 +311,8 @@ impl Game {
     /// for pos in Position::ALL {
     ///     if game.cell(pos).is_empty() {
     ///         let digit = puzzle.solution[pos].unwrap();
-    ///         game.set_digit(pos, digit, &InputDigitOptions::default()).unwrap();
+    ///         game.set_digit(pos, digit, &InputDigitOptions::default())
+    ///             .unwrap();
     ///     }
     /// }
     ///
@@ -359,10 +361,10 @@ impl Game {
     /// # Example
     ///
     /// ```
+    /// use numelace_core::{Digit, Position};
     /// use numelace_game::{Game, InputDigitOptions};
     /// use numelace_generator::PuzzleGenerator;
     /// use numelace_solver::TechniqueSolver;
-    /// use numelace_core::{Digit, Position};
     ///
     /// let solver = TechniqueSolver::with_all_techniques();
     /// let generator = PuzzleGenerator::new(&solver);
@@ -370,12 +372,14 @@ impl Game {
     /// let mut game = Game::new(puzzle);
     ///
     /// // Find an empty cell
-    /// let empty_pos = *Position::ALL.iter()
+    /// let empty_pos = *Position::ALL
+    ///     .iter()
     ///     .find(|&&pos| game.cell(pos).is_empty())
     ///     .expect("puzzle has empty cells");
     ///
     /// // Fill it
-    /// game.set_digit(empty_pos, Digit::D5, &InputDigitOptions::default()).unwrap();
+    /// game.set_digit(empty_pos, Digit::D5, &InputDigitOptions::default())
+    ///     .unwrap();
     /// assert_eq!(game.cell(empty_pos).as_digit(), Some(Digit::D5));
     /// ```
     pub fn set_digit(
@@ -423,10 +427,10 @@ impl Game {
     /// # Example
     ///
     /// ```
+    /// use numelace_core::{Digit, Position};
     /// use numelace_game::{Game, InputDigitOptions};
     /// use numelace_generator::PuzzleGenerator;
     /// use numelace_solver::TechniqueSolver;
-    /// use numelace_core::{Digit, Position};
     ///
     /// let solver = TechniqueSolver::with_all_techniques();
     /// let generator = PuzzleGenerator::new(&solver);
@@ -434,16 +438,19 @@ impl Game {
     /// let mut game = Game::new(puzzle);
     ///
     /// // Find an empty cell
-    /// let empty_pos = *Position::ALL.iter()
+    /// let empty_pos = *Position::ALL
+    ///     .iter()
     ///     .find(|&&pos| game.cell(pos).is_empty())
     ///     .expect("puzzle has empty cells");
     ///
     /// // Toggle on
-    /// game.toggle_digit(empty_pos, Digit::D5, &InputDigitOptions::default()).unwrap();
+    /// game.toggle_digit(empty_pos, Digit::D5, &InputDigitOptions::default())
+    ///     .unwrap();
     /// assert_eq!(game.cell(empty_pos).as_digit(), Some(Digit::D5));
     ///
     /// // Toggle off
-    /// game.toggle_digit(empty_pos, Digit::D5, &InputDigitOptions::default()).unwrap();
+    /// game.toggle_digit(empty_pos, Digit::D5, &InputDigitOptions::default())
+    ///     .unwrap();
     /// assert!(game.cell(empty_pos).is_empty());
     /// ```
     pub fn toggle_digit(
@@ -574,10 +581,10 @@ impl Game {
     /// # Example
     ///
     /// ```
+    /// use numelace_core::{Digit, Position};
     /// use numelace_game::{Game, InputDigitOptions};
     /// use numelace_generator::PuzzleGenerator;
     /// use numelace_solver::TechniqueSolver;
-    /// use numelace_core::{Digit, Position};
     ///
     /// let solver = TechniqueSolver::with_all_techniques();
     /// let generator = PuzzleGenerator::new(&solver);
@@ -585,10 +592,12 @@ impl Game {
     /// let mut game = Game::new(puzzle);
     ///
     /// // Find an empty cell and fill it
-    /// let empty_pos = *Position::ALL.iter()
+    /// let empty_pos = *Position::ALL
+    ///     .iter()
     ///     .find(|&&pos| game.cell(pos).is_empty())
     ///     .expect("puzzle has empty cells");
-    /// game.set_digit(empty_pos, Digit::D5, &InputDigitOptions::default()).unwrap();
+    /// game.set_digit(empty_pos, Digit::D5, &InputDigitOptions::default())
+    ///     .unwrap();
     ///
     /// // Clear it
     /// game.clear_cell(empty_pos).unwrap();
@@ -724,8 +733,8 @@ impl CellState {
     /// # Example
     ///
     /// ```
-    /// use numelace_game::CellState;
     /// use numelace_core::Digit;
+    /// use numelace_game::CellState;
     ///
     /// assert_eq!(CellState::Given(Digit::D5).as_given(), Some(Digit::D5));
     /// assert_eq!(CellState::Filled(Digit::D5).as_given(), None);
@@ -744,8 +753,8 @@ impl CellState {
     /// # Example
     ///
     /// ```
-    /// use numelace_game::CellState;
     /// use numelace_core::Digit;
+    /// use numelace_game::CellState;
     ///
     /// assert_eq!(CellState::Filled(Digit::D5).as_filled(), Some(Digit::D5));
     /// assert_eq!(CellState::Given(Digit::D5).as_filled(), None);
@@ -776,8 +785,8 @@ impl CellState {
     /// # Example
     ///
     /// ```
-    /// use numelace_game::CellState;
     /// use numelace_core::Digit;
+    /// use numelace_game::CellState;
     ///
     /// assert_eq!(CellState::Given(Digit::D5).as_digit(), Some(Digit::D5));
     /// assert_eq!(CellState::Filled(Digit::D7).as_digit(), Some(Digit::D7));
@@ -794,9 +803,10 @@ impl CellState {
 
 #[cfg(test)]
 mod tests {
-    use super::*;
     use numelace_core::{Digit, DigitGrid, DigitSet, Position};
     use numelace_generator::PuzzleGenerator;
+
+    use super::*;
 
     #[test]
     fn test_new_game_preserves_puzzle_structure() {

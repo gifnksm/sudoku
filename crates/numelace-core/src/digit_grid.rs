@@ -23,7 +23,7 @@ use crate::{CandidateGrid, Digit, Position, containers::Array81, index::Position
 /// # Examples
 ///
 /// ```
-/// use numelace_core::{DigitGrid, Digit, Position};
+/// use numelace_core::{Digit, DigitGrid, Position};
 ///
 /// let mut grid = DigitGrid::new();
 /// grid.set(Position::new(0, 0), Some(Digit::D5));
@@ -37,7 +37,10 @@ use crate::{CandidateGrid, Digit, Position, containers::Array81, index::Position
 /// ```
 /// use numelace_core::DigitGrid;
 ///
-/// let grid: DigitGrid = "123456789........................................................................".parse().unwrap();
+/// let grid: DigitGrid =
+///     "123456789........................................................................"
+///         .parse()
+///         .unwrap();
 /// ```
 ///
 /// [Array81]: crate::containers::Array81

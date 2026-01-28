@@ -62,7 +62,7 @@ use numelace_core::{CandidateGrid, DigitSet, Position};
 /// # Examples
 ///
 /// ```
-/// use numelace_core::{CandidateGrid, Position, Digit};
+/// use numelace_core::{CandidateGrid, Digit, Position};
 /// use numelace_solver::backtrack;
 ///
 /// let mut grid = CandidateGrid::new();
@@ -93,8 +93,9 @@ pub fn find_best_assumption(grid: &CandidateGrid) -> (Position, DigitSet) {
 mod tests {
     use std::str::FromStr as _;
 
-    use super::*;
     use numelace_core::{Digit, DigitGrid};
+
+    use super::*;
 
     #[test]
     fn test_find_best_assumption_selects_minimum_candidates() {

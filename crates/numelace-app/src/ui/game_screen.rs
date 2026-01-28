@@ -1,6 +1,7 @@
 use eframe::egui::{self, Ui};
 use egui_extras::{Size, StripBuilder};
 
+use super::{grid, keypad};
 use crate::{
     action::ActionRequestQueue,
     ui::{
@@ -9,8 +10,6 @@ use crate::{
         sidebar::{self, SidebarViewModel},
     },
 };
-
-use super::{grid, keypad};
 
 #[derive(Debug, Clone)]
 #[expect(clippy::struct_field_names)]

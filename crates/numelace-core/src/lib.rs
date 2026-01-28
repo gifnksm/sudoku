@@ -80,7 +80,7 @@
 //! # use numelace_core::{Digit, Position, containers::BitSet9, index::DigitSemantics};
 //! // BitSet9 parameterized by DigitSemantics - can only contain Digit elements
 //! let mut digit_set: BitSet9<DigitSemantics> = BitSet9::new();
-//! digit_set.insert(Digit::D5);  // ✓ Compiles - Digit is the correct type
+//! digit_set.insert(Digit::D5); // ✓ Compiles - Digit is the correct type
 //!
 //! // Position cannot be used as an element for a digit set
 //! // digit_set.insert(Position::new(0, 0));  // ✗ Compile error!
@@ -218,7 +218,6 @@
 //! println!("{}", grid); // 81 characters, no newlines
 //! println!("{:#}", grid); // 9 lines with newlines
 //! ```
-//!
 
 //! Each type provides the most natural interface for its access pattern.
 

@@ -149,12 +149,13 @@
 //!
 //! ```
 //! use numelace_core::CandidateGrid;
-//! use numelace_solver::{BacktrackSolver, technique::{BoxedTechnique, NakedSingle}};
+//! use numelace_solver::{
+//!     BacktrackSolver,
+//!     technique::{BoxedTechnique, NakedSingle},
+//! };
 //!
 //! // Use only specific techniques
-//! let techniques: Vec<BoxedTechnique> = vec![
-//!     Box::new(NakedSingle::new()),
-//! ];
+//! let techniques: Vec<BoxedTechnique> = vec![Box::new(NakedSingle::new())];
 //! let solver = BacktrackSolver::with_techniques(techniques);
 //!
 //! let grid = CandidateGrid::new();

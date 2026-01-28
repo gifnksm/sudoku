@@ -1,8 +1,6 @@
 //! Board position types.
 
-use crate::DigitPositions;
-use crate::containers::Array9;
-use crate::index::CellIndexSemantics;
+use crate::{DigitPositions, containers::Array9, index::CellIndexSemantics};
 
 /// Board position (x, y) where x is column and y is row.
 ///

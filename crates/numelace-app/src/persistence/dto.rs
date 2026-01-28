@@ -1,9 +1,8 @@
-use serde::{Deserialize, Serialize};
-
 use std::fmt::Write;
 
 use numelace_core::{DigitGrid, DigitGridParseError, Position, PositionNewError};
 use numelace_game::{CellState, Game, GameError};
+use serde::{Deserialize, Serialize};
 
 use crate::state::{
     AppState, AppearanceSettings, AssistSettings, HighlightSettings, InputMode, NotesSettings,

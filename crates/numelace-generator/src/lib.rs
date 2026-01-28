@@ -310,7 +310,10 @@ impl<'a> PuzzleGenerator<'a> {
 /// let seed = PuzzleSeed::from([1u8; 32]);
 /// let hex = format!("{}", seed);
 /// assert_eq!(hex.len(), 64);
-/// assert_eq!(hex, "0101010101010101010101010101010101010101010101010101010101010101");
+/// assert_eq!(
+///     hex,
+///     "0101010101010101010101010101010101010101010101010101010101010101"
+/// );
 /// ```
 #[derive(Debug, Clone, Copy)]
 pub struct PuzzleSeed(pub [u8; 32]);
@@ -625,8 +628,9 @@ mod tests {
     }
 
     mod property_tests {
-        use super::*;
         use proptest::prelude::*;
+
+        use super::*;
 
         proptest! {
             #![proptest_config(ProptestConfig::with_cases(10))]

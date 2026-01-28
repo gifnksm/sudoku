@@ -146,7 +146,8 @@ where
     /// ```
     /// use numelace_core::{containers::Array9, index::CellIndexSemantics};
     ///
-    /// const MY_ARRAY: Array9<i32, CellIndexSemantics> = Array9::from_array([1, 2, 3, 4, 5, 6, 7, 8, 9]);
+    /// const MY_ARRAY: Array9<i32, CellIndexSemantics> =
+    ///     Array9::from_array([1, 2, 3, 4, 5, 6, 7, 8, 9]);
     /// assert_eq!(MY_ARRAY[0], 1);
     /// ```
     #[inline]
