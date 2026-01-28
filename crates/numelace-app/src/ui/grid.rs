@@ -7,7 +7,10 @@ use eframe::egui::{
 use numelace_core::{Digit, DigitSet, Position, containers::Array81, index::PositionSemantics};
 use numelace_game::CellState;
 
-use crate::{state::HighlightSettings, ui::Action};
+use crate::{
+    action::{Action, ActionRequestQueue},
+    state::HighlightSettings,
+};
 
 bitflags::bitflags! {
     #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -57,15 +60,15 @@ impl NoteVisualState {
 }
 
 #[derive(Debug, Clone)]
-pub struct GridViewModel<'a> {
-    grid: &'a Array81<GridCell, PositionSemantics>,
+pub struct GridViewModel {
+    grid: Array81<GridCell, PositionSemantics>,
     enabled_highlights: GridVisualState,
 }
 
-impl<'a> GridViewModel<'a> {
+impl GridViewModel {
     pub fn new(
-        grid: &'a Array81<GridCell, PositionSemantics>,
-        highlight_settings: &'a HighlightSettings,
+        grid: Array81<GridCell, PositionSemantics>,
+        highlight_settings: &HighlightSettings,
     ) -> Self {
         let mut enabled_highlights = GridVisualState::SELECTED;
         let HighlightSettings {
@@ -194,9 +197,7 @@ impl EffectiveGridVisualState {
     }
 }
 
-pub fn show(ui: &mut Ui, vm: &GridViewModel<'_>) -> Vec<Action> {
-    let mut actions = vec![];
-
+pub fn show(ui: &mut Ui, vm: &GridViewModel, action_queue: &mut ActionRequestQueue) {
     let style = Arc::clone(ui.style());
     let visuals = &style.visuals;
 
@@ -257,7 +258,7 @@ pub fn show(ui: &mut Ui, vm: &GridViewModel<'_>) -> Vec<Action> {
                                         StrokeKind::Inside,
                                     );
                                     if button.clicked() {
-                                        actions.push(Action::SelectCell(pos));
+                                        action_queue.request(Action::SelectCell(pos));
                                     }
                                 }
                                 ui.end_row();
@@ -273,8 +274,6 @@ pub fn show(ui: &mut Ui, vm: &GridViewModel<'_>) -> Vec<Action> {
                 ui.end_row();
             }
         });
-
-    actions
 }
 
 fn draw_notes(

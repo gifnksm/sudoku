@@ -1,9 +1,8 @@
 use eframe::egui::{Id, Key, Modal, Sides, Ui};
 
-use crate::ui::Action;
+use crate::action::{Action, ActionRequestQueue};
 
-pub fn show_new_game_confirm(ui: &mut Ui, show: &mut bool) -> Vec<Action> {
-    let mut actions = vec![];
+pub fn show_new_game_confirm(ui: &mut Ui, action_queue: &mut ActionRequestQueue) {
     let modal = Modal::new(Id::new("new_game_confirm")).show(ui.ctx(), |ui| {
         ui.heading("New Game?");
         ui.add_space(4.0);
@@ -19,7 +18,7 @@ pub fn show_new_game_confirm(ui: &mut Ui, show: &mut bool) -> Vec<Action> {
                     new_game.request_focus();
                 }
                 if new_game.clicked() {
-                    actions.push(Action::NewGame);
+                    action_queue.request(Action::StartNewGame);
                     ui.close();
                 }
                 if ui.button("Cancel").clicked() || ui.input(|i| i.key_pressed(Key::Escape)) {
@@ -29,7 +28,6 @@ pub fn show_new_game_confirm(ui: &mut Ui, show: &mut bool) -> Vec<Action> {
         );
     });
     if modal.should_close() {
-        *show = false;
+        action_queue.request(Action::CloseNewGameConfirm);
     }
-    actions
 }

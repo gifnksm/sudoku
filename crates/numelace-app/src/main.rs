@@ -9,10 +9,14 @@ use eframe::{
 
 use crate::app::NumelaceApp;
 
+mod action;
+mod action_handler;
 mod app;
+mod game_factory;
 mod persistence;
 mod state;
 mod ui;
+mod view_model_builder;
 
 const APP_ID: &str = "io.github.gifnksm.numelace";
 

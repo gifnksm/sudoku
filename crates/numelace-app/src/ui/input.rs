@@ -1,30 +1,29 @@
 use eframe::egui::{InputState, Key};
 use numelace_core::Digit;
 
-use crate::ui::Action;
+use crate::action::{Action, ActionRequestQueue, MoveDirection};
 
-pub fn handle_input(i: &InputState) -> Vec<Action> {
-    let mut actions = vec![];
+pub fn handle_input(i: &InputState, action_queue: &mut ActionRequestQueue) {
     if i.modifiers.command && i.key_pressed(Key::N) {
-        actions.push(Action::RequestNewGameConfirm);
+        action_queue.request(Action::RequestNewGameConfirm);
     }
     if i.key_pressed(Key::ArrowUp) {
-        actions.push(Action::MoveSelection(crate::ui::MoveDirection::Up));
+        action_queue.request(Action::MoveSelection(MoveDirection::Up));
     }
     if i.key_pressed(Key::ArrowDown) {
-        actions.push(Action::MoveSelection(crate::ui::MoveDirection::Down));
+        action_queue.request(Action::MoveSelection(MoveDirection::Down));
     }
     if i.key_pressed(Key::ArrowLeft) {
-        actions.push(Action::MoveSelection(crate::ui::MoveDirection::Left));
+        action_queue.request(Action::MoveSelection(MoveDirection::Left));
     }
     if i.key_pressed(Key::ArrowRight) {
-        actions.push(Action::MoveSelection(crate::ui::MoveDirection::Right));
+        action_queue.request(Action::MoveSelection(MoveDirection::Right));
     }
     if i.key_pressed(Key::Escape) {
-        actions.push(Action::ClearSelection);
+        action_queue.request(Action::ClearSelection);
     }
     if i.key_pressed(Key::S) {
-        actions.push(Action::ToggleInputMode);
+        action_queue.request(Action::ToggleInputMode);
     }
     let pairs = [
         (Key::Delete, None),
@@ -42,14 +41,13 @@ pub fn handle_input(i: &InputState) -> Vec<Action> {
     for (key, digit) in pairs {
         if i.key_pressed(key) {
             if let Some(digit) = digit {
-                actions.push(Action::RequestDigit {
+                action_queue.request(Action::RequestDigit {
                     digit,
                     swap: i.modifiers.command,
                 });
             } else {
-                actions.push(Action::ClearCell);
+                action_queue.request(Action::ClearCell);
             }
         }
     }
-    actions
 }

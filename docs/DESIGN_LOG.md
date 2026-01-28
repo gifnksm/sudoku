@@ -27,3 +27,4 @@ Short, timestamped notes capturing decisions and rationale.
 - 2026-01-27: Skip extra commit confirmation when the user explicitly asks to commit — reduces redundant prompts while keeping confirmation for other cases.
 - 2026-01-27: Strict rule checks still allow clearing existing digits/notes — preserves safe undo of inputs while preventing new conflicts.
 - 2026-01-27: Strict-conflicting inputs are rejected but shown as ghost UI state — surfaces rule violations without mutating game state.
+- 2026-01-28: App logic refactor splits Action handling, view model building, and action request queuing — improves responsibility separation and testability.

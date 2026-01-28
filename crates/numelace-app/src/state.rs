@@ -1,5 +1,5 @@
 use numelace_core::{Digit, Position};
-use numelace_game::Game;
+use numelace_game::{Game, RuleCheckPolicy};
 
 #[derive(Debug)]
 pub struct AppState {
@@ -18,12 +18,40 @@ impl AppState {
             settings: Settings::default(),
         }
     }
+
+    pub fn rule_check_policy(&self) -> RuleCheckPolicy {
+        if self.settings.assist.block_rule_violations {
+            RuleCheckPolicy::Strict
+        } else {
+            RuleCheckPolicy::Permissive
+        }
+    }
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, derive_more::IsVariant)]
 pub enum InputMode {
     Fill,
     Notes,
+}
+
+impl InputMode {
+    pub fn toggle(&mut self) {
+        *self = match self {
+            InputMode::Fill => InputMode::Notes,
+            InputMode::Notes => InputMode::Fill,
+        }
+    }
+
+    pub fn swapped(self, swap: bool) -> Self {
+        if swap {
+            match self {
+                InputMode::Fill => InputMode::Notes,
+                InputMode::Notes => InputMode::Fill,
+            }
+        } else {
+            self
+        }
+    }
 }
 
 #[derive(Debug, Default, Clone)]

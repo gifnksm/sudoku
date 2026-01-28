@@ -4,7 +4,7 @@ use eframe::egui::{self, Align2, Button, FontId, Grid, Layout, RichText, Ui, Vec
 use numelace_core::{Digit, containers::Array9, index::DigitSemantics};
 use numelace_game::ToggleCapability;
 
-use crate::ui::Action;
+use crate::action::{Action, ActionRequestQueue};
 
 #[derive(Debug, Clone)]
 pub struct KeypadViewModel {
@@ -69,9 +69,7 @@ const BUTTON_LAYOUT: [[ButtonType; 5]; 2] = {
     ]
 };
 
-pub fn show(ui: &mut Ui, vm: &KeypadViewModel) -> Vec<Action> {
-    let mut actions = vec![];
-
+pub fn show(ui: &mut Ui, vm: &KeypadViewModel, action_queue: &mut ActionRequestQueue) {
     let style = Arc::clone(ui.style());
     let visuals = &style.visuals;
 
@@ -106,7 +104,7 @@ pub fn show(ui: &mut Ui, vm: &KeypadViewModel) -> Vec<Action> {
                                         &vm.digit_states[digit],
                                         visuals,
                                     ) {
-                                        actions.push(Action::RequestDigit {
+                                        action_queue.request(Action::RequestDigit {
                                             digit,
                                             swap: swap_input_mode,
                                         });
@@ -114,7 +112,7 @@ pub fn show(ui: &mut Ui, vm: &KeypadViewModel) -> Vec<Action> {
                                 }
                                 ButtonType::RemoveDigit => {
                                     if show_remove_button(ui, button_size, vm.has_removable_digit) {
-                                        actions.push(Action::ClearCell);
+                                        action_queue.request(Action::ClearCell);
                                     }
                                 }
                             }
@@ -146,11 +144,10 @@ pub fn show(ui: &mut Ui, vm: &KeypadViewModel) -> Vec<Action> {
                 )
                 .changed()
             {
-                actions.push(Action::ToggleInputMode);
+                action_queue.request(Action::ToggleInputMode);
             }
         });
     });
-    actions
 }
 
 fn show_digit_button(

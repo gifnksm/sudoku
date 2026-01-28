@@ -28,6 +28,13 @@ Focus on these aspects:
 - **Error conditions** - Invalid inputs and error handling
 - **Expected panics** - Use `#[should_panic]` (keep these tests separate)
 
+### App Crate Focus (numelace-app)
+
+- **Action handling** - Verify `action_handler` applies state changes and side effects (e.g., dialog flags, conflict ghost) correctly.
+- **Determinism** - Prefer fixed puzzles or explicit `Game::from_problem_filled_notes` inputs in tests to avoid randomness.
+- **View model logic** - Test derived view data (e.g., highlight/ghost behavior) without UI rendering.
+- **Keep UI out of tests** - UI rendering and egui wiring should remain untested; focus on data preparation.
+
 ### What NOT to Test (Rust-Specific Over-Testing)
 
 These patterns add maintenance cost without sufficient value:

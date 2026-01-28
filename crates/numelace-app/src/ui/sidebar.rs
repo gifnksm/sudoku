@@ -1,10 +1,15 @@
 use eframe::egui::{Button, CollapsingHeader, RichText, ScrollArea, Ui};
 
 use crate::{
-    app::GameStatus,
+    action::{Action, ActionRequestQueue},
     state::{AppearanceSettings, AssistSettings, HighlightSettings, Settings, Theme},
-    ui::Action,
 };
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum GameStatus {
+    InProgress,
+    Solved,
+}
 
 #[derive(Debug, Clone)]
 pub struct SidebarViewModel<'a> {
@@ -18,8 +23,7 @@ impl<'a> SidebarViewModel<'a> {
     }
 }
 
-pub fn show(ui: &mut Ui, vm: &SidebarViewModel) -> Vec<Action> {
-    let mut actions = vec![];
+pub fn show(ui: &mut Ui, vm: &SidebarViewModel, action_queue: &mut ActionRequestQueue) {
     ui.vertical(|ui| {
         ui.group(|ui| {
             let status_text = match vm.status {
@@ -37,7 +41,7 @@ pub fn show(ui: &mut Ui, vm: &SidebarViewModel) -> Vec<Action> {
                 Button::new(RichText::new("New Game").size(20.0)),
             );
             if button.clicked() {
-                actions.push(Action::RequestNewGameConfirm);
+                action_queue.request(Action::RequestNewGameConfirm);
             }
         });
 
@@ -90,8 +94,7 @@ pub fn show(ui: &mut Ui, vm: &SidebarViewModel) -> Vec<Action> {
             });
         });
         if changed {
-            actions.push(Action::UpdateSettings(settings));
+            action_queue.request(Action::UpdateSettings(settings));
         }
     });
-    actions
 }

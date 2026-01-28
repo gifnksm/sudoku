@@ -21,6 +21,7 @@ This backlog is the single source of truth for tasks and ideas.
 - Setting to toggle keypad styling for rule-violating inputs that would be blocked
 - Feature toggles UI (assist on/off) ✅
 - UI ViewModel-based split/refactor ✅
+- App logic refactor for testability (action extraction + action_handler + view_model_builder split) ✅
 
 ### Gameplay
 
