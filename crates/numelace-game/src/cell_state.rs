@@ -1,6 +1,9 @@
 use numelace_core::{Digit, DigitSet};
 
-use crate::{error::GameError, input::InputCapability};
+use crate::{
+    error::GameError,
+    input::{InputBlockReason, InputOperation},
+};
 
 /// The state of a cell in the game.
 ///
@@ -31,12 +34,15 @@ impl CellState {
     ///
     /// This only checks cell-local constraints (e.g., given cells are immutable).
     /// Board-level conflicts are handled by [`crate::Game`].
-    #[must_use]
-    pub(crate) fn set_digit_capability(self, _digit: Digit) -> InputCapability {
+    pub(crate) fn set_digit_capability(
+        self,
+        digit: Digit,
+    ) -> Result<InputOperation, InputBlockReason> {
         match self {
-            CellState::Given(_) => InputCapability::BlockedByGivenCell,
+            CellState::Given(_) => Err(InputBlockReason::GivenCell),
+            CellState::Filled(existing) if existing == digit => Ok(InputOperation::NoOp),
             CellState::Filled(_) | CellState::Notes(_) | CellState::Empty => {
-                InputCapability::Allowed
+                Ok(InputOperation::Set)
             }
         }
     }
@@ -45,25 +51,16 @@ impl CellState {
     ///
     /// This only checks cell-local constraints (e.g., filled cells cannot hold notes).
     /// Board-level conflicts are handled by [`crate::Game`].
-    #[must_use]
-    pub(crate) fn toggle_note_capability(self, _digit: Digit) -> InputCapability {
+    pub(crate) fn toggle_note_capability(
+        self,
+        digit: Digit,
+    ) -> Result<InputOperation, InputBlockReason> {
         match self {
-            CellState::Given(_) => InputCapability::BlockedByGivenCell,
-            CellState::Filled(_) => InputCapability::BlockedByFilledCell,
-            CellState::Notes(_) | CellState::Empty => InputCapability::Allowed,
+            CellState::Given(_) => Err(InputBlockReason::GivenCell),
+            CellState::Filled(_) => Err(InputBlockReason::FilledCell),
+            CellState::Notes(notes) if notes.contains(digit) => Ok(InputOperation::Removed),
+            CellState::Notes(_) | CellState::Empty => Ok(InputOperation::Set),
         }
-    }
-
-    /// Returns whether setting the given digit is a no-op for this cell.
-    #[must_use]
-    pub(crate) fn is_same_filled_digit(self, digit: Digit) -> bool {
-        matches!(self, CellState::Filled(existing) if existing == digit)
-    }
-
-    /// Returns whether toggling this digit would remove an existing note.
-    #[must_use]
-    pub(crate) fn is_note_removal(self, digit: Digit) -> bool {
-        matches!(self, CellState::Notes(notes) if notes.contains(digit))
     }
 
     /// Sets this cell to a filled digit, clearing notes if needed.
@@ -71,7 +68,7 @@ impl CellState {
     /// # Errors
     ///
     /// Returns [`GameError::CannotModifyGivenCell`] if this is a given cell.
-    pub fn set_filled(&mut self, digit: Digit) -> Result<(), GameError> {
+    pub(crate) fn set_filled(&mut self, digit: Digit) -> Result<(), GameError> {
         match self {
             CellState::Given(_) => Err(GameError::CannotModifyGivenCell),
             CellState::Filled(d) => {
@@ -86,7 +83,7 @@ impl CellState {
     }
 
     /// Drops a digit from this cell's notes, converting empty notes to [`CellState::Empty`].
-    pub fn drop_note_digit(&mut self, digit: Digit) {
+    pub(crate) fn drop_note_digit(&mut self, digit: Digit) {
         if let CellState::Notes(notes) = self {
             notes.remove(digit);
             if notes.is_empty() {
@@ -95,28 +92,19 @@ impl CellState {
         }
     }
 
-    /// Toggles a note in this cell.
-    ///
-    /// # Errors
-    ///
-    /// Returns [`GameError::CannotModifyGivenCell`] if this is a given cell.
-    /// Returns [`GameError::CannotAddNoteToFilledCell`] if this is a filled cell.
-    pub fn toggle_note(&mut self, digit: Digit) -> Result<(), GameError> {
+    /// Adds a digit to this cell's notes, converting empty cells to [`CellState::Notes`].
+    pub(crate) fn add_note_digit(&mut self, digit: Digit) {
         match self {
-            CellState::Given(_) => Err(GameError::CannotModifyGivenCell),
-            CellState::Filled(_) => Err(GameError::CannotAddNoteToFilledCell),
-            CellState::Notes(digits) => {
-                digits.toggle(digit);
-                if digits.is_empty() {
-                    *self = CellState::Empty;
-                }
-                Ok(())
+            CellState::Notes(notes) => {
+                notes.insert(digit);
             }
             CellState::Empty => {
-                let mut digits = DigitSet::new();
-                digits.insert(digit);
-                *self = CellState::Notes(digits);
-                Ok(())
+                let mut notes = DigitSet::new();
+                notes.insert(digit);
+                *self = CellState::Notes(notes);
+            }
+            CellState::Given(_) | CellState::Filled(_) => {
+                unreachable!("add_note_digit is invalid for given or filled cells");
             }
         }
     }
@@ -126,7 +114,7 @@ impl CellState {
     /// # Errors
     ///
     /// Returns [`GameError::CannotModifyGivenCell`] if this is a given cell.
-    pub fn clear(&mut self) -> Result<(), GameError> {
+    pub(crate) fn clear(&mut self) -> Result<(), GameError> {
         match self {
             CellState::Given(_) => Err(GameError::CannotModifyGivenCell),
             CellState::Filled(_) | CellState::Notes(_) => {
@@ -230,16 +218,19 @@ mod tests {
     }
 
     #[test]
-    fn test_cell_state_toggle_note_transitions() {
+    fn test_cell_state_add_note_digit_transitions() {
         let mut cell = CellState::Empty;
-        cell.toggle_note(Digit::D3).unwrap();
+        cell.add_note_digit(Digit::D3);
         assert!(matches!(
             cell,
             CellState::Notes(notes) if notes.contains(Digit::D3)
         ));
 
-        cell.toggle_note(Digit::D3).unwrap();
-        assert_eq!(cell, CellState::Empty);
+        cell.add_note_digit(Digit::D5);
+        assert!(matches!(
+            cell,
+            CellState::Notes(notes) if notes.contains(Digit::D3) && notes.contains(Digit::D5)
+        ));
     }
 
     #[test]

@@ -34,3 +34,4 @@ Short, timestamped notes capturing decisions and rationale.
 - 2026-01-28: Centralize CellState transitions (fill, note toggle, clear) into CellState methods — keeps state invariants consistent across game logic.
 - 2026-01-29: Digit input is non-toggle (same digit is no-op); notes remain toggle-based — aligns with typical Sudoku UX and keeps clear-cell as the explicit removal action.
 - 2026-01-29: Clarify `Game` vs `CellState` responsibilities (cell-local capability checks in `CellState`, board-level rules and peer effects orchestrated by `Game`) and split `numelace-game` into `game`, `cell_state`, `input`, and `error` modules — keeps local invariants centralized and reduces drift.
+- 2026-01-29: Represent input outcomes as `Result<InputOperation, InputBlockReason>` for capability checks and operations — makes no-op/set/remove outcomes explicit while keeping board-level rules in `Game`.

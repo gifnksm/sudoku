@@ -1,5 +1,7 @@
 use derive_more::{Display, Error};
 
+use crate::input::InputBlockReason;
+
 /// Errors that can occur during game operations.
 #[derive(Debug, Display, Error)]
 pub enum GameError {
@@ -23,4 +25,14 @@ pub enum GameError {
     /// This occurs when the digit violates Sudoku rules in strict mode.
     #[display("given digit causes a conflict with existing digits")]
     ConflictingDigit,
+}
+
+impl From<InputBlockReason> for GameError {
+    fn from(reason: InputBlockReason) -> Self {
+        match reason {
+            InputBlockReason::GivenCell => GameError::CannotModifyGivenCell,
+            InputBlockReason::FilledCell => GameError::CannotAddNoteToFilledCell,
+            InputBlockReason::Conflict => GameError::ConflictingDigit,
+        }
+    }
 }

@@ -2,7 +2,7 @@ use std::sync::Arc;
 
 use eframe::egui::{self, Align2, Button, FontId, Grid, Layout, RichText, Ui, Vec2, Visuals};
 use numelace_core::{Digit, containers::Array9, index::DigitSemantics};
-use numelace_game::InputCapability;
+use numelace_game::{InputBlockReason, InputOperation};
 
 use crate::{
     action::{Action, ActionRequestQueue},
@@ -18,15 +18,15 @@ pub struct KeypadViewModel {
 
 #[derive(Debug, Clone)]
 pub struct DigitKeyState {
-    set_digit: Option<InputCapability>,
-    toggle_note: Option<InputCapability>,
+    set_digit: Option<Result<InputOperation, InputBlockReason>>,
+    toggle_note: Option<Result<InputOperation, InputBlockReason>>,
     decided_count: usize,
 }
 
 impl DigitKeyState {
     pub fn new(
-        digit: Option<InputCapability>,
-        note: Option<InputCapability>,
+        digit: Option<Result<InputOperation, InputBlockReason>>,
+        note: Option<Result<InputOperation, InputBlockReason>>,
         decided_count: usize,
     ) -> Self {
         Self {
@@ -170,10 +170,11 @@ fn show_digit_button(
     };
 
     let (enabled, text_color) = match toggle_capability {
-        Some(InputCapability::BlockedByConflict) => (true, visuals.warn_fg_color),
-        Some(InputCapability::Allowed) => (true, visuals.text_color()),
-        Some(InputCapability::BlockedByGivenCell | InputCapability::BlockedByFilledCell)
-        | None => (false, visuals.text_color()),
+        Some(Ok(_)) => (true, visuals.text_color()),
+        Some(Err(InputBlockReason::Conflict)) => (true, visuals.warn_fg_color),
+        Some(Err(InputBlockReason::GivenCell | InputBlockReason::FilledCell)) | None => {
+            (false, visuals.text_color())
+        }
     };
 
     let text = RichText::new(digit.as_str())

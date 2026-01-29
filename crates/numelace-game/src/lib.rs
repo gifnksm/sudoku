@@ -66,4 +66,6 @@ mod input;
 pub use cell_state::CellState;
 pub use error::GameError;
 pub use game::Game;
-pub use input::{InputCapability, InputDigitOptions, NoteCleanupPolicy, RuleCheckPolicy};
+pub use input::{
+    InputBlockReason, InputDigitOptions, InputOperation, NoteCleanupPolicy, RuleCheckPolicy,
+};

@@ -5,7 +5,9 @@ use numelace_core::{
 };
 use numelace_generator::GeneratedPuzzle;
 
-use crate::{CellState, GameError, InputCapability, InputDigitOptions, RuleCheckPolicy};
+use crate::{
+    CellState, GameError, InputBlockReason, InputDigitOptions, InputOperation, RuleCheckPolicy,
+};
 
 /// A Sudoku game session.
 ///
@@ -235,13 +237,15 @@ impl Game {
         pos: Position,
         digit: Digit,
         options: &InputDigitOptions,
-    ) -> Result<(), GameError> {
-        if self.grid[pos].is_same_filled_digit(digit) {
-            return Ok(());
-        }
+    ) -> Result<InputOperation, GameError> {
+        let operation = self.cell(pos).set_digit_capability(digit)?;
 
-        if self.cell(pos).set_digit_capability(digit) == InputCapability::BlockedByGivenCell {
-            return Err(GameError::CannotModifyGivenCell);
+        match operation {
+            InputOperation::NoOp => return Ok(InputOperation::NoOp),
+            InputOperation::Removed => {
+                unreachable!("set_digit should not yield Removed");
+            }
+            InputOperation::Set => {}
         }
 
         if options.rule_check_policy.is_strict() && self.is_conflicting(pos, digit) {
@@ -256,35 +260,35 @@ impl Game {
             }
         }
 
-        Ok(())
+        Ok(InputOperation::Set)
     }
 
     /// Returns the capability for placing a digit at the given position.
     ///
-    /// The returned [`InputCapability`] indicates if the input is allowed or the
-    /// reason it is blocked, taking the provided policy into account.
-    /// Setting the same digit again is always allowed, even under strict checks.
-    #[must_use]
+    /// The returned result indicates the cell-local operation or why it is blocked,
+    /// taking the provided policy into account.
+    ///
+    /// # Errors
+    ///
+    /// Returns [`InputBlockReason::GivenCell`] if the cell is a given cell.
+    /// Returns [`InputBlockReason::Conflict`] if strict rule checks are enabled and
+    /// the digit conflicts with existing digits.
     pub fn set_digit_capability(
         &self,
         pos: Position,
         digit: Digit,
         policy: RuleCheckPolicy,
-    ) -> InputCapability {
-        let capability = self.cell(pos).set_digit_capability(digit);
-        if capability != InputCapability::Allowed {
-            return capability;
+    ) -> Result<InputOperation, InputBlockReason> {
+        let operation = self.cell(pos).set_digit_capability(digit)?;
+
+        if matches!(operation, InputOperation::Set)
+            && policy.is_strict()
+            && self.is_conflicting(pos, digit)
+        {
+            return Err(InputBlockReason::Conflict);
         }
 
-        if self.grid[pos].is_same_filled_digit(digit) {
-            return InputCapability::Allowed;
-        }
-
-        if policy.is_strict() && self.is_conflicting(pos, digit) {
-            return InputCapability::BlockedByConflict;
-        }
-
-        InputCapability::Allowed
+        Ok(operation)
     }
 
     /// Toggles a candidate note at the given position.
@@ -304,51 +308,54 @@ impl Game {
         pos: Position,
         digit: Digit,
         policy: RuleCheckPolicy,
-    ) -> Result<(), GameError> {
-        let capability = self.cell(pos).toggle_note_capability(digit);
-        match capability {
-            InputCapability::BlockedByGivenCell => return Err(GameError::CannotModifyGivenCell),
-            InputCapability::BlockedByFilledCell => {
-                return Err(GameError::CannotAddNoteToFilledCell);
+    ) -> Result<InputOperation, GameError> {
+        let operation = self.cell(pos).toggle_note_capability(digit)?;
+
+        match operation {
+            InputOperation::NoOp => return Ok(InputOperation::NoOp),
+            InputOperation::Removed => {
+                self.grid[pos].drop_note_digit(digit);
+                return Ok(InputOperation::Removed);
             }
-            InputCapability::Allowed | InputCapability::BlockedByConflict => {}
+            InputOperation::Set => {}
         }
 
-        let removing_note = self.grid[pos].is_note_removal(digit);
-        if !removing_note && policy.is_strict() && self.is_conflicting(pos, digit) {
+        if policy.is_strict() && self.is_conflicting(pos, digit) {
             return Err(GameError::ConflictingDigit);
         }
 
-        self.grid[pos].toggle_note(digit)?;
-        Ok(())
+        self.grid[pos].add_note_digit(digit);
+        Ok(InputOperation::Set)
     }
 
     /// Returns the toggle capability for notes at the given position.
     ///
-    /// The returned [`InputCapability`] indicates if the input is allowed or the
-    /// reason it is blocked, taking the provided policy into account.
-    /// Note removal returns [`InputCapability::Allowed`] even under strict checks.
-    #[must_use]
+    /// The returned result indicates the cell-local operation or why it is blocked,
+    /// taking the provided policy into account.
+    /// Note removal returns `Ok(InputOperation::Removed)` even under strict checks.
+    ///
+    /// # Errors
+    ///
+    /// Returns [`InputBlockReason::GivenCell`] if the cell is a given cell.
+    /// Returns [`InputBlockReason::FilledCell`] if the cell is filled.
+    /// Returns [`InputBlockReason::Conflict`] if strict rule checks are enabled and
+    /// the digit conflicts with existing digits when adding a note.
     pub fn toggle_note_capability(
         &self,
         pos: Position,
         digit: Digit,
         policy: RuleCheckPolicy,
-    ) -> InputCapability {
-        let capability = self.cell(pos).toggle_note_capability(digit);
-        if capability != InputCapability::Allowed {
-            return capability;
+    ) -> Result<InputOperation, InputBlockReason> {
+        let operation = self.cell(pos).toggle_note_capability(digit)?;
+
+        if matches!(operation, InputOperation::Set)
+            && policy.is_strict()
+            && self.is_conflicting(pos, digit)
+        {
+            return Err(InputBlockReason::Conflict);
         }
 
-        if self.grid[pos].is_note_removal(digit) {
-            return InputCapability::Allowed;
-        }
-
-        if policy.is_strict() && self.is_conflicting(pos, digit) {
-            return InputCapability::BlockedByConflict;
-        }
-
-        InputCapability::Allowed
+        Ok(operation)
     }
 
     /// Clears the digit at the given position.
@@ -770,19 +777,19 @@ mod tests {
 
         assert_eq!(
             game.set_digit_capability(given_pos, Digit::D1, RuleCheckPolicy::Permissive),
-            InputCapability::BlockedByGivenCell
+            Err(InputBlockReason::GivenCell)
         );
         assert_eq!(
             game.toggle_note_capability(given_pos, Digit::D1, RuleCheckPolicy::Permissive),
-            InputCapability::BlockedByGivenCell
+            Err(InputBlockReason::GivenCell)
         );
         assert_eq!(
             game.set_digit_capability(empty_pos, Digit::D1, RuleCheckPolicy::Permissive),
-            InputCapability::Allowed
+            Ok(InputOperation::Set)
         );
         assert_eq!(
             game.toggle_note_capability(empty_pos, Digit::D1, RuleCheckPolicy::Permissive),
-            InputCapability::Allowed
+            Ok(InputOperation::Set)
         );
 
         assert!(!game.has_removable_digit(empty_pos));
@@ -791,7 +798,7 @@ mod tests {
         assert!(game.has_removable_digit(empty_pos));
         assert_eq!(
             game.toggle_note_capability(empty_pos, Digit::D1, RuleCheckPolicy::Permissive),
-            InputCapability::BlockedByFilledCell
+            Err(InputBlockReason::FilledCell)
         );
     }
 

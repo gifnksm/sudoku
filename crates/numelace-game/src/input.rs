@@ -54,15 +54,24 @@ pub enum NoteCleanupPolicy {
     RemovePeers,
 }
 
-/// Indicates whether an input is currently allowed and, if not, why it is blocked.
+/// Indicates what operation would occur for a valid input.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, derive_more::IsVariant)]
-pub enum InputCapability {
-    /// The input is allowed.
-    Allowed,
+pub enum InputOperation {
+    /// The input is allowed but would not change the cell.
+    NoOp,
+    /// The input would set or replace a digit, or add a note.
+    Set,
+    /// The input would remove a note.
+    Removed,
+}
+
+/// Indicates why an input is blocked.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, derive_more::IsVariant)]
+pub enum InputBlockReason {
     /// The target cell is a given cell and cannot be modified.
-    BlockedByGivenCell,
+    GivenCell,
     /// The target cell is filled and cannot accept notes.
-    BlockedByFilledCell,
+    FilledCell,
     /// The input conflicts with an existing digit under strict rules.
-    BlockedByConflict,
+    Conflict,
 }
