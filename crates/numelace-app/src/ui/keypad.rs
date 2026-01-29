@@ -1,6 +1,8 @@
 use std::sync::Arc;
 
-use eframe::egui::{self, Align2, Button, FontId, Grid, RichText, Ui, UiBuilder, Vec2, Visuals};
+use eframe::egui::{
+    self, Align2, Button, Color32, FontId, Grid, RichText, Ui, UiBuilder, Vec2, Visuals,
+};
 use numelace_core::{Digit, containers::Array9, index::DigitSemantics};
 use numelace_game::{InputBlockReason, InputOperation};
 
@@ -146,6 +148,110 @@ pub fn show(ui: &mut Ui, vm: &KeypadViewModel, action_queue: &mut ActionRequestQ
     });
 }
 
+struct DigitButtonProps {
+    effective_notes_mode: bool,
+    capability: Option<Result<InputOperation, InputBlockReason>>,
+    digit: Digit,
+}
+
+impl DigitButtonProps {
+    fn new(state: &DigitKeyState, digit: Digit, effective_notes_mode: bool) -> Self {
+        let capability = if effective_notes_mode {
+            state.toggle_note
+        } else {
+            state.set_digit
+        };
+        Self {
+            effective_notes_mode,
+            capability,
+            digit,
+        }
+    }
+
+    fn tooltip(&self) -> String {
+        let d = self.digit;
+        if self.effective_notes_mode {
+            match self.capability {
+                Some(Ok(InputOperation::Set)) => format!("Add note {d}"),
+                Some(Ok(InputOperation::Removed)) => format!("Remove note {d}"),
+                Some(Ok(InputOperation::NoOp)) => {
+                    format!("Toggle note {d} (blocked by unexpected state)")
+                }
+                Some(Err(InputBlockReason::Conflict)) => {
+                    format!("Add note {d} (blocked by rule violation)")
+                }
+                Some(Err(InputBlockReason::GivenCell | InputBlockReason::FilledCell)) => {
+                    format!("Add note {d} (blocked by filled cell)")
+                }
+                None => {
+                    format!("Toggle note {d} (blocked by no cell selected)")
+                }
+            }
+        } else {
+            match self.capability {
+                Some(Ok(InputOperation::Set)) => format!("Set digit {d}"),
+                Some(Ok(InputOperation::Removed)) => {
+                    format!("Set digit {d} (unexpected state)")
+                }
+                Some(Ok(InputOperation::NoOp)) => {
+                    format!("Set digit {d} (already set)")
+                }
+                Some(Err(InputBlockReason::Conflict)) => {
+                    format!("Set digit {d} (blocked by rule violation)")
+                }
+                Some(Err(InputBlockReason::GivenCell)) => {
+                    format!("Set digit {d} (blocked by pre-filled cell)")
+                }
+                Some(Err(InputBlockReason::FilledCell)) => {
+                    format!("Set digit {d} (blocked by unexpected state)")
+                }
+                None => format!("Set digit {d} (blocked by no cell selected)"),
+            }
+        }
+    }
+
+    fn text_color(&self, visuals: &Visuals) -> Color32 {
+        match self.capability {
+            Some(Err(InputBlockReason::Conflict)) => visuals.warn_fg_color,
+            Some(Ok(_) | Err(InputBlockReason::GivenCell | InputBlockReason::FilledCell))
+            | None => visuals.text_color(),
+        }
+    }
+
+    fn enabled(&self) -> bool {
+        match self.capability {
+            Some(
+                Ok(InputOperation::Set | InputOperation::Removed) | Err(InputBlockReason::Conflict),
+            ) => true,
+            Some(
+                Ok(InputOperation::NoOp)
+                | Err(InputBlockReason::GivenCell | InputBlockReason::FilledCell),
+            )
+            | None => false,
+        }
+    }
+
+    fn op_icon(&self) -> Option<&'static str> {
+        if !self.effective_notes_mode {
+            return None;
+        }
+
+        match self.capability {
+            Some(Ok(InputOperation::Set)) => Some(icon::PENCIL),
+            Some(Ok(InputOperation::Removed)) => Some(icon::FOUR_CORNERS),
+            Some(
+                Ok(InputOperation::NoOp)
+                | Err(
+                    InputBlockReason::Conflict
+                    | InputBlockReason::GivenCell
+                    | InputBlockReason::FilledCell,
+                ),
+            )
+            | None => None,
+        }
+    }
+}
+
 fn show_digit_button(
     ui: &mut Ui,
     digit: Digit,
@@ -157,30 +263,17 @@ fn show_digit_button(
     let digit_count_color = visuals.text_color();
     let op_icon_color = visuals.text_color();
 
-    let (toggle_capability, tooltip) = if effective_notes_mode {
-        (state.toggle_note, "Toggle note")
-    } else {
-        (state.set_digit, "Set digit")
-    };
+    let props = DigitButtonProps::new(state, digit, effective_notes_mode);
 
-    let pencil_icon = effective_notes_mode.then_some(icon::PENCIL);
-    let four_corners_icon = effective_notes_mode.then_some(icon::FOUR_CORNERS);
-
-    let (op_icon, enabled, text_color) = match toggle_capability {
-        Some(Ok(InputOperation::NoOp)) => (None, false, visuals.text_color()),
-        Some(Ok(InputOperation::Set)) => (pencil_icon, true, visuals.text_color()),
-        Some(Ok(InputOperation::Removed)) => (four_corners_icon, true, visuals.text_color()),
-        Some(Err(InputBlockReason::Conflict)) => (None, true, visuals.warn_fg_color),
-        Some(Err(InputBlockReason::GivenCell | InputBlockReason::FilledCell)) | None => {
-            (None, false, visuals.text_color())
-        }
-    };
-
+    let tooltip = props.tooltip();
     let text = RichText::new(digit.as_str())
-        .color(text_color)
+        .color(props.text_color(visuals))
         .size(button_size * 0.8);
     let button = Button::new(text).min_size(Vec2::splat(button_size));
-    let button = ui.add_enabled(enabled, button).on_hover_text(tooltip);
+    let button = ui
+        .add_enabled(props.enabled(), button)
+        .on_hover_text(&tooltip)
+        .on_disabled_hover_text(&tooltip);
     let clicked = button.clicked();
 
     ui.painter().text(
@@ -191,7 +284,7 @@ fn show_digit_button(
         digit_count_color,
     );
 
-    if let Some(op_icon) = op_icon {
+    if let Some(op_icon) = props.op_icon() {
         ui.painter().text(
             button.rect.right_bottom() + egui::vec2(-4.0, -2.0),
             Align2::RIGHT_BOTTOM,
@@ -208,7 +301,8 @@ fn show_remove_button(ui: &mut Ui, button_size: f32, has_removable_digit: bool) 
     let button = Button::new(text).min_size(Vec2::splat(button_size));
     let button = ui
         .add_enabled(has_removable_digit, button)
-        .on_hover_text("Clear cell (digit + notes)");
+        .on_hover_text("Clear cell (digit and notes)")
+        .on_disabled_hover_text("Clear cell (no removable cell selected)");
     button.clicked()
 }
 
