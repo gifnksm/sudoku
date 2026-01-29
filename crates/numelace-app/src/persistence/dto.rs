@@ -5,8 +5,7 @@ use numelace_game::{CellState, Game, GameError};
 use serde::{Deserialize, Serialize};
 
 use crate::state::{
-    AppState, AppearanceSettings, AssistSettings, HighlightSettings, InputMode, NotesSettings,
-    Settings, Theme,
+    AppState, AssistSettings, HighlightSettings, InputMode, NotesSettings, Settings,
 };
 
 // DTO defaulting guidance:
@@ -175,7 +174,6 @@ impl From<InputModeDto> for InputMode {
 #[serde(default)]
 pub struct SettingsDto {
     assist: AssistSettingsDto,
-    appearance: AppearanceSettingsDto,
 }
 
 impl Default for SettingsDto {
@@ -188,7 +186,6 @@ impl From<&Settings> for SettingsDto {
     fn from(value: &Settings) -> Self {
         Self {
             assist: AssistSettingsDto::from(&value.assist),
-            appearance: AppearanceSettingsDto::from(&value.appearance),
         }
     }
 }
@@ -203,7 +200,6 @@ impl From<SettingsDto> for Settings {
     fn from(value: SettingsDto) -> Self {
         Self {
             assist: value.assist.into(),
-            appearance: value.appearance.into(),
         }
     }
 }
@@ -323,69 +319,5 @@ impl From<NotesSettingsDto> for NotesSettings {
 impl From<NotesSettings> for NotesSettingsDto {
     fn from(value: NotesSettings) -> Self {
         Self::from(&value)
-    }
-}
-
-#[derive(Debug, Clone, Deserialize, Serialize)]
-#[serde(default)]
-pub struct AppearanceSettingsDto {
-    pub theme: ThemeDto,
-}
-
-impl Default for AppearanceSettingsDto {
-    fn default() -> Self {
-        AppearanceSettings::default().into()
-    }
-}
-
-impl From<&AppearanceSettings> for AppearanceSettingsDto {
-    fn from(value: &AppearanceSettings) -> Self {
-        Self {
-            theme: value.theme.into(),
-        }
-    }
-}
-
-impl From<AppearanceSettings> for AppearanceSettingsDto {
-    fn from(value: AppearanceSettings) -> Self {
-        Self::from(&value)
-    }
-}
-
-impl From<AppearanceSettingsDto> for AppearanceSettings {
-    fn from(value: AppearanceSettingsDto) -> Self {
-        Self {
-            theme: value.theme.into(),
-        }
-    }
-}
-
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Deserialize, Serialize)]
-pub enum ThemeDto {
-    Light,
-    Dark,
-}
-
-impl Default for ThemeDto {
-    fn default() -> Self {
-        Theme::default().into()
-    }
-}
-
-impl From<ThemeDto> for Theme {
-    fn from(value: ThemeDto) -> Self {
-        match value {
-            ThemeDto::Light => Theme::Light,
-            ThemeDto::Dark => Theme::Dark,
-        }
-    }
-}
-
-impl From<Theme> for ThemeDto {
-    fn from(value: Theme) -> Self {
-        match value {
-            Theme::Light => ThemeDto::Light,
-            Theme::Dark => ThemeDto::Dark,
-        }
     }
 }

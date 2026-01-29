@@ -1,10 +1,8 @@
-use eframe::egui::{CollapsingHeader, RichText, ScrollArea, Ui};
+use eframe::egui::{CollapsingHeader, RichText, ScrollArea, Ui, widgets};
 
 use crate::{
     action::{Action, ActionRequestQueue},
-    state::{
-        AppearanceSettings, AssistSettings, HighlightSettings, NotesSettings, Settings, Theme,
-    },
+    state::{AssistSettings, HighlightSettings, NotesSettings, Settings},
 };
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -41,7 +39,7 @@ pub fn show(ui: &mut Ui, vm: &SidebarViewModel, action_queue: &mut ActionRequest
 
         let mut changed = false;
         let mut settings = vm.settings.clone();
-        let Settings { assist, appearance } = &mut settings;
+        let Settings { assist } = &mut settings;
         ScrollArea::vertical().show(ui, |ui| {
             ui.heading("Settings");
             ui.indent("sidebar_settings", |ui| {
@@ -89,15 +87,10 @@ pub fn show(ui: &mut Ui, vm: &SidebarViewModel, action_queue: &mut ActionRequest
                         });
                     });
 
-                let AppearanceSettings { theme } = appearance;
                 CollapsingHeader::new("Appearance")
                     .default_open(true)
                     .show(ui, |ui| {
-                        ui.label(RichText::new("Theme"));
-                        ui.indent("theme", |ui| {
-                            changed |= ui.radio_value(theme, Theme::Light, "Light").changed();
-                            changed |= ui.radio_value(theme, Theme::Dark, "Dark").changed();
-                        });
+                        widgets::global_theme_preference_buttons(ui);
                     });
             });
         });

@@ -10,7 +10,6 @@ use crate::{
 #[derive(Default, Debug, Clone, Copy, PartialEq, Eq)]
 pub struct ActionEffect {
     pub state_save_requested: bool,
-    pub theme_changed: bool,
 }
 
 #[derive(Debug)]
@@ -101,7 +100,6 @@ pub fn handle(
         }
         Action::UpdateSettings(settings) => {
             ctx.app_state.settings = settings;
-            ctx.effect.theme_changed = true;
         }
     }
 

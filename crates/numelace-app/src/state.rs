@@ -73,7 +73,6 @@ impl InputMode {
 #[derive(Debug, Default, Clone)]
 pub struct Settings {
     pub assist: AssistSettings,
-    pub appearance: AppearanceSettings,
 }
 
 #[derive(Debug, Clone)]
@@ -124,18 +123,6 @@ impl Default for NotesSettings {
             auto_remove_peer_notes_on_fill: true,
         }
     }
-}
-
-#[derive(Debug, Default, Clone)]
-pub struct AppearanceSettings {
-    pub theme: Theme,
-}
-
-#[derive(Debug, Default, Clone, Copy, PartialEq, Eq)]
-pub enum Theme {
-    #[default]
-    Light,
-    Dark,
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]

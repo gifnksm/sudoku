@@ -13,7 +13,7 @@ use std::time::Duration;
 
 use eframe::{
     App, CreationContext, Frame, Storage,
-    egui::{CentralPanel, Context, TopBottomPanel, Visuals},
+    egui::{CentralPanel, Context, TopBottomPanel},
 };
 
 use crate::{
@@ -22,7 +22,7 @@ use crate::{
     action_handler::{self, ActionEffect},
     game_factory,
     persistence::storage,
-    state::{AppState, Theme, UiState},
+    state::{AppState, UiState},
     ui, view_model_builder,
 };
 
@@ -39,29 +39,13 @@ impl NumelaceApp {
             .and_then(storage::load_state)
             .unwrap_or_else(|| AppState::new(game_factory::generate_random_game()));
         let ui_state = UiState::new(DEFAULT_MAX_HISTORY_LENGTH, &app_state);
-        let this = Self {
+        Self {
             app_state,
             ui_state,
-        };
-        this.update_theme(&cc.egui_ctx);
-        this
-    }
-
-    fn update_theme(&self, ctx: &Context) {
-        match self.app_state.settings.appearance.theme {
-            Theme::Light => {
-                ctx.set_visuals(Visuals::light());
-            }
-            Theme::Dark => {
-                ctx.set_visuals(Visuals::dark());
-            }
         }
     }
 
-    fn apply_effect(&mut self, ctx: &Context, frame: &mut Frame, effect: ActionEffect) {
-        if effect.theme_changed {
-            self.update_theme(ctx);
-        }
+    fn apply_effect(&mut self, frame: &mut Frame, effect: ActionEffect) {
         if effect.state_save_requested
             && let Some(storage) = frame.storage_mut()
         {
@@ -117,6 +101,6 @@ impl App for NumelaceApp {
             &mut action_queue,
         );
 
-        self.apply_effect(ctx, frame, effect);
+        self.apply_effect(frame, effect);
     }
 }
