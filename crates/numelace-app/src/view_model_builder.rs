@@ -11,7 +11,8 @@ use crate::{
         game_screen::GameScreenViewModel,
         grid::{GridCell, GridViewModel, GridVisualState, NoteVisualState},
         keypad::{DigitKeyState, KeypadViewModel},
-        sidebar::{GameStatus, SidebarViewModel},
+        sidebar::SidebarViewModel,
+        status_line::{GameStatus, StatusLineViewModel},
         toolbar::ToolbarViewModel,
     },
 };
@@ -104,6 +105,13 @@ pub fn build_game_screen_view_model(
     let settings = &app_state.settings;
     let notes_mode = app_state.input_mode.is_notes();
 
+    let status = if app_state.game.is_solved() {
+        GameStatus::Solved
+    } else {
+        GameStatus::InProgress
+    };
+    let status_line_vm = StatusLineViewModel::new(status);
+
     let grid = build_grid(app_state, ui_state);
     let grid_vm = GridViewModel::new(grid, &settings.assist.highlight);
 
@@ -117,17 +125,12 @@ pub fn build_game_screen_view_model(
     let has_removable_digit = selected_cell.is_some_and(|pos| game.has_removable_digit(pos));
     let keypad_vm = KeypadViewModel::new(digit_capabilities, has_removable_digit, notes_mode);
 
-    GameScreenViewModel::new(grid_vm, keypad_vm)
+    GameScreenViewModel::new(status_line_vm, grid_vm, keypad_vm)
 }
 
 pub fn build_sidebar_view_model(app_state: &AppState) -> SidebarViewModel<'_> {
-    let status = if app_state.game.is_solved() {
-        GameStatus::Solved
-    } else {
-        GameStatus::InProgress
-    };
     let settings = &app_state.settings;
-    SidebarViewModel::new(status, settings)
+    SidebarViewModel::new(settings)
 }
 
 #[cfg(test)]

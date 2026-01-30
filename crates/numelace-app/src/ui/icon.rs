@@ -12,3 +12,5 @@ pub const PALETTE: &str = "🎨";
 pub const ARROW_UNDO: &str = "⮪";
 pub const ARROW_REDO: &str = "⮫";
 pub const PLUS: &str = "✚";
+pub const TROPHY: &str = "🏆";
+pub const HOURGLASS: &str = "⏳";

@@ -1,4 +1,4 @@
-use eframe::egui::{CollapsingHeader, RichText, ScrollArea, Ui, widgets};
+use eframe::egui::{CollapsingHeader, ScrollArea, Ui, widgets};
 
 use crate::{
     action::{Action, ActionRequestQueue},
@@ -6,38 +6,19 @@ use crate::{
     ui::icon,
 };
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
-pub enum GameStatus {
-    InProgress,
-    Solved,
-}
-
 #[derive(Debug, Clone)]
 pub struct SidebarViewModel<'a> {
-    status: GameStatus,
     settings: &'a Settings,
 }
 
 impl<'a> SidebarViewModel<'a> {
-    pub fn new(status: GameStatus, settings: &'a Settings) -> Self {
-        Self { status, settings }
+    pub fn new(settings: &'a Settings) -> Self {
+        Self { settings }
     }
 }
 
 pub fn show(ui: &mut Ui, vm: &SidebarViewModel, action_queue: &mut ActionRequestQueue) {
     ui.vertical(|ui| {
-        ui.group(|ui| {
-            let status_text = match vm.status {
-                GameStatus::InProgress => "Game in progress",
-                GameStatus::Solved => "Congratulations! You solved the puzzle!",
-            };
-            let status_label = match vm.status {
-                GameStatus::InProgress => RichText::new(status_text),
-                GameStatus::Solved => RichText::new(status_text).color(ui.visuals().warn_fg_color),
-            };
-            ui.label(status_label.size(20.0));
-        });
-
         let mut changed = false;
         let mut settings = vm.settings.clone();
         let Settings { assist } = &mut settings;
