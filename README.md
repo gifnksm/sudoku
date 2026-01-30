@@ -1,12 +1,12 @@
 # Numelace
 
-Numelace is a number-place (Sudoku) puzzle application written in Rust, with a desktop-first focus and planned Web/WASM support.
+Numelace is a number-place (Sudoku) puzzle application written in Rust, with desktop and Web/WASM support.
 
 ## Project Goals
 
 - **Automatic Puzzle Generation**: Generate Sudoku puzzles with configurable difficulty levels
 - **Multiple Solving Strategies**: Implement both algorithmic (backtracking) and human-like solving techniques
-- **Cross-Platform**: Desktop GUI today, Web/WASM planned, using egui/eframe
+- **Cross-Platform**: Desktop and Web/WASM GUIs using egui/eframe
 
 ## Current Status
 
@@ -30,7 +30,17 @@ Planned features are tracked in docs/BACKLOG.md.
   - ✅ Desktop GUI (keypad with digit counts, theme toggle, new game confirmation)
   - ✅ Assist toggles UI (optional features on/off)
   - ✅ Auto-save and resume (board state + settings)
-  - ⚙️ Web/WASM support is planned
+  - ✅ Web/WASM support
+
+## Web Demo
+
+- Coming soon: <https://gifnksm.github.io/numelace> (not published yet)
+
+## Run on Desktop
+
+```bash
+cargo run --release
+```
 
 ## Controls
 
@@ -83,27 +93,7 @@ docs/    # project documentation
 - [docs/TESTING.md](docs/TESTING.md) - testing guidelines
 - [docs/DOCUMENTATION_GUIDE.md](docs/DOCUMENTATION_GUIDE.md) - documentation conventions
 
-For contributions, see [CONTRIBUTING.md](CONTRIBUTING.md).
-
-## Build and Run
-
-```bash
-# Build all crates
-cargo build
-
-# Build with optimizations
-cargo build --release
-
-# Run tests
-cargo test
-```
-
-For development commands (clippy, benchmarks, documentation generation, etc.), see [CONTRIBUTING.md](CONTRIBUTING.md).
-
-```bash
-# Desktop application
-cargo run --release
-```
+For development workflows and contribution guidelines, see [CONTRIBUTING.md](CONTRIBUTING.md).
 
 ## License
 

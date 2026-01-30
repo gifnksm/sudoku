@@ -8,7 +8,7 @@ This document describes the architecture of the Numelace application, including 
 
 - **Problem Generation**: Automatically generate Sudoku puzzles with configurable difficulty levels
 - **Multiple Solving Strategies**: Implement both algorithmic (backtracking) and human-like solving techniques
-- **Multi-Platform Support**: Desktop GUI (egui/eframe); Web/WASM support is planned
+- **Multi-Platform Support**: Desktop GUI and Web/WASM support using egui/eframe
 - **Interactive Features**: Hints, mistake detection, undo/redo functionality
 
 ## Crate Structure
@@ -20,7 +20,7 @@ numelace/
 │   ├── numelace-solver/        # Solving algorithms
 │   ├── numelace-generator/     # Puzzle generation
 │   ├── numelace-game/          # Game logic and state management
-│   └── numelace-app/           # GUI application (desktop, web planned)
+│   └── numelace-app/           # GUI application (desktop + web)
 └── docs/
     ├── ARCHITECTURE.md       # This file
     └── TESTING.md            # Testing guidelines
@@ -100,7 +100,7 @@ See [numelace-game documentation](../crates/numelace-game/src/lib.rs) for detail
 
 **Status**: GUI implemented ⚙️ (core gameplay + UX features)
 
-**Purpose**: Desktop GUI application using egui/eframe (web planned).
+**Purpose**: Desktop and Web/WASM GUI application using egui/eframe.
 
 **Key Components**: `NumelaceApp`, board rendering, keyboard input, selection handling
 
@@ -154,7 +154,7 @@ numelace-generator
     ↓
 numelace-game
     ↓
-numelace-app (desktop, web planned)
+numelace-app (desktop + web)
 ```
 
 **Principles**:

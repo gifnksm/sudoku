@@ -50,11 +50,13 @@ This backlog is the single source of truth for tasks and ideas.
 - UI ViewModel-based split/refactor ✅
 - App logic refactor for testability (action extraction + action_handler + view_model_builder split) ✅
 - Auto-save and resume (board state + settings) ✅
-- WASM build (run in web browser)
+- WASM build (run in web browser) ✅
+- Publish web build via GitHub Actions + GitHub Pages
+- Replace template app icons with Numelace branding
 
 ## Bugs / Fixes
 
-- None listed yet
+- Debug: debug builds hit a `debug_assert` with the message `add_space makes no sense in a grid layout` (root cause TBD)
 
 ## Notes
 

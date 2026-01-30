@@ -16,11 +16,20 @@ bitflags.workspace = true
 derive_more = { workspace = true, features = ["error", "display", "from"] }
 eframe = { workspace = true, features = ["persistence"] }
 egui_extras.workspace = true
+log.workspace = true
 numelace-core.workspace = true
 numelace-game.workspace = true
 numelace-generator.workspace = true
 numelace-solver.workspace = true
 serde = { workspace = true, features = ["derive"] }
+
+[target.'cfg(not(target_arch = "wasm32"))'.dependencies]
+env_logger.workspace = true
+
+[target.'cfg(target_arch = "wasm32")'.dependencies]
+getrandom = { workspace = true, features = ["wasm_js"] }
+wasm-bindgen-futures.workspace = true
+web-sys = { workspace = true, features = ["Document", "HtmlCanvasElement", "Window"] }
 
 [lints]
 workspace = true

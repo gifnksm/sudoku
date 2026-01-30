@@ -36,6 +36,13 @@ Run clippy and address warnings:
 cargo clippy --all-targets
 ```
 
+WASM target checks (lint and docs):
+
+```bash
+cargo clippy --all-targets --target wasm32-unknown-unknown
+cargo doc --no-deps --target wasm32-unknown-unknown
+```
+
 ### Documentation
 
 Check markdown files with markdownlint:
