@@ -51,7 +51,7 @@ This backlog is the single source of truth for tasks and ideas.
 - App logic refactor for testability (action extraction + action_handler + view_model_builder split) ✅
 - Auto-save and resume (board state + settings) ✅
 - WASM build (run in web browser) ✅
-- Publish web build via GitHub Actions + GitHub Pages
+- Publish web build via GitHub Actions + GitHub Pages ✅
 - Replace template app icons with Numelace branding
 
 ## Bugs / Fixes

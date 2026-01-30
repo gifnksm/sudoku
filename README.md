@@ -34,7 +34,7 @@ Planned features are tracked in docs/BACKLOG.md.
 
 ## Web Demo
 
-- Coming soon: <https://gifnksm.github.io/numelace> (not published yet)
+- Web demo: <https://gifnksm.github.io/numelace>
 
 ## Run on Desktop
 

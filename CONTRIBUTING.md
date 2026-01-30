@@ -12,6 +12,16 @@ This document describes the standards and guidelines for this project.
 
 ## Development Workflow
 
+### Local CI checks
+
+Prerequisites: `cargo`, `trunk`, and `typos` must be available on your PATH.
+
+Run the local CI script to mirror GitHub Actions checks:
+
+```bash
+scripts/ci.sh
+```
+
 ### Code Quality
 
 Format code with `cargo fmt`:
