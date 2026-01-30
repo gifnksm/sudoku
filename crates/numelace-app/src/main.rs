@@ -74,7 +74,7 @@ fn main() {
         // Remove the loading text and spinner:
         if let Some(loading_text) = document.get_element_by_id("loading_text") {
             match start_result {
-                Ok(_) => {
+                Ok(()) => {
                     loading_text.remove();
                 }
                 Err(e) => {
