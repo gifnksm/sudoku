@@ -11,7 +11,7 @@ use crate::{
         game_screen::GameScreenViewModel,
         grid::{GridCell, GridViewModel, GridVisualState, NoteVisualState},
         keypad::{DigitKeyState, KeypadViewModel},
-        sidebar::SidebarViewModel,
+        settings::SettingsViewModel,
         status_line::{GameStatus, StatusLineViewModel},
         toolbar::ToolbarViewModel,
     },
@@ -128,9 +128,9 @@ pub fn build_game_screen_view_model(
     GameScreenViewModel::new(status_line_vm, grid_vm, keypad_vm)
 }
 
-pub fn build_sidebar_view_model(app_state: &AppState) -> SidebarViewModel<'_> {
+pub fn build_settings_view_model(app_state: &AppState) -> SettingsViewModel<'_> {
     let settings = &app_state.settings;
-    SidebarViewModel::new(settings)
+    SettingsViewModel::new(settings)
 }
 
 #[cfg(test)]

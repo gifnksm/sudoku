@@ -1,12 +1,18 @@
 use eframe::egui::{InputState, Key};
 use numelace_core::Digit;
 
-use crate::action::{Action, ActionRequestQueue, MoveDirection};
+use crate::{
+    action::{Action, ActionRequestQueue, MoveDirection},
+    state::ModalKind,
+};
 
 pub fn handle_input(i: &InputState, action_queue: &mut ActionRequestQueue) {
     // `i.modifiers.command` is true when Ctrl (Windows/Linux) or Cmd (Mac) is pressed
     if i.modifiers.command && i.key_pressed(Key::N) {
-        action_queue.request(Action::RequestNewGameConfirm);
+        action_queue.request(Action::OpenModal(ModalKind::NewGameConfirm));
+    }
+    if i.modifiers.command && i.key_pressed(Key::Comma) {
+        action_queue.request(Action::OpenModal(ModalKind::Settings));
     }
     if i.modifiers.command && i.key_pressed(Key::Z) {
         action_queue.request(Action::Undo);

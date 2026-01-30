@@ -146,9 +146,15 @@ impl GameSnapshot {
     }
 }
 
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum ModalKind {
+    NewGameConfirm,
+    Settings,
+}
+
 #[derive(Debug)]
 pub struct UiState {
-    pub show_new_game_confirm_dialogue: bool,
+    pub active_modal: Option<ModalKind>,
     pub conflict_ghost: Option<(Position, GhostType)>,
     history: UndoRedoStack<GameSnapshot>,
 }
@@ -156,7 +162,7 @@ pub struct UiState {
 impl UiState {
     pub fn new(max_history_len: usize, init_state: &AppState) -> Self {
         let mut this = Self {
-            show_new_game_confirm_dialogue: false,
+            active_modal: None,
             conflict_ghost: None,
             history: UndoRedoStack::new(max_history_len),
         };

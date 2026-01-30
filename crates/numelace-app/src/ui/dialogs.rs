@@ -1,4 +1,4 @@
-use eframe::egui::{Context, Id, Key, Modal, Sides};
+use eframe::egui::{Context, Id, Modal, Sides};
 
 use crate::{
     action::{Action, ActionRequestQueue},
@@ -24,15 +24,13 @@ pub fn show_new_game_confirm(ctx: &Context, action_queue: &mut ActionRequestQueu
                     action_queue.request(Action::StartNewGame);
                     ui.close();
                 }
-                if ui.button(format! {"{} Cancel", icon::CANCEL}).clicked()
-                    || ui.input(|i| i.key_pressed(Key::Escape))
-                {
+                if ui.button(format! {"{} Cancel", icon::CANCEL}).clicked() {
                     ui.close();
                 }
             },
         );
     });
     if modal.should_close() {
-        action_queue.request(Action::CloseNewGameConfirm);
+        action_queue.request(Action::CloseModal);
     }
 }

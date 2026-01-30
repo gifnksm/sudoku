@@ -2,7 +2,7 @@ use std::mem;
 
 use numelace_core::{Digit, Position};
 
-use crate::state::Settings;
+use crate::state::{ModalKind, Settings};
 
 #[derive(Debug, Clone)]
 pub enum Action {
@@ -14,8 +14,8 @@ pub enum Action {
     ClearCell,
     Undo,
     Redo,
-    RequestNewGameConfirm,
-    CloseNewGameConfirm,
+    OpenModal(ModalKind),
+    CloseModal,
     StartNewGame,
     UpdateSettings(Settings),
 }

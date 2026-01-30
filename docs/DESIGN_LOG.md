@@ -38,3 +38,4 @@ Short, timestamped notes capturing decisions and rationale.
 - 2026-01-29: Keypad action indicators show note add/remove via compact icons and the notes toggle uses a dedicated pencil button — improves clarity while reducing visual noise.
 - 2026-01-30: README is user-focused while CONTRIBUTING covers developer workflows — keeps entry points clear for each audience.
 - 2026-01-30: Provide a local CI script mirroring GitHub Actions checks — makes it easy to run the same checks before pushing.
+- 2026-01-30: Use a front-and-center Settings modal (on-demand) and move theme switching to the toolbar — simplifies access while keeping the grid area clean.

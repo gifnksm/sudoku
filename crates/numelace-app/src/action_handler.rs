@@ -88,11 +88,11 @@ pub fn handle(
             push_history_if_changed = false;
             ctx.ui_state.redo(ctx.app_state);
         }
-        Action::RequestNewGameConfirm => {
-            ctx.ui_state.show_new_game_confirm_dialogue = true;
+        Action::OpenModal(modal) => {
+            ctx.ui_state.active_modal = Some(modal);
         }
-        Action::CloseNewGameConfirm => {
-            ctx.ui_state.show_new_game_confirm_dialogue = false;
+        Action::CloseModal => {
+            ctx.ui_state.active_modal = None;
         }
         Action::StartNewGame => {
             push_history_if_changed = false;
@@ -156,7 +156,7 @@ mod tests {
     use crate::{
         DEFAULT_MAX_HISTORY_LENGTH,
         action::Action,
-        state::{AppState, GhostType, UiState},
+        state::{AppState, GhostType, ModalKind, UiState},
     };
 
     fn fixed_game() -> Game {
@@ -260,17 +260,17 @@ mod tests {
     fn close_new_game_confirm_clears_flag() {
         let mut app_state = AppState::new(fixed_game());
         let mut ui_state = UiState::new(DEFAULT_MAX_HISTORY_LENGTH, &app_state);
-        ui_state.show_new_game_confirm_dialogue = true;
+        ui_state.active_modal = Some(ModalKind::NewGameConfirm);
         let mut effect = ActionEffect::default();
 
         handle(
             &mut app_state,
             &mut ui_state,
             &mut effect,
-            Action::CloseNewGameConfirm,
+            Action::CloseModal,
         );
 
-        assert!(!ui_state.show_new_game_confirm_dialogue);
+        assert!(ui_state.active_modal.is_none());
         assert!(effect.state_save_requested);
     }
 }

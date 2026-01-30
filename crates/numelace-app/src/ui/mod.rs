@@ -4,6 +4,6 @@ pub mod grid;
 pub mod icon;
 pub mod input;
 pub mod keypad;
-pub mod sidebar;
+pub mod settings;
 pub mod status_line;
 pub mod toolbar;

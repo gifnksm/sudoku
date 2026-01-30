@@ -13,7 +13,7 @@ use std::time::Duration;
 
 use eframe::{
     App, CreationContext, Frame, Storage,
-    egui::{CentralPanel, Context, SidePanel, TopBottomPanel},
+    egui::{CentralPanel, Context, TopBottomPanel},
 };
 
 use crate::{
@@ -22,7 +22,7 @@ use crate::{
     action_handler::{self, ActionEffect},
     game_factory,
     persistence::storage,
-    state::{AppState, UiState},
+    state::{AppState, ModalKind, UiState},
     ui, view_model_builder,
 };
 
@@ -67,7 +67,7 @@ impl App for NumelaceApp {
         let mut effect = ActionEffect::default();
         let mut action_queue = ActionRequestQueue::default();
 
-        if !self.ui_state.show_new_game_confirm_dialogue {
+        if self.ui_state.active_modal.is_none() {
             ctx.input(|i| {
                 ui::input::handle_input(i, &mut action_queue);
                 action_handler::handle_all(
@@ -80,7 +80,6 @@ impl App for NumelaceApp {
         }
 
         let toolbar_vm = view_model_builder::build_toolbar_vm(&self.ui_state);
-        let sidebar_vm = view_model_builder::build_sidebar_view_model(&self.app_state);
         let game_screen_vm =
             view_model_builder::build_game_screen_view_model(&self.app_state, &self.ui_state);
 
@@ -88,16 +87,21 @@ impl App for NumelaceApp {
             ui::toolbar::show(ui, &toolbar_vm, &mut action_queue);
         });
 
-        SidePanel::right("sidebar").show(ctx, |ui| {
-            ui::sidebar::show(ui, &sidebar_vm, &mut action_queue);
-        });
-
         CentralPanel::default().show(ctx, |ui| {
             ui::game_screen::show(ui, &game_screen_vm, &mut action_queue);
         });
 
-        if self.ui_state.show_new_game_confirm_dialogue {
-            ui::dialogs::show_new_game_confirm(ctx, &mut action_queue);
+        if let Some(modal) = self.ui_state.active_modal {
+            match modal {
+                ModalKind::NewGameConfirm => {
+                    ui::dialogs::show_new_game_confirm(ctx, &mut action_queue);
+                }
+                ModalKind::Settings => {
+                    let settings_vm =
+                        view_model_builder::build_settings_view_model(&self.app_state);
+                    ui::settings::show(ctx, &settings_vm, &mut action_queue);
+                }
+            }
         }
 
         action_handler::handle_all(

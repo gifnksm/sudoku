@@ -1,7 +1,8 @@
-use eframe::egui::{Button, Response, RichText, Ui};
+use eframe::egui::{Button, Response, RichText, Sides, Ui, widgets};
 
 use crate::{
     action::{Action, ActionRequestQueue},
+    state::ModalKind,
     ui::icon,
 };
 
@@ -19,21 +20,33 @@ impl ToolbarViewModel {
 
 pub fn show(ui: &mut Ui, vm: &ToolbarViewModel, action_queue: &mut ActionRequestQueue) {
     ui.add_space(ui.spacing().item_spacing.y);
-    ui.horizontal(|ui| {
-        if button(ui, icon::ARROW_UNDO, "Undo", vm.can_undo).clicked() {
-            action_queue.request(Action::Undo);
-        }
+    Sides::new().show(
+        ui,
+        |ui| {
+            ui.horizontal(|ui| {
+                if button(ui, icon::ARROW_UNDO, "Undo", vm.can_undo).clicked() {
+                    action_queue.request(Action::Undo);
+                }
 
-        if button(ui, icon::ARROW_REDO, "Redo", vm.can_redo).clicked() {
-            action_queue.request(Action::Redo);
-        }
+                if button(ui, icon::ARROW_REDO, "Redo", vm.can_redo).clicked() {
+                    action_queue.request(Action::Redo);
+                }
 
-        ui.separator();
+                ui.separator();
 
-        if button(ui, icon::PLUS, "New Game", true).clicked() {
-            action_queue.request(Action::RequestNewGameConfirm);
-        }
-    });
+                if button(ui, icon::PLUS, "New Game", true).clicked() {
+                    action_queue.request(Action::OpenModal(ModalKind::NewGameConfirm));
+                }
+
+                if button(ui, icon::GEAR_NO_HUB, "Settings", true).clicked() {
+                    action_queue.request(Action::OpenModal(ModalKind::Settings));
+                }
+            });
+        },
+        |ui| {
+            widgets::global_theme_preference_switch(ui);
+        },
+    );
     ui.add_space(ui.spacing().item_spacing.y);
 }
 
