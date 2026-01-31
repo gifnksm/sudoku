@@ -2,3 +2,6 @@
 # Allow project name variants.
 Numelace = "Numelace"
 numelace = "numelace"
+
+[files]
+extend-exclude = ["crates/numelace-app/src/ui/icon.rs"]
