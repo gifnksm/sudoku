@@ -1,8 +1,7 @@
 use std::sync::Arc;
 
 use eframe::egui::{
-    Align2, Button, Color32, FontId, Grid, Painter, Rect, RichText, Stroke, StrokeKind, Ui, Vec2,
-    Visuals,
+    Align2, Color32, FontId, Painter, Pos2, Rect, Sense, Stroke, StrokeKind, Ui, Vec2, Visuals,
 };
 use numelace_core::{Digit, DigitSet, Position, containers::Array81, index::PositionSemantics};
 use numelace_game::CellState;
@@ -10,6 +9,7 @@ use numelace_game::CellState;
 use crate::{
     action::{Action, ActionRequestQueue},
     state::HighlightSettings,
+    ui::layout::{ComponentUnits, LayoutScale},
 };
 
 bitflags::bitflags! {
@@ -102,7 +102,7 @@ impl GridViewModel {
     fn grid_thick_border(visuals: &Visuals, cell_size: f32) -> Stroke {
         let base_width = f32::max(cell_size * CELL_BORDER_WIDTH_BASE_RATIO, 1.0);
         Stroke::new(
-            base_width * THICK_BORDER_RATIO,
+            base_width * THICK_BORDER_WIDTH_RATIO,
             Self::inactive_border_color(visuals),
         )
     }
@@ -112,8 +112,25 @@ impl GridViewModel {
     }
 }
 
+pub const GRID_CELLS: f32 = 9.0;
+
+pub fn grid_side_with_border(cell_size: f32) -> f32 {
+    let thick_border = thick_border_width(cell_size);
+    GRID_CELLS * cell_size + thick_border * 4.0
+}
+
+pub const fn required_units() -> ComponentUnits {
+    let len = GRID_CELLS + CELL_BORDER_WIDTH_BASE_RATIO * (THICK_BORDER_WIDTH_RATIO * 4.0);
+    ComponentUnits::new(len, len)
+}
+
+fn thick_border_width(cell_size: f32) -> f32 {
+    let base_width = f32::max(cell_size * CELL_BORDER_WIDTH_BASE_RATIO, 1.0);
+    base_width * THICK_BORDER_WIDTH_RATIO
+}
+
 const CELL_BORDER_WIDTH_BASE_RATIO: f32 = 0.03;
-const THICK_BORDER_RATIO: f32 = 2.0;
+const THICK_BORDER_WIDTH_RATIO: f32 = 3.0;
 const THIN_BORDER_WIDTH_RATIO: f32 = 1.0;
 const SELECTED_BORDER_WIDTH_RATIO: f32 = 3.0;
 const SAME_DIGIT_BORDER_WIDTH_RATIO: f32 = 1.0;
@@ -197,83 +214,123 @@ impl EffectiveGridVisualState {
     }
 }
 
-pub fn show(ui: &mut Ui, vm: &GridViewModel, action_queue: &mut ActionRequestQueue) {
+pub fn show(
+    ui: &mut Ui,
+    vm: &GridViewModel,
+    scale: &LayoutScale,
+    action_queue: &mut ActionRequestQueue,
+) {
+    let cell_size = scale.cell_size;
     let style = Arc::clone(ui.style());
     let visuals = &style.visuals;
+    let grid_side = grid_side_with_border(cell_size);
 
-    let grid_size = ui.available_size().min_elem();
-    // - 9 cells across
-    // - 2 inner 3x3 borders
-    // - outer borders are drawn outside layout (not included here)
-    let cell_size = grid_size / (9.0 + 2.0 * CELL_BORDER_WIDTH_BASE_RATIO * THICK_BORDER_RATIO);
+    let (rect, _response) = ui.allocate_exact_size(Vec2::splat(grid_side), Sense::hover());
+
     let thick_border = GridViewModel::grid_thick_border(visuals, cell_size);
+    let base_border = f32::max(cell_size * CELL_BORDER_WIDTH_BASE_RATIO, 1.0);
+    let inner_rect = rect.shrink(thick_border.width);
 
-    Grid::new(ui.id().with("outer_board"))
-        .spacing((thick_border.width, thick_border.width))
-        .min_col_width(cell_size * 3.0)
-        .min_row_height(cell_size * 3.0)
-        .show(ui, |ui| {
-            for box_row in 0..3 {
-                for box_col in 0..3 {
-                    let box_index = box_row * 3 + box_col;
-                    let grid = Grid::new(ui.id().with(format!("inner_box_{box_row}_{box_col}")))
-                        .spacing((0.0, 0.0))
-                        .min_col_width(cell_size)
-                        .min_row_height(cell_size)
-                        .show(ui, |ui| {
-                            for cell_row in 0..3 {
-                                for cell_col in 0..3 {
-                                    let cell_index = cell_row * 3 + cell_col;
-                                    let pos = Position::from_box(box_index, cell_index);
-                                    let cell = &vm.grid[pos];
-                                    let vs = vm.effective_visual_state(cell.visual_state);
-                                    let text_color =
-                                        vs.text_color(cell.content.is_given(), visuals);
-                                    let text = if let Some(digit) = cell.content.as_digit() {
-                                        RichText::new(digit.as_str())
-                                    } else {
-                                        RichText::new("")
-                                    }
-                                    .color(text_color)
-                                    .size(cell_size * 0.8);
-                                    let button = Button::new(text)
-                                        .min_size(Vec2::splat(cell_size))
-                                        .fill(vs.cell_fill_color(visuals));
-                                    let button = ui.add(button);
-                                    if let Some(digits) = cell.content.as_notes() {
-                                        let rect = button.rect.shrink(thick_border.width);
-                                        draw_notes(
-                                            ui.painter(),
-                                            vm,
-                                            rect,
-                                            digits,
-                                            &cell.note_visual_state,
-                                            visuals,
-                                        );
-                                    }
-                                    ui.painter().rect_stroke(
-                                        button.rect,
-                                        0.0,
-                                        vs.cell_border(visuals, cell_size),
-                                        StrokeKind::Inside,
-                                    );
-                                    if button.clicked() {
-                                        action_queue.request(Action::SelectCell(pos));
-                                    }
-                                }
-                                ui.end_row();
-                            }
-                        });
-                    ui.painter().rect_stroke(
-                        grid.response.rect,
-                        0.0,
-                        thick_border,
-                        StrokeKind::Outside,
-                    );
-                }
-                ui.end_row();
+    let painter = ui.painter();
+    draw_outer_border(painter, rect, thick_border);
+
+    for y in 0..9 {
+        for x in 0..9 {
+            let pos = Position::new(x, y);
+            let cell = &vm.grid[pos];
+            let vs = vm.effective_visual_state(cell.visual_state);
+
+            let xf = f32::from(x);
+            let yf = f32::from(y);
+            let cell_min = inner_rect.min
+                + Vec2::new(
+                    cell_size * xf + (xf / 3.0).floor() * thick_border.width,
+                    cell_size * yf + (yf / 3.0).floor() * thick_border.width,
+                );
+            let cell_max = cell_min + Vec2::splat(cell_size);
+            let cell_rect = Rect::from_min_max(cell_min, cell_max);
+
+            painter.rect_filled(cell_rect, 0.0, vs.cell_fill_color(visuals));
+
+            if let Some(digits) = cell.content.as_notes() {
+                let notes_rect = cell_rect.shrink(base_border);
+                draw_notes(
+                    painter,
+                    vm,
+                    notes_rect,
+                    digits,
+                    &cell.note_visual_state,
+                    visuals,
+                );
+            } else if let Some(digit) = cell.content.as_digit() {
+                painter.text(
+                    cell_rect.center(),
+                    Align2::CENTER_CENTER,
+                    digit.as_str(),
+                    FontId::proportional(cell_size * 0.8),
+                    vs.text_color(cell.content.is_given(), visuals),
+                );
             }
-        });
+
+            painter.rect_stroke(
+                cell_rect,
+                0.0,
+                vs.cell_border(visuals, cell_size),
+                StrokeKind::Inside,
+            );
+
+            let response = ui.interact(cell_rect, ui.id().with((x, y)), Sense::click());
+            if response.clicked() {
+                action_queue.request(Action::SelectCell(pos));
+            }
+        }
+    }
+
+    draw_box_borders(painter, inner_rect, cell_size, thick_border);
+}
+
+fn draw_outer_border(painter: &Painter, rect: Rect, stroke: Stroke) {
+    let thickness = stroke.width.max(1.0);
+
+    let left = Rect::from_min_max(
+        Pos2::new(rect.left(), rect.top()),
+        Pos2::new(rect.left() + thickness, rect.bottom()),
+    );
+    let right = Rect::from_min_max(
+        Pos2::new(rect.right() - thickness, rect.top()),
+        Pos2::new(rect.right(), rect.bottom()),
+    );
+    let top = Rect::from_min_max(
+        Pos2::new(rect.left(), rect.top()),
+        Pos2::new(rect.right(), rect.top() + thickness),
+    );
+    let bottom = Rect::from_min_max(
+        Pos2::new(rect.left(), rect.bottom() - thickness),
+        Pos2::new(rect.right(), rect.bottom()),
+    );
+
+    painter.rect_filled(left, 0.0, stroke.color);
+    painter.rect_filled(right, 0.0, stroke.color);
+    painter.rect_filled(top, 0.0, stroke.color);
+    painter.rect_filled(bottom, 0.0, stroke.color);
+}
+
+fn draw_box_borders(painter: &Painter, inner_rect: Rect, cell_size: f32, stroke: Stroke) {
+    let start = inner_rect.min;
+    let end = inner_rect.max;
+    let thickness = stroke.width.max(1.0);
+    let half = thickness * 0.5;
+
+    for i in [1.0, 2.0] {
+        let offset = cell_size * 3.0 * i + thickness * (i - 0.5);
+        let x = start.x + offset;
+        let v_rect = Rect::from_min_max(Pos2::new(x - half, start.y), Pos2::new(x + half, end.y));
+        painter.rect_filled(v_rect, 0.0, stroke.color);
+
+        let y = start.y + offset;
+        let h_rect = Rect::from_min_max(Pos2::new(start.x, y - half), Pos2::new(end.x, y + half));
+        painter.rect_filled(h_rect, 0.0, stroke.color);
+    }
 }
 
 fn draw_notes(

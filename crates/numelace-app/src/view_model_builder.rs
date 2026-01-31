@@ -111,6 +111,7 @@ pub fn build_game_screen_view_model(
         GameStatus::InProgress
     };
     let status_line_vm = StatusLineViewModel::new(status);
+    let toolbar_vm = build_toolbar_vm(ui_state);
 
     let grid = build_grid(app_state, ui_state);
     let grid_vm = GridViewModel::new(grid, &settings.assist.highlight);
@@ -125,7 +126,7 @@ pub fn build_game_screen_view_model(
     let has_removable_digit = selected_cell.is_some_and(|pos| game.has_removable_digit(pos));
     let keypad_vm = KeypadViewModel::new(digit_capabilities, has_removable_digit, notes_mode);
 
-    GameScreenViewModel::new(status_line_vm, grid_vm, keypad_vm)
+    GameScreenViewModel::new(toolbar_vm, status_line_vm, grid_vm, keypad_vm)
 }
 
 pub fn build_settings_view_model(app_state: &AppState) -> SettingsViewModel<'_> {

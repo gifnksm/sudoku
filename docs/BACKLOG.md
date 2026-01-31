@@ -53,7 +53,7 @@ This backlog is the single source of truth for tasks and ideas.
 - WASM build (run in web browser) ✅
 - Publish web build via GitHub Actions + GitHub Pages ✅
 - Replace template app icons with Numelace branding
-- Smartphone UI optimization (touch targets, layout adjustments, modal sizing)
+- Smartphone UI optimization (touch targets, layout adjustments, modal sizing) ✅
 - Settings modal (front-and-center modal with close button + outside click) ✅
 
 ## Bugs / Fixes

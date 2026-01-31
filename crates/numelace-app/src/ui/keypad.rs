@@ -8,7 +8,10 @@ use numelace_game::{InputBlockReason, InputOperation};
 
 use crate::{
     action::{Action, ActionRequestQueue},
-    ui::icon,
+    ui::{
+        icon,
+        layout::{ComponentUnits, LayoutScale},
+    },
 };
 
 #[derive(Debug, Clone)]
@@ -59,7 +62,7 @@ enum ButtonType {
     ToggleInputMode,
 }
 
-const BUTTON_LAYOUT: [[Option<ButtonType>; 7]; 2] = {
+const BUTTON_LAYOUT: [[Option<ButtonType>; 6]; 2] = {
     #[expect(clippy::unnecessary_wraps)]
     const fn d(d: Digit) -> Option<ButtonType> {
         Some(ButtonType::Digit(d))
@@ -76,37 +79,61 @@ const BUTTON_LAYOUT: [[Option<ButtonType>; 7]; 2] = {
     #[allow(clippy::enum_glob_use)]
     use Digit::*;
     [
-        [d(D1), d(D2), d(D3), d(D4), d(D5), None, t()],
-        [d(D6), d(D7), d(D8), d(D9), c(), None, None],
+        [d(D1), d(D2), d(D3), d(D4), d(D5), t()],
+        [d(D6), d(D7), d(D8), d(D9), c(), None],
     ]
 };
 
 #[expect(clippy::cast_precision_loss)]
-pub fn show(ui: &mut Ui, vm: &KeypadViewModel, action_queue: &mut ActionRequestQueue) {
+const KEYPAD_COLUMNS: f32 = BUTTON_LAYOUT[0].len() as f32;
+#[expect(clippy::cast_precision_loss)]
+const KEYPAD_ROWS: f32 = BUTTON_LAYOUT.len() as f32;
+
+pub fn required_units() -> ComponentUnits {
+    ComponentUnits::new(
+        KEYPAD_COLUMNS + (KEYPAD_COLUMNS - 1.0) * LayoutScale::SPACING_FACTOR.x,
+        KEYPAD_ROWS
+            + (KEYPAD_ROWS - 1.0) * LayoutScale::SPACING_FACTOR.y
+            + LayoutScale::PADDING_FACTOR.y,
+    )
+}
+
+#[expect(clippy::cast_precision_loss)]
+pub fn show(
+    ui: &mut Ui,
+    vm: &KeypadViewModel,
+    scale: &LayoutScale,
+    action_queue: &mut ActionRequestQueue,
+) {
     let style = Arc::clone(ui.style());
     let visuals = &style.visuals;
 
-    let x_padding = 5.0;
-    let y_padding = 5.0;
-    let avail = ui.available_size();
+    let padding = Vec2::new(0.0, scale.padding.y);
+    let avail = ui.available_size() - padding;
     let x_buttons = BUTTON_LAYOUT[0].len() as f32;
     let y_buttons = BUTTON_LAYOUT.len() as f32;
-    let button_size = f32::min(
-        (avail.x - (x_buttons - 1.0) * x_padding) / x_buttons,
-        (avail.y - (y_buttons - 1.0) * y_padding) / y_buttons,
-    );
-    // Center the digit block so keys "3" and "8" align with the overall grid center.
-    // The block spans 5 columns; its center is column index 2 (0-based).
-    let digit_center_offset = button_size * 2.5 + x_padding * 2.0;
+    let button_size = scale.cell_size;
+    let x_spacing = if x_buttons > 1.0 {
+        ((avail.x - button_size * x_buttons) / (x_buttons - 1.0)).max(0.0)
+    } else {
+        0.0
+    };
+    let y_spacing = if y_buttons > 1.0 {
+        ((avail.y - button_size * y_buttons) / (y_buttons - 1.0)).max(0.0)
+    } else {
+        0.0
+    };
     let rect = ui.available_rect_before_wrap();
-    let origin_x = rect.center().x - digit_center_offset;
-    let rect = rect.intersect(rect.with_min_x(origin_x));
+    let rect = egui::Rect::from_min_max(rect.min + padding, rect.max);
 
     let swap_input_mode = ui.input(|i| i.modifiers.command);
     let effective_notes_mode = vm.notes_mode ^ swap_input_mode;
     ui.scope_builder(UiBuilder::new().max_rect(rect), |ui| {
+        ui.spacing_mut().item_spacing = Vec2::ZERO;
         Grid::new(ui.id().with("keypad_grid"))
-            .spacing((x_padding, y_padding))
+            .spacing((x_spacing, y_spacing))
+            .min_col_width(button_size)
+            .min_row_height(button_size)
             .max_col_width(button_size)
             .show(ui, |ui| {
                 for row in BUTTON_LAYOUT {
@@ -138,7 +165,7 @@ pub fn show(ui: &mut Ui, vm: &KeypadViewModel, action_queue: &mut ActionRequestQ
                                 }
                             }
                             None => {
-                                ui.allocate_space(Vec2::splat(button_size - x_padding));
+                                ui.allocate_space(Vec2::splat(button_size));
                             }
                         }
                     }

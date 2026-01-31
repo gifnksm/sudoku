@@ -13,7 +13,7 @@ use std::time::Duration;
 
 use eframe::{
     App, CreationContext, Frame, Storage,
-    egui::{CentralPanel, Context, TopBottomPanel},
+    egui::{CentralPanel, Context},
 };
 
 use crate::{
@@ -79,13 +79,8 @@ impl App for NumelaceApp {
             });
         }
 
-        let toolbar_vm = view_model_builder::build_toolbar_vm(&self.ui_state);
         let game_screen_vm =
             view_model_builder::build_game_screen_view_model(&self.app_state, &self.ui_state);
-
-        TopBottomPanel::top("toolbar").show(ctx, |ui| {
-            ui::toolbar::show(ui, &toolbar_vm, &mut action_queue);
-        });
 
         CentralPanel::default().show(ctx, |ui| {
             ui::game_screen::show(ui, &game_screen_vm, &mut action_queue);
