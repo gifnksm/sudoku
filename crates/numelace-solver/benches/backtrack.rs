@@ -23,7 +23,7 @@
 //! cargo bench --bench backtrack
 //! ```
 
-use std::str::FromStr as _;
+use std::{hint, str::FromStr as _};
 
 use criterion::{BenchmarkId, Criterion, criterion_group, criterion_main};
 use numelace_core::{CandidateGrid, DigitGrid};
@@ -70,7 +70,14 @@ fn bench_find_best_assumption(c: &mut Criterion) {
             BenchmarkId::new("find_best_assumption", format!("{param}_{given}")),
             &grid,
             |b, grid| {
-                b.iter(|| backtrack::find_best_assumption(grid));
+                b.iter_batched_ref(
+                    || hint::black_box(grid.clone()),
+                    |grid| {
+                        let result = backtrack::find_best_assumption(grid);
+                        hint::black_box(result)
+                    },
+                    criterion::BatchSize::SmallInput,
+                );
             },
         );
     }

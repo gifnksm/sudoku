@@ -26,9 +26,9 @@
 //! cargo bench --bench generator
 //! ```
 
-use std::str::FromStr as _;
+use std::{hint, str::FromStr as _};
 
-use criterion::{BenchmarkId, Criterion, criterion_group, criterion_main};
+use criterion::{BatchSize, BenchmarkId, Criterion, criterion_group, criterion_main};
 use numelace_generator::{PuzzleGenerator, PuzzleSeed};
 use numelace_solver::TechniqueSolver;
 
@@ -48,7 +48,11 @@ fn bench_generator_fundamental(c: &mut Criterion) {
             BenchmarkId::new("generator_fundamental", format!("seed_{i}")),
             &seed,
             |b, seed| {
-                b.iter(|| generator.generate_with_seed(*seed));
+                b.iter_batched(
+                    || hint::black_box(*seed),
+                    |seed| generator.generate_with_seed(seed),
+                    BatchSize::SmallInput,
+                );
             },
         );
     }

@@ -30,9 +30,9 @@
 //! cargo bench --bench solver
 //! ```
 
-use std::str::FromStr as _;
+use std::{hint, str::FromStr as _};
 
-use criterion::{BenchmarkId, Criterion, criterion_group, criterion_main};
+use criterion::{BatchSize, BenchmarkId, Criterion, criterion_group, criterion_main};
 use numelace_core::{CandidateGrid, DigitGrid};
 use numelace_solver::{BacktrackSolver, TechniqueSolver};
 
@@ -84,10 +84,11 @@ fn bench_technique_solver_fundamental(c: &mut Criterion) {
                 );
                 assert_eq!(test_grid.to_digit_grid().to_string(), SOLUTION);
 
-                b.iter(|| {
-                    let mut grid = grid.clone();
-                    solver.solve(&mut grid).unwrap()
-                });
+                b.iter_batched_ref(
+                    || hint::black_box(grid.clone()),
+                    |grid| solver.solve(grid).unwrap(),
+                    BatchSize::SmallInput,
+                );
             },
         );
     }
@@ -130,10 +131,11 @@ fn bench_backtrack_solver_fundamental(c: &mut Criterion) {
                     assert_eq!(solutions[0].0.to_digit_grid().to_string(), SOLUTION);
                 }
 
-                b.iter(|| {
-                    let grid = grid.clone();
-                    solver.solve(grid).unwrap().take(100).collect::<Vec<_>>()
-                });
+                b.iter_batched(
+                    || hint::black_box(grid.clone()),
+                    |grid| solver.solve(grid).unwrap().take(100).collect::<Vec<_>>(),
+                    BatchSize::SmallInput,
+                );
             },
         );
     }
