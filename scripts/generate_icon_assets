@@ -6,7 +6,9 @@ repo_root=$(CDPATH= cd -- "$(dirname -- "$0")/.." && pwd)
 "$repo_root/scripts/generate_icon_svg"
 
 rsvg-convert -w 1024 -h 1024 "$repo_root/assets/source/icon.svg" -o "$repo_root/assets/icon-1024.png"
-rsvg-convert -w 512 -h 512 "$repo_root/assets/source/icon.svg" -o "$repo_root/assets/maskable_icon_x512.png"
+rsvg-convert -w 355 -h 355 "$repo_root/assets/source/icon.svg" -o "$repo_root/assets/maskable_icon_tmp.png"
+magick "$repo_root/assets/maskable_icon_tmp.png" -background none -gravity center -extent 512x512 "$repo_root/assets/maskable_icon_x512.png"
+rm "$repo_root/assets/maskable_icon_tmp.png"
 rsvg-convert -w 256 -h 256 "$repo_root/assets/source/icon.svg" -o "$repo_root/assets/icon-256.png"
 rsvg-convert -w 192 -h 192 "$repo_root/assets/source/icon.svg" -o "$repo_root/assets/icon_ios_touch_192.png"
 
