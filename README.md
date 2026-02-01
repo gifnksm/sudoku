@@ -12,6 +12,8 @@ Numelace is a number-place (Sudoku) puzzle application written in Rust, with des
 
 <https://gifnksm.github.io/numelace/>
 
+The Web Demo is PWA-ready. You can play on your phone and add it to your home screen.
+
 ## Run on Desktop (Local)
 
 ```bash
