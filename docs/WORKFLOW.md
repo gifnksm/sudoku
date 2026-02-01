@@ -21,7 +21,7 @@ This project uses a lightweight, memory-friendly workflow for hobby development.
 
 ## 4) Mark done
 
-- Mark completed backlog items with ✅
+- Mark completed backlog items with `[x]` in the task list
 
 ## Files to know
 

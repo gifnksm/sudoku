@@ -7,58 +7,58 @@ This backlog is the single source of truth for tasks and ideas.
 
 ### Gameplay
 
-- Candidate notes (player notes) ✅
-- Undo/redo ✅
-- Reset current puzzle ✅
-- Timer and statistics (e.g., solve time, mistakes, hints used)
-- Puzzle paste/import (text paste/manual input; no difficulty/uniqueness assumptions)
+- [X] Candidate notes (player notes)
+- [X] Undo/redo
+- [X] Reset current puzzle
+- [ ] Timer and statistics (e.g., solve time, mistakes, hints used)
+- [ ] Puzzle paste/import (text paste/manual input; no difficulty/uniqueness assumptions)
 
 ### Puzzle & solver
 
-- Difficulty-based puzzle generation
-- Seeded generation and regenerate by seed
-- Technique explanations for hints (may overlap with hint system)
-- Solver technique extensions (pairs, pointing, box/line, X-Wing)
+- [ ] Difficulty-based puzzle generation
+- [ ] Seeded generation and regenerate by seed
+- [ ] Technique explanations for hints (may overlap with hint system)
+- [ ] Solver technique extensions (pairs, pointing, box/line, X-Wing)
 
 ### Optional assist features
 
-- Selection row/column/box highlight ✅
-- Same digit highlight ✅
-- Highlight peers of same-digit cells (row/column/box) ✅
-- Mistake highlighting (row/col/box conflicts) ✅
-- Block rule-violating input (optional) ✅
-  - Indicate blocked candidates on keypad buttons (optional) ✅
-  - Allow toggling blocked-candidate indicator (optional)
-- Ghost input preview for blocked actions ✅
-- Assist: on digit entry, remove that digit’s note from all peers (same row, column, or box) (optional) ✅
-- Notes auto-fill for possible digits (optional)
-  - For selected cell
-  - For all cells
-- Hint system (scope TBD: show applicable technique, target cells, or apply a step)
+- [X] Selection row/column/box highlight
+- [X] Same digit highlight
+- [X] Highlight peers of same-digit cells (row/column/box)
+- [X] Mistake highlighting (row/col/box conflicts)
+- [X] Block rule-violating input (optional)
+  - [X] Indicate blocked candidates on keypad buttons (optional)
+  - [ ] Allow toggling blocked-candidate indicator (optional)
+- [X] Ghost input preview for blocked actions
+- [X] Assist: on digit entry, remove that digit’s note from all peers (same row, column, or box) (optional)
+- [ ] Notes auto-fill for possible digits (optional)
+  - [ ] For selected cell
+  - [ ] For all cells
+- [ ] Hint system (scope TBD: show applicable technique, target cells, or apply a step)
 
 ### Application features
 
-- Digit count/tally display (per digit) ✅
-- Digit count integrated number pad/buttons (mouse-only input) ✅
-- Light/Dark mode toggle ✅
-- Mouse-only input (number pad/buttons) ✅
-- New Game confirmation dialog ✅
-- Input discoverability (make shortcuts/keybinds easier to find; format TBD)
-- UI clarity & visual polish (general improvements; details TBD)
-- Keypad buttons show which action will occur for notes (add/remove) ✅
-- Feature toggles UI for (optional) assists ✅
-- UI ViewModel-based split/refactor ✅
-- App logic refactor for testability (action extraction + action_handler + view_model_builder split) ✅
-- Auto-save and resume (board state + settings) ✅
-- WASM build (run in web browser) ✅
-- Publish web build via GitHub Actions + GitHub Pages ✅
-- Replace template app icons with Numelace branding
-- Smartphone UI optimization (touch targets, layout adjustments, modal sizing) ✅
-- Settings modal (front-and-center modal with close button + outside click) ✅
+- [X] Digit count/tally display (per digit)
+- [X] Digit count integrated number pad/buttons (mouse-only input)
+- [X] Light/Dark mode toggle
+- [X] Mouse-only input (number pad/buttons)
+- [X] New Game confirmation dialog
+- [ ] Input discoverability (make shortcuts/keybinds easier to find; format TBD)
+- [ ] UI clarity & visual polish (general improvements; details TBD)
+- [X] Keypad buttons show which action will occur for notes (add/remove)
+- [X] Feature toggles UI for (optional) assists
+- [X] UI ViewModel-based split/refactor
+- [X] App logic refactor for testability (action extraction + action_handler + view_model_builder split)
+- [X] Auto-save and resume (board state + settings)
+- [X] WASM build (run in web browser)
+- [X] Publish web build via GitHub Actions + GitHub Pages
+- [ ] Replace template app icons with Numelace branding
+- [X] Smartphone UI optimization (touch targets, layout adjustments, modal sizing)
+- [X] Settings modal (front-and-center modal with close button + outside click)
 
 ## Bugs / Fixes
 
-- Debug: debug builds hit a `debug_assert` with the message `add_space makes no sense in a grid layout` (resolved ✅)
+- [X] Debug: debug builds hit a `debug_assert` with the message `add_space makes no sense in a grid layout`
 
 ## Notes
 
